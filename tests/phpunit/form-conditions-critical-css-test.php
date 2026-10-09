@@ -7,21 +7,12 @@
 
 namespace DesignSetGo\Tests;
 
-use DesignSetGo\Blocks\Form_Conditions_Critical_CSS;
 use WP_UnitTestCase;
 
 /**
  * Critical CSS test case.
  */
 class Test_Form_Conditions_Critical_CSS extends WP_UnitTestCase {
-
-	/**
-	 * Reset the once-per-request flag.
-	 */
-	public function set_up() {
-		parent::set_up();
-		Form_Conditions_Critical_CSS::reset();
-	}
 
 	/**
 	 * Form markup with or without a conditional field.
@@ -39,7 +30,7 @@ class Test_Form_Conditions_Critical_CSS extends WP_UnitTestCase {
 	public function test_style_printed_before_form_markup() {
 		$html = do_blocks( $this->form( true ) );
 
-		$style = strpos( $html, '<style id="dsgo-form-conditions-critical">' );
+		$style = strpos( $html, '<style class="dsgo-form-conditions-critical">' );
 		$this->assertNotFalse( $style );
 		$this->assertLessThan( strpos( $html, 'dsgo-form-builder' ), $style );
 		$this->assertStringContainsString( 'dsgo-conditions-pending', $html );
@@ -47,10 +38,20 @@ class Test_Form_Conditions_Critical_CSS extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/scripting:\s*enabled/', $html );
 	}
 
-	public function test_style_printed_once_per_request() {
+	public function test_each_conditional_form_gets_its_own_style() {
 		$html = do_blocks( $this->form( true ) ) . do_blocks( $this->form( true ) );
 
-		$this->assertSame( 1, substr_count( $html, 'id="dsgo-form-conditions-critical"' ) );
+		$this->assertSame( 2, substr_count( $html, 'class="dsgo-form-conditions-critical"' ) );
+		$this->assertStringNotContainsString( 'id="dsgo-form-conditions-critical"', $html );
+	}
+
+	public function test_plain_form_does_not_consume_or_get_style() {
+		$plain = do_blocks( $this->form( false ) );
+		$cond  = do_blocks( $this->form( true ) );
+
+		$this->assertStringNotContainsString( 'dsgo-form-conditions-critical', $plain );
+		$this->assertSame( 1, substr_count( $cond, 'class="dsgo-form-conditions-critical"' ) );
+		$this->assertLessThan( strpos( $cond, 'dsgo-form-builder' ), strpos( $cond, '<style class=' ) );
 	}
 
 	public function test_no_style_without_conditional_fields() {

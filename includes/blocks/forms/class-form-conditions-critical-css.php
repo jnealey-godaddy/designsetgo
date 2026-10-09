@@ -5,7 +5,7 @@
  * The form block stylesheets are deferred (media="print" + onload swap, see
  * Assets::optimize_css_loading()), so a rule that lives in them applies after
  * first paint. The conditional-field pre-hide has to apply before the fields
- * paint, so it is printed inline ahead of the first form that needs it.
+ * paint, so it is printed inline ahead of every form that needs it.
  *
  * @package DesignSetGo
  * @since 2.10.0
@@ -36,13 +36,6 @@ class Form_Conditions_Critical_CSS {
 	const CSS = '.dsgo-form-field[hidden]{display:none}@media (scripting:enabled){.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional{animation:dsgo-conditions-pending 4s}}@keyframes dsgo-conditions-pending{0%,99.9%{display:none}}';
 
 	/**
-	 * Whether the style has been printed in this request.
-	 *
-	 * @var bool
-	 */
-	private static $printed = false;
-
-	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -50,16 +43,11 @@ class Form_Conditions_Critical_CSS {
 	}
 
 	/**
-	 * Reset the once-per-request flag (tests).
+	 * Prepend the critical style to every form containing a conditional field.
 	 *
-	 * @return void
-	 */
-	public static function reset() {
-		self::$printed = false;
-	}
-
-	/**
-	 * Prepend the critical style to the first form containing a conditional field.
+	 * Not printed once per request: a render whose output never reaches the
+	 * page (SEO plugins, REST content) would otherwise consume the flag.
+	 * Duplicate identical style tags are harmless.
 	 *
 	 * @param string $block_content Rendered block HTML.
 	 * @param array  $block         Parsed block (unused).
@@ -68,12 +56,10 @@ class Form_Conditions_Critical_CSS {
 	public function prepend_style( $block_content, $block = array() ) {
 		unset( $block );
 
-		if ( self::$printed || ! is_string( $block_content ) || false === strpos( $block_content, 'dsgo-form-field--conditional' ) ) {
+		if ( ! is_string( $block_content ) || false === strpos( $block_content, 'dsgo-form-field--conditional' ) ) {
 			return $block_content;
 		}
 
-		self::$printed = true;
-
-		return '<style id="dsgo-form-conditions-critical">' . self::CSS . '</style>' . $block_content;
+		return '<style class="dsgo-form-conditions-critical">' . self::CSS . '</style>' . $block_content;
 	}
 }
