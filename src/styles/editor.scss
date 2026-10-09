@@ -18,6 +18,9 @@
 // Pill, Icon, Icon Button, and Modal Trigger (see src/styles/_justification.scss).
 @use 'justification' as *;
 
+// Same `transparent` preset fallback as the frontend (src/style.scss).
+@use 'preset-fallbacks';
+
 // Shared components
 @use '../components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
 
