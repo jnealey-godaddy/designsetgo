@@ -60,7 +60,7 @@ The root block (always `designsetgo/section`) needs a `metadata` object for the 
 
 ## Placeholder Images
 
-Use `{{dsgo:placeholder-{type}}}` tokens for images, not hardcoded external URLs — `designsetgo_replace_pattern_placeholders()` (`includes/patterns/placeholder-images.php`) replaces these with local placeholder image URLs at registration time, so patterns don't depend on a third-party image host at runtime. Available types: `avatar`, `landscape`, `landscape-wide`, `portrait`, `square`, `gallery`, `logo` (see `designsetgo_get_placeholder_map()` for the current list — check it before inventing a new type).
+Use `{{dsgo:placeholder-{type}}}` tokens for images, not hardcoded external URLs — `designsetgo_replace_pattern_placeholders()` (`includes/patterns/placeholder-images.php`) replaces these with local placeholder image URLs at registration time, so patterns don't depend on a third-party image host at runtime. Available types: `avatar`, `landscape`, `landscape-wide`, `portrait`, `square`, `gallery`, `logo` (see `designsetgo_get_placeholder_map()` for the current list — check it before inventing a new type). For a Countdown Timer, use `{{dsgo:countdown-target}}` in both `targetDateTime` and `data-target-datetime` — it resolves to a date 30 days ahead, so the pattern never ships already expired.
 
 ## Testing
 
