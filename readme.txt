@@ -112,6 +112,12 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 = Unreleased =
 
+* **Fix:** Hotspot markers in the editor now sit exactly where they appear on your site. Before, every marker after the first was shown lower than its real position.
+* **Fix:** An Advanced Heading's font size, line height and letter spacing now apply to the heading, instead of being overridden by your theme's heading styles.
+* **Fix:** Form message boxes, date pickers and dropdowns use your theme's font instead of the browser's default.
+* **Fix:** Outline buttons in the bundled patterns show their label instead of a solid dark box. This also fixes buttons already on your pages.
+* **Fix:** Countdown patterns start 30 days out when inserted, instead of showing "The countdown has ended!".
+* **Improved:** Bundled patterns use fictional company and person names instead of real brands.
 * **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names).
 * **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
 * **Improved:** The submission details screen now shows each field's label alongside its field name.
