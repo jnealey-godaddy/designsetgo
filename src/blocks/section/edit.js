@@ -31,6 +31,7 @@ import {
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import LayoutControls from '../../extensions/layout/controls';
 import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import ShapeDividerControls from './components/ShapeDividerControls';
@@ -393,6 +394,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 							contentWidth: '',
 							contentPosition: 'center',
 							boxWidth: '',
+							dsgoLayout: undefined,
 						})
 					}
 				>
@@ -534,6 +536,12 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 							</ToggleGroupControl>
 						</DsgoInspectorPanel.Item>
 					)}
+					<LayoutControls
+						name="designsetgo/section"
+						attributes={attributes}
+						setAttributes={setAttributes}
+						clientId={clientId}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

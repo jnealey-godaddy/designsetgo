@@ -97,9 +97,12 @@ class Abilities_Registry {
 
 		$helpers = array(
 			'class-block-inserter.php',
+			'class-block-batch.php',
+			'class-generation-contract.php',
 			'class-block-configurator.php',
 			'class-block-schema-loader.php',
 			'class-css-sanitizer.php',
+			'class-responsive-css.php',
 		);
 
 		foreach ( $helpers as $helper ) {

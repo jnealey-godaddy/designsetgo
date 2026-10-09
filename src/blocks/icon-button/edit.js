@@ -43,6 +43,7 @@ import {
 } from '@wordpress/components';
 import clsx from 'clsx';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { ChildLayoutControls } from '../../extensions/layout/controls';
 import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
 import { link as linkIcon } from '@wordpress/icons';
 import { useSelect } from '@wordpress/data';
@@ -385,6 +386,7 @@ export default function IconButtonEdit({
 					panelId={clientId}
 					resetAll={() =>
 						setAttributes({
+							dsgoLayout: undefined,
 							icon: 'lightbulb',
 							iconPosition: 'start',
 							iconStyle: undefined,
@@ -454,6 +456,10 @@ export default function IconButtonEdit({
 							}
 						/>
 					</DsgoInspectorPanel.Item>
+					<ChildLayoutControls
+						name="designsetgo/icon-button"
+						{...{ attributes, setAttributes, clientId, isSelected }}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

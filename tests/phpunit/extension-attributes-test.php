@@ -62,10 +62,14 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 			$this->assertIsArray( $config['attributes'], "Config file {$name}.php 'attributes' should be an array." );
 			$this->assertNotEmpty( $config['attributes'], "Config file {$name}.php 'attributes' should not be empty." );
 
-			// Validate each attribute has type and default.
+			// Existing extensions have defaults; optional layout preserves old comments.
 			foreach ( $config['attributes'] as $attr_name => $attr_schema ) {
 				$this->assertArrayHasKey( 'type', $attr_schema, "Attribute {$attr_name} in {$name}.php missing 'type'." );
-				$this->assertArrayHasKey( 'default', $attr_schema, "Attribute {$attr_name} in {$name}.php missing 'default'." );
+				if ( 'dsgoLayout' === $attr_name ) {
+					$this->assertArrayNotHasKey( 'default', $attr_schema, 'Optional layout must not write defaults into existing content.' );
+				} else {
+					$this->assertArrayHasKey( 'default', $attr_schema, "Attribute {$attr_name} in {$name}.php missing 'default'." );
+				}
 			}
 		}
 	}
@@ -236,7 +240,7 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 		// interactions, max-width, responsive, reveal-container, reveal-control,
 		// schema, sticky-header-controls, style-binding, svg-patterns,
 		// text-reveal, vertical-parallax, visibility.
-		$this->assertCount( 19, $files, 'Should have 19 extension config files.' );
+		$this->assertCount( 20, $files, 'Should have 20 extension config files.' );
 	}
 
 	/**

@@ -1,0 +1,214 @@
+{
+  "attributes": {
+    "align": {
+      "type": "string",
+      "default": "full"
+    },
+    "tagName": {
+      "type": "string",
+      "default": "div"
+    },
+    "constrainWidth": {
+      "type": "boolean",
+      "default": true
+    },
+    "contentWidth": {
+      "type": "string",
+      "default": ""
+    },
+    "contentPosition": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "default": "center"
+    },
+    "boxWidth": {
+      "type": "string",
+      "default": ""
+    },
+    "style": {
+      "type": "object",
+      "default": {
+        "spacing": {
+          "padding": {
+            "top": "var:preset|spacing|50",
+            "bottom": "var:preset|spacing|50",
+            "left": "var:preset|spacing|30",
+            "right": "var:preset|spacing|30"
+          }
+        }
+      }
+    },
+    "hoverBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "hoverTextColor": {
+      "type": "string",
+      "default": ""
+    },
+    "hoverIconBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "hoverButtonBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "overlayColor": {
+      "type": "string",
+      "default": ""
+    },
+    "overlayOpacity": {
+      "type": "integer"
+    },
+    "shapeDividerTop": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerTopColor": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerTopHeight": {
+      "type": "number",
+      "default": null
+    },
+    "shapeDividerTopWidth": {
+      "type": "number",
+      "default": null
+    },
+    "shapeDividerTopFlipX": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerTopFlipY": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerTopFront": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerTopBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerTopSpacing": {
+      "type": "string"
+    },
+    "shapeDividerBottom": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerBottomColor": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerBottomHeight": {
+      "type": "number",
+      "default": null
+    },
+    "shapeDividerBottomWidth": {
+      "type": "number",
+      "default": null
+    },
+    "shapeDividerBottomFlipX": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerBottomFlipY": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerBottomFront": {
+      "type": "boolean",
+      "default": false
+    },
+    "shapeDividerBottomBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeDividerBottomSpacing": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "anchor": true,
+    "align": [
+      "wide",
+      "full"
+    ],
+    "html": false,
+    "inserter": true,
+    "layout": {
+      "allowSwitching": false,
+      "allowInheriting": false,
+      "allowEditing": true,
+      "allowSizingOnChildren": true,
+      "allowOrientation": false,
+      "default": {
+        "type": "flex",
+        "orientation": "vertical",
+        "justifyContent": "center"
+      }
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true,
+      "__experimentalDefaultControls": {
+        "padding": true,
+        "blockGap": true
+      }
+    },
+    "dimensions": {
+      "minHeight": true
+    },
+    "color": {
+      "background": true,
+      "text": true,
+      "gradients": true,
+      "link": true,
+      "__experimentalDefaultControls": {
+        "background": true,
+        "text": true
+      }
+    },
+    "background": {
+      "backgroundImage": true,
+      "backgroundSize": true,
+      "backgroundPosition": true,
+      "backgroundRepeat": true,
+      "__experimentalDefaultControls": {
+        "backgroundImage": true
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    },
+    "shadow": true,
+    "position": {
+      "sticky": true
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true,
+      "__experimentalDefaultControls": {
+        "color": true,
+        "radius": true,
+        "style": true,
+        "width": true
+      }
+    }
+  }
+}

@@ -29,11 +29,18 @@ import {
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import metadata from '../block.json';
 import save from '../save';
-import deprecated from '../deprecated';
+import deprecatedWithLayout from '../deprecated';
+
+// Keep historical-version positional assertions independent of the new snapshot.
+const deprecated = deprecatedWithLayout.slice(1);
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
-registerBlockType(metadata.name, { ...metadata, save, deprecated });
+registerBlockType(metadata.name, {
+	...metadata,
+	save,
+	deprecated: deprecatedWithLayout,
+});
 
 /**
  * Builds a serialized `<!-- wp:designsetgo/section {...} -->` fixture from a

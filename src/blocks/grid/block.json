@@ -171,6 +171,14 @@
 			"type": "string",
 			"default": ""
 		},
+		"tabletColumnTemplate": {
+			"type": "string",
+			"default": ""
+		},
+		"mobileColumnTemplate": {
+			"type": "string",
+			"default": ""
+		},
 		"matchRowHeights": {
 			"type": "boolean",
 			"default": false

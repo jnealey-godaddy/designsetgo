@@ -17,6 +17,7 @@ import {
 } from './utils/has-overlay-style';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import metadata from './block.json';
+import layoutCompatibility from './deprecated-layout';
 import currentSave from './save';
 import ShapeDivider, {
 	getRenderedShapeHeight,
@@ -2406,6 +2407,7 @@ const v1 = {
 // v10 reuses the current save(), so the content it claims already carries the
 // colour-aware opacity and must not be pinned to the legacy strength.
 export default [
+	layoutCompatibility,
 	...withLegacyOverlayOpacity([v11, v11Unconstrained]),
 	v10,
 	...withLegacyOverlayOpacity([v9, v8, v7, v6, v5, v4, v3, v2, v1]),

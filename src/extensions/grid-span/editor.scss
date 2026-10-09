@@ -1,53 +1,22 @@
 /**
  * Grid Span Extension - Editor Styles
  *
- * Editor-only styles for grid column span functionality.
- * Ensures column span doesn't exceed available columns at different viewport widths.
+ * Clamp authored spans against the Grid editor's measured track count. This
+ * handles responsive templates and auto-filled tracks without changing stored
+ * attributes. Direct-child selectors keep nested Grids independent.
  *
  * @package DesignSetGo
  */
 
-/**
- * Responsive Column Span Constraints (Editor)
- *
- * On mobile/tablet, if the grid has fewer columns than the span,
- * the span should be constrained to the max available columns.
- * This prevents blocks from spanning more columns than exist.
- *
- * Selectors explicitly match the `grid-column` style property to avoid
- * false positives on row-span styles (`grid-row: span N`).
- */
-
-// Generate responsive constraints for each grid column configuration
-// Tablet breakpoint (≤ 1024px)
 @media (max-width: 1024px) {
 
-	@for $cols from 1 through 12 {
-		.dsgo-grid-cols-tablet-#{$cols} .dsgo-grid__inner > [data-block] {
-			// If span exceeds available columns, constrain it
-			@for $span from ($cols + 1) through 12 {
-				&[style*="grid-column: span #{$span}"],
-				&[style*="grid-column:span #{$span}"],
-				&[style*="grid-column:span#{$span}"] {
-					grid-column: span #{$cols} !important;
-				}
-			}
-		}
-	}
-}
+	:where(.dsgo-grid > .dsgo-grid__inner) > [data-block] {
 
-// Mobile breakpoint (≤ 767px)
-@media (max-width: 767px) {
-
-	@for $cols from 1 through 12 {
-		.dsgo-grid-cols-mobile-#{$cols} .dsgo-grid__inner > [data-block] {
-			// If span exceeds available columns, constrain it
-			@for $span from ($cols + 1) through 12 {
-				&[style*="grid-column: span #{$span}"],
-				&[style*="grid-column:span #{$span}"],
-				&[style*="grid-column:span#{$span}"] {
-					grid-column: span #{$cols} !important;
-				}
+		@for $span from 1 through 12 {
+			&[style*="grid-column: span #{$span}"],
+			&[style*="grid-column:span #{$span}"],
+			&[style*="grid-column:span#{$span}"] {
+				grid-column: span min(#{$span}, var(--dsgo-grid-rendered-columns, #{$span})) !important;
 			}
 		}
 	}

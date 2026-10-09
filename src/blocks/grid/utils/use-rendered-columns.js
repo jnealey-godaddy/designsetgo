@@ -13,27 +13,7 @@
  */
 
 import { useState, useLayoutEffect } from '@wordpress/element';
-
-/**
- * Read the resolved track count off an element's computed style.
- *
- * @param {HTMLElement} element  Grid container.
- * @param {number}      fallback Count to use when the track list is unreadable.
- * @return {number} Rendered column count.
- */
-function readColumnCount(element, fallback) {
-	const view = element.ownerDocument?.defaultView;
-	if (!view) {
-		return fallback;
-	}
-
-	const tracks = view.getComputedStyle(element).gridTemplateColumns;
-	if (!tracks || tracks === 'none') {
-		return fallback;
-	}
-
-	return tracks.split(/\s+/).filter(Boolean).length || fallback;
-}
+import { measureRenderedColumns } from './count-rendered-columns';
 
 /**
  * Track the rendered column count of the element held by `ref`.
@@ -63,7 +43,7 @@ export function useRenderedColumns(ref, fallback, trackList) {
 		}
 
 		const measure = () => {
-			const next = readColumnCount(element, fallback);
+			const next = measureRenderedColumns(element, fallback);
 			// Only the width drives the track count, so this can't oscillate
 			// with the height change that activating row matching causes — but
 			// bail on an unchanged value anyway to avoid a wasted render.
@@ -78,13 +58,20 @@ export function useRenderedColumns(ref, fallback, trackList) {
 		measure();
 
 		const view = element.ownerDocument?.defaultView;
-		if (!view?.ResizeObserver) {
+		if (!view) {
 			return undefined;
 		}
-
-		const observer = new view.ResizeObserver(measure);
-		observer.observe(element);
-		return () => observer.disconnect();
+		// Media queries can change tracks even when the constrained grid box
+		// stays the same size (for example when switching editor devices).
+		view.addEventListener('resize', measure);
+		const observer = view.ResizeObserver
+			? new view.ResizeObserver(measure)
+			: null;
+		observer?.observe(element);
+		return () => {
+			observer?.disconnect();
+			view.removeEventListener('resize', measure);
+		};
 	}, [ref, fallback, trackList]);
 
 	return columns;

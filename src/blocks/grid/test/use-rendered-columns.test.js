@@ -91,6 +91,19 @@ describe('useRenderedColumns', () => {
 		expect(result.current).toBe(1);
 	});
 
+	test('re-measures on viewport resize even when the grid box stays fixed', () => {
+		stubResizeObserver();
+		stubTracks(2);
+		const ref = { current: element };
+		const { result } = renderHook(() =>
+			useRenderedColumns(ref, 3, 'repeat(3, 1fr)')
+		);
+		expect(result.current).toBe(2);
+		stubTracks(1);
+		act(() => window.dispatchEvent(new Event('resize')));
+		expect(result.current).toBe(1);
+	});
+
 	test('re-measures when the observer fires', () => {
 		const observer = stubResizeObserver();
 		stubTracks(3);
@@ -101,6 +114,37 @@ describe('useRenderedColumns', () => {
 
 		stubTracks(2);
 		observer.fire();
+		expect(result.current).toBe(2);
+	});
+
+	test('measures the template without implicit columns from an oversized saved span', () => {
+		const child = document.createElement('div');
+		child.style.gridColumn = 'span 3';
+		element.appendChild(child);
+		jest.spyOn(window, 'getComputedStyle').mockImplementation(() => ({
+			gridTemplateColumns:
+				child.style.gridColumn === 'span 3'
+					? '200px 200px 200px'
+					: '300px 300px',
+		}));
+		const { result } = renderHook(() =>
+			useRenderedColumns({ current: element }, 1, '1fr 1fr')
+		);
+		expect(result.current).toBe(2);
+		expect(child.style.gridColumn).toBe('span 3');
+	});
+
+	test('named grid lines do not inflate the measured track count', () => {
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			gridTemplateColumns: '[start first] 300px [middle] 300px [end]',
+		});
+		const { result } = renderHook(() =>
+			useRenderedColumns(
+				{ current: element },
+				3,
+				'[start first] 1fr [middle] 1fr [end]'
+			)
+		);
 		expect(result.current).toBe(2);
 	});
 

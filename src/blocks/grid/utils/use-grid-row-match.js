@@ -42,11 +42,18 @@ const SUPPORTED_CARD_BLOCKS = [
  * @param {number}  columns.desktopColumns  Desktop column count.
  * @param {number}  columns.tabletColumns   Tablet column count.
  * @param {number}  columns.mobileColumns   Mobile column count.
+ * @param {number}  columns.renderedColumns Actual measured track count.
  * @return {{isRowMatchActive: boolean, matchRowCount: number}} Activation + row count.
  */
 export function useGridRowMatch(
 	clientId,
-	{ matchRowHeights, desktopColumns, tabletColumns, mobileColumns }
+	{
+		matchRowHeights,
+		desktopColumns,
+		tabletColumns,
+		mobileColumns,
+		renderedColumns,
+	}
 ) {
 	// Per-card row counts. This is a block-count approximation: it counts each
 	// card's direct child *blocks*, whereas the frontend (view.js
@@ -87,6 +94,7 @@ export function useGridRowMatch(
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
+		renderedColumns,
 	});
 
 	return { isRowMatchActive: isActive, matchRowCount: rowCount };

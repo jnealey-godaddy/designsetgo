@@ -1,5 +1,7 @@
 # WordPress Abilities API Integration
 
+For installed generation discovery, serialization without drafts, responsive Grid templates and residual CSS, see the [native generation contract](GENERATION-CONTRACT.md).
+
 ## Overview
 
 DesignSetGo is **the first WordPress block library** to integrate with the WordPress 6.9 Abilities API, making it the **most AI-friendly WordPress block plugin** available.
@@ -20,22 +22,22 @@ The WordPress Abilities API is a new core initiative that creates a structured w
 
 ## Available Abilities
 
-DesignSetGo registers **21 abilities** in 3 registered categories. The
+DesignSetGo registers **23 abilities** in 3 registered categories. The
 category an ability is registered in — `info`, `blocks`, or `settings` — is
 what `/wp-json/wp-abilities/v1/categories` reports and what the `category`
 filter on `list-abilities` accepts.
 
 | Registered category | Count | Contents |
 |---|---|---|
-| `info` | 7 | `list-abilities`, `list-blocks`, `list-extensions`, `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context` |
-| `blocks` | 10 | `add-block`, `add-child-block`, `add-accordion-item`, `add-tab`, `add-timeline-item`, `update-block`, `batch-update`, `configure-custom-css`, `configure-shape-divider`, `delete-block` |
+| `info` | 8 | `list-abilities`, `list-blocks`, `list-extensions`, `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context`, `serialize-blocks` |
+| `blocks` | 11 | `add-block`, `add-blocks`, `add-child-block`, `add-accordion-item`, `add-tab`, `add-timeline-item`, `update-block`, `batch-update`, `configure-custom-css`, `configure-shape-divider`, `delete-block` |
 | `settings` | 4 | `get-settings`, `update-settings`, `get-global-css`, `update-global-css` |
 
 The groupings used as headings below (Info / Inserters / Configurators /
 Settings) are editorial. Insertion and configuration abilities all register
 in the single `blocks` category.
 
-### 1. Info Abilities (7)
+### 1. Info Abilities (8)
 
 #### `designsetgo/list-abilities`
 
@@ -524,7 +526,7 @@ Adds an item to an existing timeline container.
 | `list-dynamic-tag-sources` | List Dynamic Tag binding sources, filterable by `returns` and `group` | readonly |
 | `get-post-blocks` | Retrieve blocks from a post with blockIndex values | readonly |
 | `find-blocks` | Search for blocks across posts by type | readonly |
-| `get-design-context` | Read resolved theme design settings, global styles, and block style variations | readonly |
+| `get-design-context`, `serialize-blocks` | Read resolved theme design settings, global styles, and block style variations | readonly |
 
 All info abilities are annotated `readonly: true, destructive: false,
 idempotent: true`. `list-abilities`, `list-blocks`, and `list-extensions`
@@ -774,7 +776,7 @@ Each ability has specific permission requirements:
 | Ability | Required capability | anon | subscriber | editor | admin |
 |---|---|---|---|---|---|
 | `list-abilities`, `list-blocks`, `list-extensions` | `read` | deny | **allow** | allow | allow |
-| `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context` | `edit_posts` | deny | deny | allow | allow |
+| `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context`, `serialize-blocks` | `edit_posts` | deny | deny | allow | allow |
 | All inserter and configurator abilities | `edit_posts` | deny | deny | allow | allow |
 | `get-settings`, `update-settings` | `manage_options` | deny | deny | deny | allow |
 | `get-global-css`, `update-global-css` | `edit_css` | deny | deny | allow¹ | allow |

@@ -5,6 +5,8 @@
  * This replaces hundreds of CSS rules with lightweight JavaScript.
  */
 
+import { measureRenderedColumns } from './utils/count-rendered-columns';
+
 (function () {
 	'use strict';
 
@@ -25,6 +27,7 @@
 				'dsgo-grid--match-rows'
 			);
 
+			this.originalSpans = new Map();
 			this.init();
 		}
 
@@ -85,29 +88,24 @@
 		handleResize() {
 			const config = this.getResponsiveColumns();
 
-			// Effective columns at the current breakpoint (desktop reports
-			// null, so fall back to the desktop column class), then narrowed
-			// to what the grid is actually rendering — a column min width can
-			// drop a column instead of overflowing.
-			//
-			// Only Align Rows consumes this, and the measurement forces a
-			// synchronous layout flush, so skip it entirely for grids without
-			// the feature: `applyRowMatching()` treats a falsy count the same
-			// way it treats a single column, and returns before using it.
 			const configuredColumns =
-				config.columns === null
-					? this.getDesktopColumns()
-					: config.columns;
-			const effectiveColumns = this.matchRows
-				? this.getRenderedColumns(configuredColumns)
-				: null;
-
-			// Desktop: Remove all constraints
-			if (config.breakpoint === 'desktop') {
-				this.removeConstraints();
-			} else {
-				// Mobile/Tablet: Constrain spans
-				this.applyConstraints(config.columns);
+				config.columns ?? this.getDesktopColumns();
+			const hasResponsiveTemplate =
+				config.breakpoint !== 'desktop' &&
+				!!this.inner.style
+					.getPropertyValue(
+						`--dsgo-grid-columns-${config.breakpoint}`
+					)
+					.trim();
+			// Plain grids keep the inexpensive class fallback. Templates need used
+			// tracks for span limits even when row matching is disabled.
+			this.removeConstraints();
+			const effectiveColumns =
+				this.matchRows || hasResponsiveTemplate
+					? this.getRenderedColumns(configuredColumns)
+					: configuredColumns;
+			if (config.breakpoint !== 'desktop') {
+				this.applyConstraints(effectiveColumns);
 			}
 
 			this.applyRowMatching(effectiveColumns);
@@ -146,20 +144,7 @@
 		 * @return {number} Rendered column count.
 		 */
 		getRenderedColumns(fallback) {
-			const tracks = window.getComputedStyle(
-				this.inner
-			).gridTemplateColumns;
-
-			// 'none' (no grid), '' (detached / jsdom without layout), or any
-			// unresolved value: fall back to the configured count.
-			if (!tracks || tracks === 'none') {
-				return fallback;
-			}
-
-			// Resolved track lists are space-separated used values
-			// ('364px 364px 364px'). `minmax()`/`repeat()` only survive here if
-			// the browser could not resolve them, which the guard above covers.
-			return tracks.split(/\s+/).filter(Boolean).length || fallback;
+			return measureRenderedColumns(this.inner, fallback);
 		}
 
 		/**
@@ -245,15 +230,17 @@
 
 				// If span exceeds max columns, constrain it
 				if (spanValue > maxColumns) {
+					this.originalSpans.set(child, inlineStyle);
 					child.style.gridColumn = `span ${maxColumns}`;
 				}
 			});
 		}
 
 		removeConstraints() {
-			// Reset to original inline styles (desktop view)
-			// Elements keep their original grid-column values
-			// No action needed - constraints only apply on tablet/mobile
+			this.originalSpans.forEach((span, child) => {
+				child.style.gridColumn = span;
+			});
+			this.originalSpans.clear();
 		}
 	}
 

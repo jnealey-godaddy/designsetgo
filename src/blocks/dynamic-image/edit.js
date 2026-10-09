@@ -38,6 +38,7 @@ import {
 	useDynamicTagPreview,
 } from '../../components/DynamicTagPicker';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { ChildLayoutControls } from '../../extensions/layout/controls';
 
 const OBJECT_FIT_OPTIONS = [
 	{ label: __('Cover', 'designsetgo'), value: 'cover' },
@@ -90,7 +91,13 @@ const DEFAULTS = {
 	rel: '',
 };
 
-export default function Edit({ attributes, setAttributes, clientId, context }) {
+export default function Edit({
+	attributes,
+	setAttributes,
+	clientId,
+	context,
+	isSelected,
+}) {
 	const {
 		source,
 		sourceArgs,
@@ -193,7 +200,9 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 					title={__('Settings', 'designsetgo')}
 					panelName="settings"
 					panelId={clientId}
-					resetAll={() => setAttributes(DEFAULTS)}
+					resetAll={() =>
+						setAttributes({ ...DEFAULTS, dsgoLayout: undefined })
+					}
 				>
 					<DsgoInspectorPanel.Item
 						label={__('Dynamic source', 'designsetgo')}
@@ -438,6 +447,10 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+					<ChildLayoutControls
+						name="designsetgo/dynamic-image"
+						{...{ attributes, setAttributes, clientId, isSelected }}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

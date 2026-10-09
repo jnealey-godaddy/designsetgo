@@ -110,6 +110,25 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				'innerBlocks' => array(),
 			);
 		}
+		$payloads['generation-responsive-grid']   = array(
+			'name'        => 'designsetgo/grid',
+			'attributes'  => array(
+				'columnTemplate'       => 'minmax(0, 3fr) minmax(0, 2fr)',
+				'tabletColumnTemplate' => 'minmax(0, 2fr) minmax(0, 1fr)',
+				'mobileColumnTemplate' => 'minmax(0, 1fr)',
+				'rowGap'               => '1px',
+				'columnGap'            => '1px',
+				'style'                => array(
+					'spacing' => array(
+						'blockGap' => array(
+							'top'  => '24px',
+							'left' => '40px',
+						),
+					),
+				),
+			),
+			'innerBlocks' => array(),
+		);
 		$payloads['generation-row-space-between'] = array(
 			'name'        => 'designsetgo/row',
 			'attributes'  => array( 'layout' => array( 'verticalAlignment' => 'space-between' ) ),
@@ -125,6 +144,25 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			'innerBlocks' => array(),
 		);
 		return $payloads;
+	}
+
+	/** Core registers style even on blocks whose save() has no visual supports. */
+	public function test_blocks_without_visual_supports_do_not_serialize_style(): void {
+		$markup = Block_Inserter::build_block_markup(
+			'designsetgo/hotspot-item',
+			array(
+				'style' => array(
+					'spacing'    => array( 'padding' => array( 'top' => '2rem' ) ),
+					'color'      => array( 'text' => '#123456' ),
+					'typography' => array( 'fontSize' => '24px' ),
+				),
+			)
+		);
+
+		$this->assertStringNotContainsString( 'padding-top:', $markup );
+		$this->assertStringNotContainsString( 'color:#123456', $markup );
+		$this->assertStringNotContainsString( 'font-size:', $markup );
+		$this->assertStringContainsString( '--dsgo-hotspot-x:50%', $markup );
 	}
 
 	/** Explicit zero custom gaps must not fall back to theme spacing. */

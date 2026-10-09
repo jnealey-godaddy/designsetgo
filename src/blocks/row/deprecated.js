@@ -14,6 +14,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
+import layoutCompatibility from './deprecated-layout';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
 
@@ -971,4 +972,7 @@ const v1 = {
 	},
 };
 
-export default withLegacyOverlayOpacity([v6, v5, v4, v3, v2, v1]);
+export default [
+	layoutCompatibility,
+	...withLegacyOverlayOpacity([v6, v5, v4, v3, v2, v1]),
+];

@@ -8,6 +8,7 @@
 namespace DesignSetGo\Abilities\Info;
 
 use DesignSetGo\Abilities\Abstract_Ability;
+use DesignSetGo\Abilities\Generation_Contract;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -74,14 +75,15 @@ class Get_Design_Context extends Abstract_Ability {
 			}
 		}
 		return array(
-			'theme'       => array(
+			'generationContract' => Generation_Contract::describe(),
+			'theme'              => array(
 				'stylesheet' => $theme->get_stylesheet(),
 				'name'       => $theme->get( 'Name' ),
 			),
-			'settings'    => (object) wp_get_global_settings(),
-			'fontFaces'   => \WP_Font_Face_Resolver::get_fonts_from_theme_json(),
-			'styles'      => (object) wp_get_global_styles(),
-			'blockStyles' => (object) $styles,
+			'settings'           => (object) wp_get_global_settings(),
+			'fontFaces'          => \WP_Font_Face_Resolver::get_fonts_from_theme_json(),
+			'styles'             => (object) wp_get_global_styles(),
+			'blockStyles'        => (object) $styles,
 		);
 	}
 }

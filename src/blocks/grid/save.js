@@ -32,6 +32,8 @@ export default function GridSave({ attributes }) {
 		contentWidth,
 		columnMinWidth,
 		columnTemplate,
+		tabletColumnTemplate,
+		mobileColumnTemplate,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -130,6 +132,12 @@ export default function GridSave({ attributes }) {
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
 		columnGap: resolvedColumnGap,
+		...(tabletColumnTemplate?.trim() && {
+			'--dsgo-grid-columns-tablet': tabletColumnTemplate.trim(),
+		}),
+		...(mobileColumnTemplate?.trim() && {
+			'--dsgo-grid-columns-mobile': mobileColumnTemplate.trim(),
+		}),
 	};
 
 	// Apply width constraints to inner container

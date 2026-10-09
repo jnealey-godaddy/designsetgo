@@ -13,6 +13,7 @@
 namespace DesignSetGo\Abilities\Info;
 
 use DesignSetGo\Abilities\Abstract_Ability;
+use DesignSetGo\Abilities\Generation_Contract;
 use DesignSetGo\Admin\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -99,11 +100,15 @@ class List_Blocks extends Abstract_Ability {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'blocks' => array(
+				'generationContract' => array( 'type' => 'object' ),
+				'blocks'             => array(
 					'type'  => 'array',
 					'items' => array(
 						'type'       => 'object',
 						'properties' => array(
+							'selectors'   => array( 'type' => 'object' ),
+							'generation'  => array( 'type' => 'object' ),
+							'blockStyles' => array( 'type' => 'array' ),
 							'name'        => array(
 								'type'        => 'string',
 								'description' => __( 'Block name', 'designsetgo' ),
@@ -135,7 +140,7 @@ class List_Blocks extends Abstract_Ability {
 						),
 					),
 				),
-				'total'  => array(
+				'total'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Total number of blocks returned', 'designsetgo' ),
 				),
@@ -189,8 +194,9 @@ class List_Blocks extends Abstract_Ability {
 		}
 
 		return array(
-			'blocks' => array_values( $all_blocks ),
-			'total'  => count( $all_blocks ),
+			'generationContract' => Generation_Contract::describe(),
+			'blocks'             => array_values( $all_blocks ),
+			'total'              => count( $all_blocks ),
 		);
 	}
 
@@ -220,6 +226,9 @@ class List_Blocks extends Abstract_Ability {
 				'category'    => $block_type->category ?? '',
 				'group'       => self::get_block_group( $block_type->name ),
 				'supports'    => $this->format_supports( $block_type->supports ?? array() ),
+				'selectors'   => $block_type->selectors ?? array(),
+				'generation'  => Generation_Contract::for_block( $block_type ),
+				'blockStyles' => Generation_Contract::block_styles( $block_type->name ),
 				'parent'      => $block_type->parent ?? null,
 				'icon'        => is_string( $block_type->icon ) ? $block_type->icon : null,
 			);

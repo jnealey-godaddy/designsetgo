@@ -64,7 +64,15 @@ function wrap(name, attrs, html) {
 describe.each(BLOCKS.map((entry) => [entry[0].name, ...entry]))(
 	'%s overlay opacity',
 	(name, metadata, save, deprecated) => {
-		const [frozen] = deprecated;
+		// Optional layout/template snapshots may precede the fixed-opacity save.
+		// Select its stable function identity instead of an array position.
+		const frozen =
+			name === itemMetadata.name
+				? deprecated[0]
+				: deprecated.find(
+						(entry) =>
+							entry.save.name === 'saveWithFixedOverlayOpacity'
+					);
 
 		/**
 		 * Current save() HTML for the given attributes.
@@ -95,7 +103,7 @@ describe.each(BLOCKS.map((entry) => [entry[0].name, ...entry]))(
 		});
 
 		test.each(['var:preset|color|contrast', '#1212127D'])(
-			'the newest deprecation reproduces the previous 0.8 save() for %s',
+			'the opacity deprecation reproduces the previous 0.8 save() for %s',
 			(overlayColor) => {
 				const attributes = createBlock(name, {
 					overlayColor,

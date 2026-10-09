@@ -14,9 +14,14 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
+import layoutCompatibility from './deprecated-layout';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import { getGridTemplateColumns } from './grid-columns';
 import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
+import {
+	responsiveTemplateCompatibility,
+	withResponsiveTemplateDefaults,
+} from './deprecated-responsive-templates';
 
 // Captures the column min width from a `minmax(<width>, 1fr)` grid track.
 const MIN_WIDTH_RE = /minmax\(\s*(\d+(?:\.\d+)?[a-z%]+)\s*,\s*1fr\s*\)/i;
@@ -973,11 +978,17 @@ export {
 	styleVariationClasses,
 };
 
-export default withLegacyOverlayOpacity([
-	fixedOverlayOpacity,
-	fixedColumnMinWidthTracks,
-	legacyResponsiveTabletClass,
-	legacyMinWidth,
-	styleVariationClasses,
-	v1,
-]);
+export default [
+	layoutCompatibility,
+	...withResponsiveTemplateDefaults([
+		responsiveTemplateCompatibility,
+		...withLegacyOverlayOpacity([
+			fixedOverlayOpacity,
+			fixedColumnMinWidthTracks,
+			legacyResponsiveTabletClass,
+			legacyMinWidth,
+			styleVariationClasses,
+			v1,
+		]),
+	]),
+];
