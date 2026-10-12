@@ -107,7 +107,7 @@ export default class DSGMap {
 				} else {
 					// eslint-disable-next-line no-console
 					console.warn(
-						`[DSGMap] Could not geocode address "${this.config.address}". Falling back to default coordinates.`
+						'[DSGMap] Could not geocode configured address. Falling back to default coordinates.'
 					);
 					this.config.lat = DEFAULT_LAT;
 					this.config.lng = DEFAULT_LNG;

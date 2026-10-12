@@ -82,9 +82,10 @@ export async function geocodeAddress(address) {
 		}
 
 		return null;
-	} catch (error) {
+	} catch {
+		// Fetch errors can contain address-bearing URLs; keep this diagnostic static.
 		// eslint-disable-next-line no-console
-		console.error('Geocoding error:', error);
+		console.error('Geocoding error: could not resolve configured address.');
 		return null;
 	}
 }
