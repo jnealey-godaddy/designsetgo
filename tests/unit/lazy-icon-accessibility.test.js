@@ -80,6 +80,41 @@ describe('lazy icon injector', () => {
 		}
 	);
 
+	const iconButton = (attrs, text) =>
+		`<div class="wp-block-designsetgo-icon-button"><a class="dsgo-icon-button" href="/go" ${attrs}><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="check"></span><span class="dsgo-icon-button__text">${text}</span></a></div>`;
+
+	test('hides an Icon Button drawing next to its visible label', () => {
+		document.body.innerHTML = iconButton('', 'Learn More');
+		load();
+		const { computeAccessibleName } = require('dom-accessibility-api');
+		const svg = document.querySelector('svg');
+		expect(svg.getAttribute('aria-hidden')).toBe('true');
+		expect(svg.getAttribute('focusable')).toBe('false');
+		expect(computeAccessibleName(document.querySelector('a'))).toBe(
+			'Learn More'
+		);
+	});
+
+	test('hides the drawing of an icon-only Icon Button named by aria-label', () => {
+		document.body.innerHTML = iconButton('aria-label="Next slide"', '');
+		load();
+		const { computeAccessibleName } = require('dom-accessibility-api');
+		expect(document.querySelector('svg').getAttribute('aria-hidden')).toBe(
+			'true'
+		);
+		expect(computeAccessibleName(document.querySelector('a'))).toBe(
+			'Next slide'
+		);
+	});
+
+	test('leaves an unnamed icon-only Icon Button alone', () => {
+		document.body.innerHTML = iconButton('', '');
+		load();
+		expect(
+			document.querySelector('svg').getAttribute('aria-hidden')
+		).toBeNull();
+	});
+
 	test('does not hide an unlabelled icon-only link or unrelated consumer', () => {
 		document.body.innerHTML =
 			'<a class="dsgo-icon-list-item" href="/contact"><span class="dsgo-icon-list-item__icon dsgo-lazy-icon" data-icon-name="check"></span><div class="dsgo-icon-list-item__content"></div></a>';

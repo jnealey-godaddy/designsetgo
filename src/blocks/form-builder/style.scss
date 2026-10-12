@@ -754,9 +754,15 @@
 		content: "✓ " / "";
 	}
 
+	&.is-complete::before,
+	&[aria-current="step"]::before {
+		color: var(--dsgo-form-progress-color, currentcolor);
+	}
+
 	&[aria-current="step"] {
 		font-weight: 600;
 		opacity: 1;
+		color: var(--dsgo-form-progress-color, currentcolor);
 	}
 }
 
@@ -766,7 +772,7 @@
 	[role="progressbar"] {
 		height: 0.5rem;
 		margin-top: 0.25rem;
-		background: color-mix(in srgb, currentcolor 15%, transparent);
+		background: color-mix(in srgb, var(--dsgo-form-progress-color, currentcolor) 15%, transparent);
 		border-radius: 999px;
 		overflow: hidden;
 	}
@@ -775,27 +781,65 @@
 :where(.dsgo-form-steps__bar-fill) {
 	display: block;
 	height: 100%;
-	background: currentcolor;
+	background: var(--dsgo-form-progress-color, currentcolor);
 }
 
 :where(.dsgo-form-steps__nav) {
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
 	margin-top: var(--dsgo-form-field-spacing, 1.5rem);
 }
 
+// Next, and the footer holding Submit on the last step, sit at the end of the
+// row with Back at the start (steps-dom.js moves the footer into the nav).
 :where(.dsgo-form-steps__nav) :where(.dsgo-form-steps__next) {
 	margin-inline-start: auto;
 }
 
+// Real specificity: .dsgo-form__footer's own margin-top (0,1,0) must lose.
+.dsgo-form-steps__nav > .dsgo-form__footer {
+	margin-top: 0;
+	margin-inline-start: auto;
+}
+
+// A text button in the form's own font, with a 44px tap target. Restyle with
+// `.dsgo-form-steps__back` (zero-specificity rules, so any selector wins).
 :where(.dsgo-form-steps__back) {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	background: none;
 	border: 0;
 	padding: 0;
+	font: inherit;
 	color: inherit;
 	text-decoration: underline;
+	text-underline-offset: 0.2em;
 	cursor: pointer;
+}
+
+// Phones: the primary button goes full width on top (as Submit already does),
+// with Back underneath.
+@media (max-width: #{$breakpoint-mobile}) {
+
+	:where(.dsgo-form-steps__nav) {
+		flex-direction: column-reverse;
+		align-items: stretch;
+	}
+
+	:where(.dsgo-form-steps__back) {
+		justify-content: center;
+	}
+
+	:where(.dsgo-form-steps__nav) :where(.dsgo-form-steps__next) {
+		margin-inline-start: 0;
+	}
+
+	.dsgo-form-steps__nav > .dsgo-form__footer {
+		margin-inline-start: 0;
+	}
 }
 
 :where(.dsgo-form-step__title:focus) {

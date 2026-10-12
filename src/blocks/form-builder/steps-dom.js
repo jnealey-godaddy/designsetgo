@@ -28,6 +28,36 @@ function makeButton(label, className) {
 	return button;
 }
 
+// Per-instance modifiers of the submit button that must not follow Next.
+const SUBMIT_ONLY_CLASSES = [
+	'dsgo-form__submit--inline',
+	'dsgo-form__submit--loading',
+];
+
+/**
+ * Next takes the submit button's classes and inline style, so it follows the
+ * form's button colours, sizes, variation and hover animation, plus any Global
+ * Styles / Style Kit rule on `.dsgo-form__submit`. It stays `type="button"`, so
+ * `.dsgo-form__submit[type="submit"]` still finds the real submit.
+ *
+ * @param {HTMLElement|null} submit The form's submit button.
+ * @return {HTMLElement} Next button.
+ */
+function makeNextButton(submit) {
+	const label = __('Next', 'designsetgo');
+	if (!submit) {
+		return makeButton(label, 'dsgo-form-steps__next wp-element-button');
+	}
+	const next = makeButton(label, submit.className);
+	SUBMIT_ONLY_CLASSES.forEach((cls) => next.classList.remove(cls));
+	next.classList.add('dsgo-form-steps__next');
+	const style = submit.getAttribute('style');
+	if (style) {
+		next.setAttribute('style', style);
+	}
+	return next;
+}
+
 /**
  * Wire multi-step behaviour for one form.
  *
@@ -51,6 +81,13 @@ export function initFormSteps(container, form) {
 		// Fail open: one long form that still submits.
 		steps.forEach((step) => {
 			step.hidden = false;
+		});
+		// The footer may already sit inside the nav: put it back first, or
+		// removing the nav would take the submit button with it.
+		form?.querySelectorAll('.dsgo-form-steps__nav').forEach((nav) => {
+			nav.querySelectorAll('.dsgo-form__footer').forEach((el) =>
+				nav.before(el)
+			);
 		});
 		form?.querySelectorAll(
 			'.dsgo-form-steps__nav, .dsgo-form-steps__progress, .dsgo-form-steps__bar'
@@ -85,9 +122,8 @@ function setUp(container, form, steps) {
 	const nav = document.createElement('div');
 	nav.className = 'dsgo-form-steps__nav';
 	const back = makeButton(__('Back', 'designsetgo'), 'dsgo-form-steps__back');
-	const next = makeButton(
-		__('Next', 'designsetgo'),
-		'dsgo-form-steps__next wp-element-button'
+	const next = makeNextButton(
+		form.querySelector('.dsgo-form__submit[type="submit"]')
 	);
 	nav.append(back, next);
 	const anchor = footer || message;
@@ -95,6 +131,11 @@ function setUp(container, form, steps) {
 		form.insertBefore(nav, anchor);
 	} else {
 		form.appendChild(nav);
+	}
+	// The footer joins the nav row so Submit takes Next's place on the last
+	// step instead of dropping onto a row of its own below Back.
+	if (footer && footer.parentNode === form) {
+		nav.appendChild(footer);
 	}
 
 	let progress = null;
@@ -180,7 +221,9 @@ function setUp(container, form, steps) {
 		});
 		back.hidden = pos === 0;
 		next.hidden = isLast;
-		nav.hidden = list.length < 2;
+		// With one step, Back and Next are both hidden; the nav stays only
+		// when it holds the footer.
+		nav.hidden = list.length < 2 && !nav.contains(footer);
 		[footer, inlineSubmit, turnstile].forEach((el) => {
 			if (el) {
 				el.hidden = !isLast;

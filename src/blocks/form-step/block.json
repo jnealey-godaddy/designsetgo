@@ -17,7 +17,34 @@
   },
   "supports": {
     "html": false,
-    "reusable": false
+    "reusable": false,
+    "color": {
+      "text": true,
+      "background": false,
+      "link": false,
+      "__experimentalSkipSerialization": true,
+      "__experimentalDefaultControls": {
+        "text": true
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalSkipSerialization": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    }
+  },
+  "selectors": {
+    "root": ".wp-block-designsetgo-form-step",
+    "color": ".wp-block-designsetgo-form-step .dsgo-form-step__title",
+    "typography": ".wp-block-designsetgo-form-step .dsgo-form-step__title"
   },
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",

@@ -52,13 +52,26 @@ if ( ! function_exists( 'designsetgo_render_form_step' ) ) {
 			)
 		);
 
-		printf(
+		$html = sprintf(
 			'<div %1$s><h3 class="dsgo-form-step__title" id="%2$s" tabindex="-1">%3$s</h3><div class="dsgo-form-step__fields">%4$s</div></div>',
-			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() escapes.
+			$wrapper,
 			esc_attr( $heading_id ),
 			esc_html( $title ),
-			$content // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inner field blocks render their own escaped markup.
+			$content
 		);
+
+		// Text colour and typography style the step title, not the fields
+		// (they skip serialization, so the wrapper never carries them).
+		if ( function_exists( 'designsetgo_route_visual_supports' ) ) {
+			$html = designsetgo_route_visual_supports(
+				$html,
+				$attributes,
+				'dsgo-form-step__title',
+				array( 'color', 'typography' )
+			);
+		}
+
+		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wrapper from get_block_wrapper_attributes(), title/id escaped above, fields render their own escaped markup.
 	}
 }
 

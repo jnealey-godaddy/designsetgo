@@ -17,7 +17,14 @@ function step(n, title, fields) {
 	</div>`;
 }
 
-function mount({ progress = '', steps = true } = {}) {
+const DEFAULT_FOOTER =
+	'<div class="dsgo-form__footer"><button type="submit" class="dsgo-form__submit">Send</button></div>';
+
+function mount({
+	progress = '',
+	steps = true,
+	footerHtml = DEFAULT_FOOTER,
+} = {}) {
 	const body = steps
 		? step(1, 'About you', field('name', { required: true })) +
 			step(2, 'Details', field('city')) +
@@ -29,7 +36,7 @@ function mount({ progress = '', steps = true } = {}) {
 	}>
 		<form class="dsgo-form">
 			${body}
-			<div class="dsgo-form__footer"><button type="submit" class="dsgo-form__submit">Send</button></div>
+			${footerHtml}
 			<div class="dsgo-form__message"></div>
 		</form>
 	</div>`;
@@ -132,6 +139,71 @@ describe('initFormSteps', () => {
 		expect(nextBtn().hidden).toBe(true);
 		expect(footer().hidden).toBe(false);
 		expect(c.beforeSubmit()).toBe(true);
+	});
+
+	it('styles Next like the submit button, without making it a submit', () => {
+		const { container, form } = mount({
+			footerHtml:
+				'<div class="dsgo-form__footer"><button type="submit" class="dsgo-form__submit is-style-outline dsgo-form__submit--lift wp-element-button" style="background-color:#c0392b;font-size:20px;--dsgo-button-hover-bg:#000">Send</button></div>',
+		});
+		initFormSteps(container, form);
+		const next = nextBtn();
+		expect(next.type).toBe('button');
+		expect(next.textContent).toBe('Next');
+		expect(next.classList.contains('dsgo-form-steps__next')).toBe(true);
+		[
+			'dsgo-form__submit',
+			'is-style-outline',
+			'dsgo-form__submit--lift',
+			'wp-element-button',
+		].forEach((cls) => expect(next.classList.contains(cls)).toBe(true));
+		expect(next.style.backgroundColor).toBe('rgb(192, 57, 43)');
+		expect(next.style.fontSize).toBe('20px');
+		expect(next.style.getPropertyValue('--dsgo-button-hover-bg')).toBe(
+			'#000'
+		);
+		// The real submit button stays the first [type=submit] in the form.
+		expect(form.querySelector('.dsgo-form__submit[type="submit"]')).toBe(
+			form.querySelector('.dsgo-form__footer button')
+		);
+	});
+
+	it('drops the inline and loading modifiers when copying an inline submit', () => {
+		const { container, form } = mount({
+			footerHtml:
+				'<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline dsgo-form__submit--loading wp-element-button">Go</button>',
+		});
+		initFormSteps(container, form);
+		const next = nextBtn();
+		expect(next.classList.contains('dsgo-form__submit--inline')).toBe(
+			false
+		);
+		expect(next.classList.contains('dsgo-form__submit--loading')).toBe(
+			false
+		);
+		expect(next.classList.contains('dsgo-form__submit')).toBe(true);
+	});
+
+	it('falls back to the theme button when the form has no submit button', () => {
+		const { container, form } = mount({ footerHtml: '' });
+		initFormSteps(container, form);
+		expect(nextBtn().className).toBe(
+			'dsgo-form-steps__next wp-element-button'
+		);
+	});
+
+	it('puts the submit button in the nav row on the last step', () => {
+		const { container, form } = mount();
+		initFormSteps(container, form);
+		const nav = document.querySelector('.dsgo-form-steps__nav');
+		expect(footer().parentElement).toBe(nav);
+		expect([...nav.children]).toEqual([backBtn(), nextBtn(), footer()]);
+		form.elements.name.value = 'Ann';
+		nextBtn().click();
+		nextBtn().click();
+		expect(backBtn().hidden).toBe(false);
+		expect(nextBtn().hidden).toBe(true);
+		expect(footer().hidden).toBe(false);
 	});
 
 	it('treats submit (Enter) on an earlier step as Next', () => {
@@ -257,9 +329,12 @@ describe('initFormSteps', () => {
 			document.querySelector(`[data-dsgo-field="${n}"]`).hidden = true;
 		});
 		form.dispatchEvent(new Event('change', { bubbles: true }));
+		// The nav row now only carries the footer: no Back, no Next.
 		expect(document.querySelector('.dsgo-form-steps__nav').hidden).toBe(
-			true
+			false
 		);
+		expect(backBtn().hidden).toBe(true);
+		expect(nextBtn().hidden).toBe(true);
 		expect(
 			document.querySelector('.dsgo-form-steps__progress').hidden
 		).toBe(true);

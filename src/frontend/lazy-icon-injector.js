@@ -147,7 +147,24 @@ function initIconInjection(container = document) {
 				(standalone.getAttribute('aria-hidden') === 'true' ||
 					(standalone.getAttribute('role') === 'img' &&
 						standalone.getAttribute('aria-label')?.trim()));
-			if (namedStandalone || listContent?.textContent.trim()) {
+			// Icon Button: the button is already named by its label text or
+			// its aria-label, so the drawing beside it is decorative.
+			const iconButton = placeholder.classList.contains(
+				'dsgo-icon-button__icon'
+			)
+				? placeholder.closest('.dsgo-icon-button')
+				: null;
+			const namedIconButton =
+				iconButton &&
+				(iconButton.getAttribute('aria-label')?.trim() ||
+					iconButton
+						.querySelector('.dsgo-icon-button__text')
+						?.textContent.trim());
+			if (
+				namedStandalone ||
+				namedIconButton ||
+				listContent?.textContent.trim()
+			) {
 				svgElement.setAttribute('aria-hidden', 'true');
 				svgElement.setAttribute('focusable', 'false');
 				svgElement.removeAttribute('role');

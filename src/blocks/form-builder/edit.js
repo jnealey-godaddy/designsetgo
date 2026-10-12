@@ -71,6 +71,7 @@ export default function FormBuilderEdit({
 		fieldFocusColor,
 		fieldErrorColor,
 		fieldSuccessColor,
+		stepProgressColor,
 		submitButtonColor,
 		submitButtonBackgroundColor,
 		submitButtonPaddingVertical,
@@ -198,6 +199,7 @@ export default function FormBuilderEdit({
 		'--dsgo-form-focus-color': convertColorToCSSVar(fieldFocusColor),
 		'--dsgo-form-error-color': convertColorToCSSVar(fieldErrorColor),
 		'--dsgo-form-success-color': convertColorToCSSVar(fieldSuccessColor),
+		'--dsgo-form-progress-color': convertColorToCSSVar(stepProgressColor),
 		// Button colors now applied as inline styles on button element
 	};
 
@@ -1298,6 +1300,30 @@ export default function FormBuilderEdit({
 							enableAlpha: true,
 							clearable: true,
 						},
+						...(hasSteps
+							? [
+									{
+										label: __(
+											'Progress Color',
+											'designsetgo'
+										),
+										colorValue: decodeColorValue(
+											stepProgressColor,
+											colorGradientSettings
+										),
+										onColorChange: (color) =>
+											setAttributes({
+												stepProgressColor:
+													encodeColorValue(
+														color,
+														colorGradientSettings
+													) || '',
+											}),
+										enableAlpha: true,
+										clearable: true,
+									},
+								]
+							: []),
 						{
 							label: __('Button Text Color', 'designsetgo'),
 							colorValue: decodeColorValue(
