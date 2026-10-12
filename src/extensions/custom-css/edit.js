@@ -1,8 +1,8 @@
 /**
  * Custom CSS Extension - Editor Controls
  *
- * Inspector panel and editor style injection for custom CSS.
- * Lazy-loaded to reduce initial bundle size.
+ * Inspector panel for custom CSS. Lazy-loaded to reduce initial bundle size.
+ * Editor style injection lives in styles.js, which is not lazy.
  *
  * @since 1.0.0
  */
@@ -15,45 +15,11 @@ import {
 	TabPanel,
 	TextareaControl,
 } from '@wordpress/components';
-import { useEffect } from '@wordpress/element';
 import {
 	breakpointWidth,
 	joinResponsiveCSS,
 	splitResponsiveCSS,
 } from './responsive';
-
-/**
- * Dangerous CSS patterns that could be used for injection
- */
-const DANGEROUS_CSS_PATTERNS =
-	/javascript\s*:|expression\s*\(|behavior\s*:|@import|url\s*\(\s*['"]?\s*data:/i;
-
-/**
- * Sanitize CSS by removing dangerous patterns
- *
- * @param {string} css - Raw CSS string
- * @return {string} Sanitized CSS
- */
-function sanitizeCSS(css) {
-	if (!css) {
-		return '';
-	}
-	return css.replace(DANGEROUS_CSS_PATTERNS, '/* removed */');
-}
-
-/**
- * Replace "selector" keyword with actual CSS class
- *
- * @param {string} css       - User's CSS code
- * @param {string} className - Actual CSS class to use
- * @return {string} Processed CSS with selector replaced
- */
-function replaceSelector(css, className) {
-	if (!css) {
-		return '';
-	}
-	return sanitizeCSS(css).replace(/\bselector\b/g, `.${className}`);
-}
 
 const DEVICE_TABS = [
 	{ name: 'desktop', title: __('Desktop', 'designsetgo') },
@@ -198,55 +164,5 @@ export function CustomCSSPanel(props) {
 				</p>
 			</PanelBody>
 		</InspectorControls>
-	);
-}
-
-/**
- * Custom CSS editor style injection wrapper
- *
- * @param {Object} props                Block list block props
- * @param {Object} props.BlockListBlock Original BlockListBlock component
- */
-export function CustomCSSStyles({ BlockListBlock, ...props }) {
-	const { attributes, clientId } = props;
-	const { dsgoCustomCSS } = attributes;
-
-	const customClassName = `dsgo-custom-css-${clientId}`;
-	const styleId = `dsgo-custom-css-style-${clientId}`;
-
-	// Inject styles into editor with "selector" replaced by actual class
-	useEffect(() => {
-		const editorDocument =
-			document.querySelector('iframe[name="editor-canvas"]')
-				?.contentDocument || document;
-
-		const existingStyle = editorDocument.getElementById(styleId);
-		if (existingStyle) {
-			existingStyle.remove();
-		}
-
-		if (dsgoCustomCSS) {
-			const styleElement = editorDocument.createElement('style');
-			styleElement.id = styleId;
-			styleElement.textContent = replaceSelector(
-				dsgoCustomCSS,
-				customClassName
-			);
-			editorDocument.head.appendChild(styleElement);
-		}
-
-		return () => {
-			const styleToRemove = editorDocument.getElementById(styleId);
-			if (styleToRemove) {
-				styleToRemove.remove();
-			}
-		};
-	}, [dsgoCustomCSS, clientId, styleId, customClassName]);
-
-	return (
-		<BlockListBlock
-			{...props}
-			className={`${props.className || ''} ${customClassName}`.trim()}
-		/>
 	);
 }
