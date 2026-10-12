@@ -111,7 +111,15 @@ class Form_No_JS_Submit {
 				? ( '' !== $success ? $success : __( 'Form submitted successfully!', 'designsetgo' ) )
 				: ( '' !== $error ? $error : __( 'An error occurred. Please try again.', 'designsetgo' ) );
 
-			list( $html, $unplaced ) = $this->print_message( $html, $status, $message, $form_id );
+			$detail = '';
+			if ( 'error' === $status ) {
+				list( $code, $field ) = $this->redirect_reason();
+				$detail               = Form_No_JS_Retry::reason( $code, Form_No_JS_Refill::field_label( $html, $field ) );
+				$html                 = Form_No_JS_Refill::refill( $html, Form_No_JS_Retry::values( $form_id ) );
+				$html                 = Form_No_JS_Refill::mark_invalid( $html, $field, self::message_anchor( $form_id ) );
+			}
+
+			list( $html, $unplaced ) = $this->print_message( $html, $status, $message, $form_id, $detail );
 			$hidden                 .= $unplaced;
 		}
 
@@ -140,6 +148,9 @@ class Form_No_JS_Submit {
 		if ( ! isset( $_GET['dsgo_form_status'] ) ) {
 			return;
 		}
+
+		// Read (and clear) a failed submission's answers before output starts.
+		Form_No_JS_Retry::capture();
 
 		nocache_headers();
 		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
@@ -192,6 +203,20 @@ class Form_No_JS_Submit {
 	}
 
 	/**
+	 * Why the submission failed, from the redirect's query string.
+	 *
+	 * @return array{0: string, 1: string} Error code and field name ('' when absent).
+	 */
+	private function redirect_reason() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only: picks a fixed sentence and a field to look up in the page's own markup.
+		$code  = isset( $_GET['dsgo_form_error'] ) && is_string( $_GET['dsgo_form_error'] ) ? sanitize_key( wp_unslash( $_GET['dsgo_form_error'] ) ) : '';
+		$field = isset( $_GET['dsgo_form_field'] ) && is_string( $_GET['dsgo_form_field'] ) ? sanitize_text_field( wp_unslash( $_GET['dsgo_form_field'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		return array( $code, $field );
+	}
+
+	/**
 	 * Print the result into the form's message box.
 	 *
 	 * The box save() writes is empty and hidden (`style="display:none"`), so it
@@ -203,16 +228,18 @@ class Form_No_JS_Submit {
 	 * @param string $status  'success' or 'error'.
 	 * @param string $message Message text (unescaped).
 	 * @param string $form_id Form ID.
+	 * @param string $detail  Why it failed (unescaped), or ''.
 	 * @return array{0: string, 1: string} The HTML, and a box still to append to the form ('' when placed).
 	 */
-	private function print_message( $html, $status, $message, $form_id ) {
+	private function print_message( $html, $status, $message, $form_id, $detail = '' ) {
 		$anchor = self::message_anchor( $form_id );
 		$box    = sprintf(
-			'<div class="dsgo-form__message dsgo-form__message--%1$s"%2$s role="%3$s" aria-live="polite" aria-atomic="true" data-dsgo-server-message="%1$s">%4$s</div>',
+			'<div class="dsgo-form__message dsgo-form__message--%1$s"%2$s role="%3$s" aria-live="polite" aria-atomic="true" data-dsgo-server-message="%1$s">%4$s%5$s</div>',
 			esc_attr( $status ),
 			'' === $anchor ? '' : ' id="' . esc_attr( $anchor ) . '"',
 			'error' === $status ? 'alert' : 'status',
-			esc_html( $message )
+			esc_html( $message ),
+			'' === $detail ? '' : ' <span class="dsgo-form__message-detail">' . esc_html( $detail ) . '</span>'
 		);
 
 		$count = 0;

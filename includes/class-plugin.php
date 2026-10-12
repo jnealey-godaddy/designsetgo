@@ -689,6 +689,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-critical-css.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-step-counter.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-no-js-submit.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-no-js-retry.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-no-js-refill.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-status.php';
