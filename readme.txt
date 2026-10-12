@@ -112,17 +112,20 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 = Unreleased =
 
+* **New:** Grid has Tablet and Mobile Column Templates, so tablets and phones can have uneven column widths too, such as a narrow column beside a wide one.
+* **New:** Layout overrides for Section, Row and Grid, and for the blocks directly inside them. Under the block's Settings, set its size, spacing, gap, position and layering separately for desktop, tablet and mobile.
+* **New:** Custom CSS has Desktop, Tablet and Mobile tabs. Tablet CSS applies at 1024px wide and below, and Mobile CSS at 767px and below.
 * **Security:** Form email logs no longer record recipient addresses or subjects, and Map error logs no longer record the address you entered. Both can contain personal details.
-* **Improved:** Grids set to two or more columns on mobile now keep the column spans you set, instead of forcing every item to one column. Check those Grids on a phone after updating. Single-column mobile Grids still stack as before.
+* **Improved:** Grids set to two or more columns on mobile now keep the column spans you set, instead of forcing every item to one column. Check those Grids on a phone after updating. Single-column mobile Grids still stack as before, and a Grid with Align Rows on still gives each card one column so their rows line up.
 * **Fix:** Screen readers no longer announce the decorative drawing in Icon, Icon List and Icon Button blocks on top of their label.
-* **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost.
+* **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost. If a submission fails, the visitor's answers stay filled in and the message says what to fix, such as a required field left empty.
 * **Fix:** Hotspot markers in the editor now sit exactly where they appear on your site. Before, every marker after the first was shown lower than its real position.
 * **Fix:** An Advanced Heading's font size, line height and letter spacing now apply to the heading, instead of being overridden by your theme's heading styles.
 * **Fix:** Form message boxes, date pickers and dropdowns use your theme's font instead of the browser's default.
 * **Fix:** Outline buttons in the bundled patterns show their label instead of a solid dark box. This also fixes buttons already on your pages.
 * **Fix:** Countdown patterns start 30 days out when inserted, instead of showing "The countdown has ended!".
 * **Improved:** Bundled patterns use fictional company and person names instead of real brands.
-* **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names).
+* **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names), and the form filter names the page each form is on.
 * **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
 * **Improved:** The submission details screen now shows each field's label alongside its field name.
 * **New:** Form fields can show or hide based on other answers ("Show Company name when Customer type is Business"). Set it under a field's Settings → Conditional logic. Hidden fields are skipped when the form is submitted, even if they're required.
@@ -242,38 +245,12 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **Fix:** Advanced Heading and Hotspot editing is smoother on long pages, duplicating a Text Path no longer breaks the original's shape, and hotspot tooltips sit on their markers instead of drifting away from them.
 * **Fix:** Translations — removed a JavaScript translation catalog whose files were keyed so that WordPress could never load them, and regenerated the translation template.
 
-= 2.6.3 - 2026-08-11 =
-
-* **Fix:** Grid columns with a minimum width set no longer run past the edge of the page. On a theme with a narrower content width, a grid asking for more columns than could fit at that minimum pushed its columns straight out of the content area. The grid now drops to fewer columns and wraps the extra items onto the next row, and still shows your chosen number of columns whenever there's room for them. Existing grids are unchanged.
-* **Fix:** The Overlay Header panel no longer causes an error when editing a template part in the Site Editor. The panel now appears only where the setting actually applies.
-
-= 2.6.2 - 2026-08-05 =
-
-* **Fix:** Sticky and overlay headers keep working on sites that replace page content without a full browser reload — an AI page builder or an AJAX-driven theme, for example. After one of those updates the header stayed where it belonged but stopped fading in its background as you scrolled, and only a full page refresh brought the behaviour back.
-* **Fix:** The footer no longer paints the sticky header's drop shadow across its own top edge when you scroll. Most themes put a navigation menu in the footer, and that alone was enough for the footer to be treated as a second header.
-
-= 2.6.1 - 2026-08-04 =
-
-* **Fix:** Turning on "background on scroll" without choosing a color now gives you your theme's background, rather than no background at all. The header also darkens or lightens its text to match, so it stays readable whichever way your theme's palette runs.
-* **Fix:** Forms on pages served from a full-page cache no longer fail with "Security verification failed. Please refresh the page and try again." A cached page can outlive the security token baked into it, and the form had no way to recover; it now quietly retries and submits successfully.
-* **Fix:** The scrolled sticky/overlay header now picks up your theme's colors instead of always fading in to a near-white bar. Pages using the per-page Overlay Header never reached the code that applies your chosen scroll background, so they fell back to a hardcoded white that looked out of place on darker palettes. The header now prefers your theme's secondary surface color, and in dark mode pairs your palette's contrast and base colors so the text stays readable. Themes that don't define those colors look exactly as they did before, and any scroll background you set explicitly still wins.
-* **Fix:** Forms placed outside the main post content — a newsletter signup in the footer, a form in a template part, synced pattern, or block widget — no longer fail every submission. The form looked and behaved normally right up until Submit, then silently failed because the data it needs to talk to the server was only attached when the form lived in the page's own content.
-
-= 2.6.0 - 2026-07-29 =
-
-* **New:** Theme animation defaults — set an entrance animation once per block type (e.g. all Buttons fade in) under DesignSetGo → Settings → Features → Animations, or in your theme's `theme.json`. Every block of that type inherits it automatically, and any individual block can override it (Custom) or opt out (Off). One rule can target several block types at once, including `namespace/*` wildcards.
-* **Fix:** The per-page Overlay Header is transparent again and no longer pulls page content up by the footer's height. The header height was being measured from the wrong element on themes whose footer also contains a navigation block, which sliced the top off the hero; and the header stayed opaque on themes that paint it from a style variation or `theme.json` rather than a background class. Your first content section now also clears the header while its background still runs behind it.
-* **Fix:** Section shape dividers now honour your theme's divider height and width tokens. Previously a theme (or Style Kit) could set the default divider shape but not its size — the Section block's top/bottom dividers ignored both size tokens. Untouched dividers now inherit the theme's size (and reserve matching content clearance), while any size you set explicitly still wins. The Height/Width sliders gain a Reset that returns them to the theme default. Existing content is unchanged.
-
-= 2.5.1 - 2026-07-23 =
-
-* **New:** Section shape dividers — six new layered, tonal divider shapes: Triangle Layered, Triangle Layered Extra, Curvy Triangle Layered, Symmetric Waves Layered, Side Triangle Layered, and Side Triangle Layered Extra. Each paints as a soft two- or three-tone band that inherits your theme's color by default and can be overridden per section.
-* **Fix:** Section shape-divider spacing is now author-defined, so patterns that set the content clearance with a theme spacing token no longer show an "Attempt Recovery" prompt. A new "Content Clearance" control sets the gap between your content and the divider; existing dividers migrate silently, and a divider with no clearance set automatically reserves space to match its own height.
-
-= Earlier releases (2.5.0 and earlier) =
+= Earlier releases (2.6.3 and earlier) =
 
 For the full version history, see [CHANGELOG.md](https://github.com/jnealey-godaddy/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights:
 
+* **2.6.x** — Theme animation defaults (set an entrance animation once per block type), sticky and overlay headers that follow your theme's colors and survive AJAX page updates, size tokens for Section shape dividers, Grid columns that wrap instead of overflowing, and forms that work from cached pages and from footers, template parts and widgets.
+* **2.5.1** — Six layered Section shape dividers and a Content Clearance control.
 * **2.5.0** — Grid "Align Rows" option, a Button Style control for the Form Builder submit button, a Modal overlay color that follows your theme, working Cloudflare Turnstile tokens, and fixes for "Attempt Recovery" prompts on translated and AI-generated sites.
 * **2.4.0** — Section Divider block, Fill / Outline icons, theme-driven defaults for icons, forms, maps and SVG patterns, a new Justify control for Pill, Icon, Icon Button and Modal Trigger, safer form notification emails, and many editor and frontend fixes.
 * **2.3.0** — Theme section styles for Section, Row and Grid, site-wide default shape dividers, and redesigned shape dividers.
