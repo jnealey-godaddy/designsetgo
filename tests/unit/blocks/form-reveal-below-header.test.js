@@ -71,6 +71,18 @@ describe('topObstruction', () => {
 		).toBe(0);
 	});
 
+	it('does not count a header that a full-screen overlay covers', () => {
+		// A modal's overlay is the topmost hit; the site header is behind it.
+		expect(
+			topObstruction(
+				fakeWindow([
+					{ position: 'fixed', top: 0, bottom: 800 },
+					{ position: 'sticky', top: 0, bottom: 103 },
+				])
+			)
+		).toBe(0);
+	});
+
 	it('returns 0 where elementsFromPoint is unavailable', () => {
 		const win = fakeWindow([]);
 		delete win.document.elementsFromPoint;
@@ -113,6 +125,49 @@ describe('revealBelowHeader', () => {
 			top: 484,
 			left: 0,
 			behavior: 'auto',
+		});
+	});
+
+	describe('inside a box that scrolls on its own (the Modal block)', () => {
+		function inModal(start, modalTop = 0, modalBottom = 800) {
+			const win = fakeWindow([
+				{ position: 'sticky', top: 0, bottom: 103 },
+			]);
+			const modal = {
+				...box(modalTop, modalBottom),
+				scrollTop: 500,
+				scrollHeight: 2000,
+				clientHeight: modalBottom - modalTop,
+				parentElement: win.document.body,
+				overflowY: 'auto',
+			};
+			const wrapper = { parentElement: modal };
+			win.getComputedStyle = (node) => ({
+				position: node.position || 'static',
+				overflowY: node.overflowY || 'visible',
+			});
+			return { win, modal, start: { ...start, parentElement: wrapper } };
+		}
+
+		it('scrolls the box, not the page', () => {
+			const { win, modal, start } = inModal(box(-300, -270));
+			revealBelowHeader(start, box(-220, -190), win);
+			expect(win.scrollBy).not.toHaveBeenCalled();
+			// -300 → the box's top edge + 16 gap; the page's header is ignored.
+			expect(modal.scrollTop).toBe(500 - 316);
+		});
+
+		it('measures from the box top when the box sits lower', () => {
+			const { win, modal, start } = inModal(box(40, 70), 100, 700);
+			revealBelowHeader(start, box(120, 150), win);
+			expect(modal.scrollTop).toBe(500 + 40 - 116);
+		});
+
+		it('leaves the box alone when the step is already in view', () => {
+			const { win, modal, start } = inModal(box(200, 230));
+			revealBelowHeader(start, box(260, 290), win);
+			expect(modal.scrollTop).toBe(500);
+			expect(win.scrollBy).not.toHaveBeenCalled();
 		});
 	});
 });

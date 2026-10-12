@@ -17,7 +17,8 @@ const GAP = 16;
  * nearest fixed/sticky ancestor, starting at the top edge and moving the line
  * just below each bar found, so stacked bars (the admin bar above a sticky
  * header) add up. Boxes taller than half the viewport (a full-screen
- * overlay, a sticky sidebar) are not treated as a top bar.
+ * overlay, a sticky sidebar) are not treated as a top bar, and nothing a
+ * fixed overlay paints over (a site header behind a modal) is counted.
  *
  * @param {Object} win Window to measure.
  * @return {number} Covered height in px, 0 when nothing covers the top.
@@ -34,7 +35,8 @@ export function topObstruction(win = window) {
 		const line = bottom + 1;
 		let next = bottom;
 		[0.25, 0.5, 0.75].forEach((fraction) => {
-			doc.elementsFromPoint(width * fraction, line).forEach((hit) => {
+			// Hits come topmost first: stop at the first fixed overlay.
+			doc.elementsFromPoint(width * fraction, line).some((hit) => {
 				for (
 					let node = hit;
 					node && node !== doc.body && node !== doc.documentElement;
@@ -43,16 +45,14 @@ export function topObstruction(win = window) {
 					const { position } = win.getComputedStyle(node);
 					if (position === 'fixed' || position === 'sticky') {
 						const rect = node.getBoundingClientRect();
-						if (
-							rect.top <= line &&
-							rect.height < win.innerHeight / 2 &&
-							rect.bottom > next
-						) {
+						const tall = rect.height >= win.innerHeight / 2;
+						if (rect.top <= line && !tall && rect.bottom > next) {
 							next = rect.bottom;
 						}
-						return;
+						return tall && position === 'fixed';
 					}
 				}
+				return false;
 			});
 		});
 		if (next <= bottom) {
@@ -64,11 +64,38 @@ export function topObstruction(win = window) {
 }
 
 /**
+ * Nearest ancestor of `el` that scrolls on its own (a modal, a side panel),
+ * or null when only the page scrolls.
+ *
+ * @param {Element} el  Element inside the form.
+ * @param {Object}  win Window the element is in.
+ * @return {Element|null} Scrolling ancestor.
+ */
+function scrollParent(el, win) {
+	const doc = win.document;
+	for (
+		let node = el.parentElement;
+		node && node !== doc.body && node !== doc.documentElement;
+		node = node.parentElement
+	) {
+		const { overflowY } = win.getComputedStyle(node);
+		if (
+			['auto', 'scroll', 'overlay'].includes(overflowY) &&
+			node.scrollHeight > node.clientHeight
+		) {
+			return node;
+		}
+	}
+	return null;
+}
+
+/**
  * Bring `start` and `end` into view, top-aligned below the top bar.
  *
  * Does nothing when `start`'s top edge already sits below the bar and
  * `end`'s bottom edge is inside the viewport, so a step change near the top
- * of the page doesn't jump.
+ * of the page doesn't jump. A form inside its own scrolling box (the Modal
+ * block) is scrolled within that box instead of the page.
  *
  * @param {Element} start First element that must be visible (e.g. the progress indicator).
  * @param {Element} end   Last element that must be visible (e.g. the step heading).
@@ -78,9 +105,21 @@ export function revealBelowHeader(start, end = start, win = window) {
 	if (!start || typeof start.getBoundingClientRect !== 'function') {
 		return;
 	}
-	const limit = topObstruction(win) + GAP;
 	const top = start.getBoundingClientRect().top;
 	const bottom = (end || start).getBoundingClientRect().bottom;
+
+	const box = scrollParent(start, win);
+	if (box) {
+		const rect = box.getBoundingClientRect();
+		const limit = Math.max(rect.top, 0) + GAP;
+		if (top >= limit && bottom <= Math.min(rect.bottom, win.innerHeight)) {
+			return;
+		}
+		box.scrollTop += top - limit;
+		return;
+	}
+
+	const limit = topObstruction(win) + GAP;
 	if (top >= limit && bottom <= win.innerHeight) {
 		return;
 	}
