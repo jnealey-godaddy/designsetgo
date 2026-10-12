@@ -902,7 +902,7 @@ class Form_Handler {
 		update_post_meta( $post_id, '_dsg_form_fields', wp_slash( $fields ) );
 		update_post_meta( $post_id, '_dsg_submission_ip', $this->security->get_client_ip() );
 		update_post_meta( $post_id, '_dsg_submission_user_agent', wp_slash( $this->get_user_agent() ) );
-		update_post_meta( $post_id, '_dsg_submission_referer', wp_slash( wp_get_referer() ) );
+		update_post_meta( $post_id, '_dsg_submission_referer', wp_slash( $this->get_submission_source_url() ) );
 		update_post_meta( $post_id, '_dsg_submission_date', current_time( 'mysql' ) );
 
 		// Clear cached form submission count.
@@ -1497,6 +1497,23 @@ class Form_Handler {
 			'labels'          => $labels,
 			'conditions'      => Form_Conditions::extract( $inner_blocks ),
 		);
+	}
+
+	/**
+	 * The page a submission was sent from, for the stored Source URL.
+	 *
+	 * A no-JS retry is posted from the previous result's URL, so drop the
+	 * plugin's own result args: the record should name the page, not an
+	 * earlier failure.
+	 *
+	 * @return string Referer without result args, or '' when there is none.
+	 */
+	private function get_submission_source_url() {
+		$referer = wp_get_referer();
+		if ( ! $referer ) {
+			return '';
+		}
+		return remove_query_arg( array( 'dsgo_form_status', 'dsgo_form_id', 'dsgo_form_error', 'dsgo_form_field' ), $referer );
 	}
 
 	/**
