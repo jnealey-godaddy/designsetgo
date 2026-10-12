@@ -44,12 +44,21 @@ describe.each([
 		global.fetch = originalFetch;
 	});
 
-	it.each(['no results', 'HTTP error', 'network error'])(
+	it.each([
+		'no results',
+		'HTTP error',
+		'network error with raw address',
+		'network error with encoded URL',
+	])(
 		'warns without the configured address and initializes the fallback on %s',
 		async (failure) => {
-			if (failure === 'network error') {
+			if (failure.startsWith('network error')) {
+				const detail =
+					failure === 'network error with raw address'
+						? ADDRESS
+						: `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ADDRESS)}`;
 				global.fetch.mockRejectedValue(
-					new TypeError('Failed to fetch')
+					new TypeError(`Failed to fetch ${detail}`)
 				);
 			} else {
 				global.fetch.mockResolvedValue({
@@ -63,15 +72,32 @@ describe.each([
 			// Read the emitted arguments before the console matcher consumes them.
 			// eslint-disable-next-line no-console
 			const warnings = console.warn.mock.calls.flat().join(' ');
+			// Include Error messages, stacks, and enumerable properties in the check.
+			// eslint-disable-next-line no-console
+			const errors = console.error.mock.calls
+				.flat()
+				.map((value) =>
+					[String(value), value?.stack, JSON.stringify(value)].join(
+						' '
+					)
+				)
+				.join(' ');
 			expect(console).toHaveWarned();
 			if (failure !== 'no results') {
 				expect(console).toHaveErrored();
+				expect(errors).toContain('Geocoding');
+			} else {
+				expect(console).not.toHaveErrored();
 			}
 			expect(warnings).toMatch(/could not geocode/i);
 			expect(warnings).toContain('Falling back to default coordinates.');
-			expect(warnings).not.toContain(ADDRESS);
-			expect(warnings).not.toContain('123 F02 Test Lane');
-			expect(warnings).not.toContain('Exampleville');
+			for (const output of [warnings, errors]) {
+				expect(output).not.toContain(ADDRESS);
+				expect(output).not.toContain(encodeURIComponent(ADDRESS));
+				expect(output).not.toContain('123 F02 Test Lane');
+				expect(output).not.toContain('123%20F02%20Test%20Lane');
+				expect(output).not.toContain('Exampleville');
+			}
 			expect(map.config.lat).toBe(40.7128);
 			expect(map.config.lng).toBe(-74.006);
 			expect(initialize).toHaveBeenCalledTimes(1);

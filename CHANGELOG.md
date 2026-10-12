@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - **Form Builder**: optional email delivery logs now omit recipient addresses and email subjects, which can contain personal information. Logs retain delivery status and submission ID for troubleshooting.
-- **Map**: failed geocoding warnings no longer include the configured address, which may be a personal location. The warning retains the failure diagnostic and maps continue to use fallback coordinates.
+- **Map**: failed geocoding warnings and errors no longer include the configured address or raw error objects that may contain address-bearing request URLs. Logs retain failure diagnostics and maps continue to use fallback coordinates.
 
 ### Upgrade Notes
 
