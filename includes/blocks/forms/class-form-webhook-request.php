@@ -105,7 +105,7 @@ class Form_Webhook_Request {
 	 * @return string URL, or '' when not allowed.
 	 */
 	public static function allowed_url( string $url, string $form_id, int $submission_id ): string {
-		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+		if ( ! self::is_safe_url( $url ) ) {
 			return '';
 		}
 
@@ -121,7 +121,40 @@ class Form_Webhook_Request {
 		 */
 		$url = apply_filters( 'designsetgo_form_webhook_url', $url, $form_id, $submission_id );
 
-		return ( is_string( $url ) && '' !== $url && wp_http_validate_url( $url ) ) ? $url : '';
+		return ( is_string( $url ) && self::is_safe_url( $url ) ) ? $url : '';
+	}
+
+	/**
+	 * Core's URL check, plus the reserved ranges it only rejects from
+	 * WordPress 7.1: before that, link-local (cloud metadata), CGNAT and
+	 * 0.0.0.0/8 pass `wp_http_validate_url()` and `wp_safe_remote_post()`.
+	 *
+	 * @param string $url URL.
+	 * @return bool
+	 */
+	private static function is_safe_url( string $url ): bool {
+		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+			return false;
+		}
+
+		$host = trim( (string) wp_parse_url( $url, PHP_URL_HOST ), '.' );
+		$home = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( '' === $host || strtolower( $host ) === strtolower( $home ) ) {
+			return true;
+		}
+
+		$ip = filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ? $host : gethostbyname( $host );
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return true; // Unresolvable; core already decided.
+		}
+
+		$parts    = array_map( 'intval', explode( '.', $ip ) );
+		$reserved = 0 === $parts[0]                                     // 0.0.0.0/8 (this network).
+			|| ( 169 === $parts[0] && 254 === $parts[1] )               // 169.254.0.0/16 (link-local, cloud metadata).
+			|| ( 100 === $parts[0] && 64 <= $parts[1] && 127 >= $parts[1] ); // 100.64.0.0/10 (CGNAT).
+
+		/** This filter is documented in wp-includes/http.php */
+		return ! $reserved || (bool) apply_filters( 'http_request_host_is_external', false, $host, $url );
 	}
 
 	/**

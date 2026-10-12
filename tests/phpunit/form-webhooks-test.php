@@ -224,6 +224,7 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 			'private 10'     => array( 'http://10.0.0.8/hook' ),
 			'private 172'    => array( 'http://172.16.4.2/hook' ),
 			'cloud metadata' => array( 'http://169.254.169.254/latest/meta-data/' ),
+			'cgnat'          => array( 'http://100.64.0.1/hook' ),
 			'credentials'    => array( 'https://user:pass@93.184.216.34/hook' ),
 			'odd port'       => array( 'https://93.184.216.34:2375/hook' ),
 			'not a url'      => array( 'javascript:alert(1)' ),
