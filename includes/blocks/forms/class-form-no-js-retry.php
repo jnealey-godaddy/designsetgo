@@ -53,6 +53,14 @@ class Form_No_JS_Retry {
 	private static $captured = array();
 
 	/**
+	 * Last cookie value this request set ('' when it cleared the cookie), or
+	 * null when it set none. Lets tests see what a redirect would send.
+	 *
+	 * @var string|null
+	 */
+	private static $sent = null;
+
+	/**
 	 * Query args naming why a submission failed, for the redirect back.
 	 *
 	 * @param \WP_Error $error Submission error.
@@ -106,10 +114,17 @@ class Form_No_JS_Retry {
 	/**
 	 * Keep a failed submission's answers for the page the visitor returns to.
 	 *
+	 * Not for a submission caught as spam (the honeypot was filled): there is
+	 * no visitor to give the answers back to.
+	 *
 	 * @param string                           $form_id Form ID.
 	 * @param array<int, array<string, mixed>> $fields  Submitted fields (name, value, type).
+	 * @param string                           $code    Error code the submission failed with.
 	 */
-	public static function remember( string $form_id, array $fields ): void {
+	public static function remember( string $form_id, array $fields, string $code = '' ): void {
+		if ( 'spam_detected' === $code ) {
+			return;
+		}
 		$value = self::encode( $form_id, $fields );
 		if ( '' !== $value ) {
 			self::send_cookie( $value, time() + self::TTL );
@@ -128,7 +143,8 @@ class Form_No_JS_Retry {
 	 * @return string Cookie value.
 	 */
 	public static function encode( string $form_id, array $fields ): string {
-		$values = array();
+		$values  = array();
+		$expires = time() + self::TTL;
 		foreach ( $fields as $field ) {
 			$name  = isset( $field['name'] ) && is_string( $field['name'] ) ? $field['name'] : '';
 			$value = isset( $field['value'] ) && is_string( $field['value'] ) ? $field['value'] : '';
@@ -138,8 +154,8 @@ class Form_No_JS_Retry {
 		}
 		uasort( $values, static fn( $a, $b ) => strlen( $b ) <=> strlen( $a ) );
 		while ( $values ) {
-			$payload = base64_encode( (string) wp_json_encode( array( $form_id, $values ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Cookie-safe transport, not obfuscation.
-			$cookie  = $payload . '.' . wp_hash( $payload );
+			$payload = base64_encode( (string) wp_json_encode( array( $form_id, $values, $expires ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Cookie-safe transport, not obfuscation.
+			$cookie  = $payload . '.' . self::sign( $payload );
 			if ( strlen( $cookie ) <= self::MAX_BYTES ) {
 				return $cookie;
 			}
@@ -168,19 +184,35 @@ class Form_No_JS_Retry {
 	/**
 	 * Verify and unpack a cookie value.
 	 *
+	 * The expiry is part of the signed data, so a copied cookie stops working
+	 * after TTL even if a browser keeps sending it.
+	 *
 	 * @param string $cookie Cookie value.
 	 * @return array{0: string, 1: array<string, string>}|null Form ID and answers, or null when invalid.
 	 */
 	public static function decode( string $cookie ): ?array {
 		$parts = explode( '.', $cookie );
-		if ( 2 !== count( $parts ) || ! hash_equals( wp_hash( $parts[0] ), $parts[1] ) ) {
+		if ( 2 !== count( $parts ) || ! hash_equals( self::sign( $parts[0] ), $parts[1] ) ) {
 			return null;
 		}
 		$data = json_decode( (string) base64_decode( $parts[0], true ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- See encode().
-		if ( ! is_array( $data ) || ! isset( $data[0], $data[1] ) || ! is_string( $data[0] ) || ! is_array( $data[1] ) ) {
+		if ( ! is_array( $data ) || ! isset( $data[0], $data[1], $data[2] ) || ! is_string( $data[0] ) || ! is_array( $data[1] ) || ! is_int( $data[2] ) || $data[2] < time() ) {
 			return null;
 		}
 		return array( $data[0], array_filter( $data[1], 'is_string' ) );
+	}
+
+	/**
+	 * Signature for a cookie payload.
+	 *
+	 * Keyed with the site's auth salt and bound to this cookie's purpose, so
+	 * no other value the site signs can stand in for it.
+	 *
+	 * @param string $payload Encoded payload.
+	 * @return string Hex HMAC.
+	 */
+	private static function sign( string $payload ): string {
+		return hash_hmac( 'sha256', self::COOKIE . '|' . $payload, wp_salt( 'auth' ) );
 	}
 
 	/**
@@ -194,10 +226,21 @@ class Form_No_JS_Retry {
 	}
 
 	/**
-	 * Forget captured answers. For tests.
+	 * The cookie value this request last set ('' when cleared), or null when
+	 * it set none. For tests: PHPUnit has already sent headers.
+	 *
+	 * @return string|null
+	 */
+	public static function sent(): ?string {
+		return self::$sent;
+	}
+
+	/**
+	 * Forget captured answers and sent cookies. For tests.
 	 */
 	public static function reset(): void {
 		self::$captured = array();
+		self::$sent     = null;
 	}
 
 	/**
@@ -207,6 +250,7 @@ class Form_No_JS_Retry {
 	 * @param int    $expires Expiry timestamp.
 	 */
 	private static function send_cookie( string $value, int $expires ): void {
+		self::$sent = $value;
 		if ( headers_sent() ) {
 			return;
 		}

@@ -339,13 +339,17 @@ function initFormBuilder() {
 				(params.has('dsgo_form_error') || status === 'error')
 			) {
 				clearConfirmation();
+				// Keep the reason the server printed for this result (e.g.
+				// which field to fill in) when the form posted natively.
+				const detail = messageContainer
+					.querySelector('.dsgo-form__message-detail')
+					?.textContent.trim();
+				const msg =
+					errorMessage ||
+					__('An error occurred. Please try again.', 'designsetgo');
 				showMessage(
 					messageContainer,
-					errorMessage ||
-						__(
-							'An error occurred. Please try again.',
-							'designsetgo'
-						),
+					detail ? `${msg} ${detail}` : msg,
 					'error'
 				);
 				shown = true;
@@ -356,6 +360,7 @@ function initFormBuilder() {
 				const cleanUrl = new URL(window.location.href);
 				cleanUrl.searchParams.delete('dsgo_form_success');
 				cleanUrl.searchParams.delete('dsgo_form_error');
+				cleanUrl.searchParams.delete('dsgo_form_field');
 				cleanUrl.searchParams.delete('dsgo_form_status');
 				cleanUrl.searchParams.delete('dsgo_form_id');
 				window.history.replaceState(null, '', cleanUrl.href);

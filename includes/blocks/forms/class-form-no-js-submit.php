@@ -234,12 +234,16 @@ class Form_No_JS_Submit {
 	private function print_message( $html, $status, $message, $form_id, $detail = '' ) {
 		$anchor = self::message_anchor( $form_id );
 		$box    = sprintf(
-			'<div class="dsgo-form__message dsgo-form__message--%1$s"%2$s role="%3$s" aria-live="polite" aria-atomic="true" data-dsgo-server-message="%1$s">%4$s%5$s</div>',
+			'<div class="dsgo-form__message dsgo-form__message--%1$s"%2$s role="%3$s"%6$s aria-live="polite" aria-atomic="true" data-dsgo-server-message="%1$s">%4$s%5$s</div>',
 			esc_attr( $status ),
 			'' === $anchor ? '' : ' id="' . esc_attr( $anchor ) . '"',
 			'error' === $status ? 'alert' : 'status',
 			esc_html( $message ),
-			'' === $detail ? '' : ' <span class="dsgo-form__message-detail">' . esc_html( $detail ) . '</span>'
+			'' === $detail ? '' : ' <span class="dsgo-form__message-detail">' . esc_html( $detail ) . '</span>',
+			// A live region already in the page when it loads isn't announced.
+			// Focusable, the error is focused by the #anchor the redirect
+			// lands on, so a screen reader reads it.
+			'error' === $status ? ' tabindex="-1"' : ''
 		);
 
 		$count = 0;

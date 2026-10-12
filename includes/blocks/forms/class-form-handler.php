@@ -675,7 +675,7 @@ class Form_Handler {
 		if ( is_wp_error( $result ) ) {
 			// Without JavaScript the visitor comes back to a fresh page: keep
 			// their answers, and say why it failed (Form_No_JS_Retry).
-			Form_No_JS_Retry::remember( $form_id, $fields );
+			Form_No_JS_Retry::remember( $form_id, $fields, (string) $result->get_error_code() );
 		}
 
 		if ( '' === $redirect ) {

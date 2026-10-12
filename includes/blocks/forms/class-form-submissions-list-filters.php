@@ -112,7 +112,9 @@ class Form_Submissions_List_Filters {
 	private static function forms(): array {
 		global $wpdb;
 
-		$key   = 'dsgo_submission_forms:' . wp_cache_get_last_changed( 'posts' );
+		// v2: rows gained latest_id and page_title. Rows an older release
+		// cached under the unversioned key lack them.
+		$key   = 'dsgo_submission_forms:v2:' . wp_cache_get_last_changed( 'posts' );
 		$forms = wp_cache_get( $key, 'designsetgo' );
 		if ( is_array( $forms ) ) {
 			return $forms;

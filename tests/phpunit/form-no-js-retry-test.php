@@ -38,7 +38,8 @@ class Test_Form_No_JS_Retry extends WP_UnitTestCase {
 	}
 
 	public function tear_down() {
-		unset( $_GET['dsgo_form_status'], $_GET['dsgo_form_id'], $_GET['dsgo_form_error'], $_GET['dsgo_form_field'], $_COOKIE[ Form_No_JS_Retry::COOKIE ] );
+		$_GET = array();
+		unset( $_COOKIE[ Form_No_JS_Retry::COOKIE ] );
 		Form_No_JS_Retry::reset();
 		parent::tear_down();
 	}
@@ -169,10 +170,22 @@ class Test_Form_No_JS_Retry extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'dsgo_form_error=required_field_missing', $location );
 		$this->assertStringContainsString( 'dsgo_form_field=your_name', $location );
 
-		$xpath   = $this->return_to( $location, $markup, Form_No_JS_Retry::encode( 'retry-required', $fields ) );
+		// The cookie the handler sent, not one this test built.
+		$cookie = (string) Form_No_JS_Retry::sent();
+		$this->assertNotSame( '', $cookie );
+		$decoded = Form_No_JS_Retry::decode( $cookie );
+		$this->assertSame( 'retry-required', $decoded[0] ?? '' );
+		foreach ( $fields as $field ) {
+			if ( '' !== $field['value'] ) {
+				$this->assertSame( $field['value'], $decoded[1][ $field['name'] ] ?? null, $field['name'] );
+			}
+		}
+
+		$xpath   = $this->return_to( $location, $markup, $cookie );
 		$message = $xpath->query( '//*[@data-dsgo-server-message]' )->item( 0 );
 
 		$this->assertSame( 'Could not send. Please fill in “Your name”.', $message->textContent );
+		$this->assertSame( '-1', $message->getAttribute( 'tabindex' ), 'Focusable, so the #anchor the redirect lands on focuses it.' );
 		$this->assertSame( 'pat@example.com', $xpath->query( '//input[@name="email"]' )->item( 0 )->getAttribute( 'value' ) );
 		$this->assertSame( "Line one\n<b>two</b> & \"three\"", $xpath->query( '//textarea[@name="message"]' )->item( 0 )->textContent );
 		$this->assertSame( 'selected', $xpath->query( '//select[@name="topic"]/option[@value="support"]' )->item( 0 )->getAttribute( 'selected' ) );
@@ -273,20 +286,107 @@ class Test_Form_No_JS_Retry extends WP_UnitTestCase {
 		$this->assertSame( '', $xpath->query( '//input[@name="email"]' )->item( 0 )->getAttribute( 'value' ) );
 	}
 
+	/**
+	 * A cookie value signed the way Form_No_JS_Retry signs it.
+	 *
+	 * @param mixed $data Data to encode.
+	 * @return string
+	 */
+	private function signed( $data ) {
+		$payload = base64_encode( (string) wp_json_encode( $data ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return $payload . '.' . hash_hmac( 'sha256', Form_No_JS_Retry::COOKIE . '|' . $payload, wp_salt( 'auth' ) );
+	}
+
 	public function test_tampered_cookie_is_ignored() {
-		$cookie         = Form_No_JS_Retry::encode( 'retry-tamper', array( array( 'name' => 'email', 'value' => 'a@example.com', 'type' => 'email' ) ) );
+		$cookie          = Form_No_JS_Retry::encode( 'retry-tamper', array( array( 'name' => 'email', 'value' => 'a@example.com', 'type' => 'email' ) ) );
 		list( $payload ) = explode( '.', $cookie );
-		$forged         = base64_encode( (string) wp_json_encode( array( 'retry-tamper', array( 'email' => 'evil@example.com' ) ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$forged          = base64_encode( (string) wp_json_encode( array( 'retry-tamper', array( 'email' => 'evil@example.com' ), time() + 60 ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 
 		$this->assertNotNull( Form_No_JS_Retry::decode( $cookie ) );
-		$this->assertNull( Form_No_JS_Retry::decode( $forged . '.' . wp_hash( $payload ) ) );
+		$this->assertNull( Form_No_JS_Retry::decode( $forged . '.' . explode( '.', $cookie )[1] ) );
+		// Signed by another of the site's signatures (wp_hash) is not enough.
+		$this->assertNull( Form_No_JS_Retry::decode( $payload . '.' . wp_hash( $payload ) ) );
 		$this->assertNull( Form_No_JS_Retry::decode( 'garbage' ) );
+		$this->assertNull( Form_No_JS_Retry::decode( $cookie . '.extra' ) );
+	}
+
+	public function test_signed_but_malformed_or_expired_cookies_are_ignored() {
+		$this->assertNotNull( Form_No_JS_Retry::decode( $this->signed( array( 'f', array( 'a' => 'b' ), time() + 60 ) ) ) );
+
+		$this->assertNull( Form_No_JS_Retry::decode( $this->signed( array( 'f', array( 'a' => 'b' ), time() - 1 ) ) ), 'Expired.' );
+		$this->assertNull( Form_No_JS_Retry::decode( $this->signed( array( 'f', array( 'a' => 'b' ) ) ) ), 'No expiry.' );
+		$this->assertNull( Form_No_JS_Retry::decode( $this->signed( array( 'f', 'not answers', time() + 60 ) ) ) );
+		$this->assertNull( Form_No_JS_Retry::decode( $this->signed( array( 7, array(), time() + 60 ) ) ) );
+		$this->assertNull( Form_No_JS_Retry::decode( $this->signed( 'just a string' ) ) );
+		$this->assertSame(
+			array( 'f', array( 'a' => 'b' ) ),
+			Form_No_JS_Retry::decode( $this->signed( array( 'f', array( 'a' => 'b', 'n' => 5, 'x' => array( 'y' ) ), time() + 60 ) ) ),
+			'Only string answers survive.'
+		);
 	}
 
 	public function test_cookie_is_read_once() {
 		$_COOKIE[ Form_No_JS_Retry::COOKIE ] = Form_No_JS_Retry::encode( 'retry-once', array( array( 'name' => 'email', 'value' => 'a@example.com', 'type' => 'email' ) ) );
 		Form_No_JS_Retry::capture();
 		$this->assertSame( array( 'email' => 'a@example.com' ), Form_No_JS_Retry::values( 'retry-once' ) );
+		$this->assertSame( '', Form_No_JS_Retry::sent(), 'The cookie is expired once read.' );
+	}
+
+	public function test_forged_cookie_fills_nothing_on_the_page() {
+		$_COOKIE[ Form_No_JS_Retry::COOKIE ] = array( 'not', 'a string' );
+		Form_No_JS_Retry::capture();
+		$this->assertNull( Form_No_JS_Retry::sent(), 'A non-string cookie is not touched.' );
+
+		$xpath = $this->return_to( '/?dsgo_form_status=error&dsgo_form_id=retry-forged', $this->form_block( 'retry-forged' ), $this->signed( array( 'retry-forged', array( 'email' => 'evil@example.com' ), time() - 1 ) ) );
+
+		$this->assertSame( '', $xpath->query( '//input[@name="email"]' )->item( 0 )->getAttribute( 'value' ) );
+		$this->assertSame( '', Form_No_JS_Retry::sent(), 'Still expired, so the browser drops it.' );
+	}
+
+	public function test_bad_answer_is_named_and_flagged() {
+		list( $location, $markup ) = $this->submit(
+			'retry-invalid',
+			array(
+				'your_name' => 'Pat',
+				'email'     => 'not-an-email',
+			)
+		);
+
+		$this->assertStringContainsString( 'dsgo_form_error=validation_error', $location );
+		$this->assertStringContainsString( 'dsgo_form_field=email', $location );
+
+		$xpath = $this->return_to( $location, $markup, (string) Form_No_JS_Retry::sent() );
+
+		$this->assertSame( 'Could not send. Please check your answer to “Email address”.', $xpath->query( '//*[@data-dsgo-server-message]' )->item( 0 )->textContent );
+		$email = $xpath->query( '//input[@name="email"]' )->item( 0 );
+		$this->assertSame( 'not-an-email', $email->getAttribute( 'value' ) );
+		$this->assertSame( 'true', $email->getAttribute( 'aria-invalid' ) );
+	}
+
+	public function test_success_and_spam_keep_no_answers() {
+		list( $location ) = $this->submit( 'retry-ok', array( 'your_name' => 'Pat' ) );
+		$this->assertStringContainsString( 'dsgo_form_status=success', $location );
+		$this->assertNull( Form_No_JS_Retry::sent() );
+
+		list( $location ) = $this->submit(
+			'retry-bot',
+			array(
+				'your_name'   => 'Bot',
+				'dsg_website' => 'https://spam.example',
+			)
+		);
+		$this->assertStringContainsString( 'dsgo_form_status=error', $location );
+		$this->assertStringNotContainsString( 'dsgo_form_error', $location );
+		$this->assertNull( Form_No_JS_Retry::sent(), 'No answers are kept for a honeypot catch.' );
+	}
+
+	public function test_success_message_is_not_focusable() {
+		$_GET['dsgo_form_status'] = 'success';
+		$_GET['dsgo_form_id']     = 'retry-done';
+		$message                  = $this->xpath( do_blocks( $this->form_block( 'retry-done' ) ) )->query( '//*[@data-dsgo-server-message]' )->item( 0 );
+
+		$this->assertSame( 'status', $message->getAttribute( 'role' ) );
+		$this->assertFalse( $message->hasAttribute( 'tabindex' ) );
 	}
 
 	public function test_hidden_fields_are_not_stored_and_long_answers_are_dropped_first() {
@@ -301,6 +401,50 @@ class Test_Form_No_JS_Retry extends WP_UnitTestCase {
 
 		$this->assertLessThanOrEqual( Form_No_JS_Retry::MAX_BYTES, strlen( $cookie ) );
 		$this->assertSame( array( 'retry-size', array( 'email' => 'a@example.com' ) ), Form_No_JS_Retry::decode( $cookie ) );
+	}
+
+	public function test_nothing_is_stored_when_no_answer_fits() {
+		$this->assertSame( '', Form_No_JS_Retry::encode( 'retry-huge', array( array( 'name' => 'essay', 'value' => str_repeat( 'é', 3000 ), 'type' => 'textarea' ) ) ) );
+		$this->assertSame( '', Form_No_JS_Retry::encode( 'retry-empty', array( array( 'name' => 'email', 'value' => '', 'type' => 'email' ) ) ) );
+
+		Form_No_JS_Retry::remember( 'retry-empty', array() );
+		$this->assertNull( Form_No_JS_Retry::sent() );
+	}
+
+	public function test_field_label_without_a_label_is_empty() {
+		$this->assertSame( 'City', Form_No_JS_Refill::field_label( '<label for="c">City <span class="dsgo-form-field__required">*</span></label><input id="c" name="city">', 'city' ) );
+		$this->assertSame( '', Form_No_JS_Refill::field_label( '<input id="c" name="city">', 'city' ), 'No <label for>.' );
+		$this->assertSame( '', Form_No_JS_Refill::field_label( '<label>City</label><input name="city">', 'city' ), 'No id.' );
+		$this->assertSame( '', Form_No_JS_Refill::field_label( '<label for="c">City</label><input id="c" name="city">', 'town' ), 'No such field.' );
+		$this->assertSame( '', Form_No_JS_Refill::field_label( '<label for="n">Nonce</label><input type="hidden" id="n" name="_wpnonce" value="x" data-dsgo-system>', '_wpnonce' ), 'System fields are never named.' );
+	}
+
+	public function test_mark_invalid_keeps_existing_descriptions_and_skips_system_fields() {
+		$html = '<input type="hidden" name="city" value="x" data-dsgo-system><input name="city" aria-describedby="city-help">';
+
+		$out = Form_No_JS_Refill::mark_invalid( $html, 'city', 'msg' );
+
+		$this->assertStringContainsString( '<input type="hidden" name="city" value="x" data-dsgo-system>', $out );
+		$this->assertStringContainsString( 'aria-describedby="city-help msg"', $out );
+		$this->assertSame( 1, substr_count( $out, 'aria-invalid="true"' ) );
+		$this->assertSame( $html, Form_No_JS_Refill::mark_invalid( $html, '', 'msg' ) );
+	}
+
+	public function test_textarea_answers_are_dropped_not_the_form_when_pcre_fails() {
+		$html = '<form><textarea name="message"></textarea><input name="city" value=""></form>';
+		$jit  = ini_get( 'pcre.jit' );
+		$back = ini_get( 'pcre.backtrack_limit' );
+		ini_set( 'pcre.jit', '0' ); // phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'pcre.backtrack_limit', '1' ); // phpcs:ignore WordPress.PHP.IniSet.Risky
+		try {
+			$out = Form_No_JS_Refill::refill( $html, array( 'message' => 'Hi', 'city' => 'Oslo' ) );
+		} finally {
+			ini_set( 'pcre.jit', (string) $jit ); // phpcs:ignore WordPress.PHP.IniSet.Risky
+			ini_set( 'pcre.backtrack_limit', (string) $back ); // phpcs:ignore WordPress.PHP.IniSet.Risky
+		}
+
+		$this->assertStringContainsString( 'value="Oslo"', $out );
+		$this->assertStringContainsString( '<textarea', $out );
 	}
 
 	public function test_refill_leaves_system_fields_alone() {

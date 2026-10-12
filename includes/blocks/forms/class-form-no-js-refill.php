@@ -81,7 +81,7 @@ class Form_No_JS_Refill {
 		if ( ! $textareas ) {
 			return $html;
 		}
-		return (string) preg_replace_callback(
+		$filled = preg_replace_callback(
 			'#(<textarea\b[^>]*?)\s+data-dsgo-refill="(\d+)"([^>]*>).*?(</textarea>)#is',
 			static function ( $match ) use ( $textareas ) {
 				$value = $textareas[ (int) $match[2] ] ?? '';
@@ -90,6 +90,9 @@ class Form_No_JS_Refill {
 			},
 			$html
 		);
+		// On a PCRE failure (backtrack limit on a huge form), show the form
+		// without the textarea answers rather than no form at all.
+		return null === $filled ? $html : $filled;
 	}
 
 	/**
@@ -106,7 +109,7 @@ class Form_No_JS_Refill {
 		$processor = new \WP_HTML_Tag_Processor( $html );
 		$id        = '';
 		while ( '' !== $name && $processor->next_tag() ) {
-			if ( in_array( $processor->get_tag(), array( 'INPUT', 'SELECT', 'TEXTAREA' ), true ) && $name === $processor->get_attribute( 'name' ) ) {
+			if ( self::is_answer_control( $processor, $name ) ) {
 				$id = (string) $processor->get_attribute( 'id' );
 				break;
 			}
@@ -156,7 +159,7 @@ class Form_No_JS_Refill {
 		}
 		$processor = new \WP_HTML_Tag_Processor( $html );
 		while ( $processor->next_tag() ) {
-			if ( ! in_array( $processor->get_tag(), array( 'INPUT', 'SELECT', 'TEXTAREA' ), true ) || $name !== $processor->get_attribute( 'name' ) ) {
+			if ( ! self::is_answer_control( $processor, $name ) ) {
 				continue;
 			}
 			$processor->set_attribute( 'aria-invalid', 'true' );
@@ -167,5 +170,22 @@ class Form_No_JS_Refill {
 			break;
 		}
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Whether the processor is on a control named `$name` that holds a
+	 * visitor's answer: not a hidden or system input, which a link naming
+	 * it should not be able to flag.
+	 *
+	 * @param \WP_HTML_Tag_Processor $processor Processor on an opening tag.
+	 * @param string                 $name      Field name.
+	 * @return bool
+	 */
+	private static function is_answer_control( \WP_HTML_Tag_Processor $processor, string $name ): bool {
+		if ( ! in_array( $processor->get_tag(), array( 'INPUT', 'SELECT', 'TEXTAREA' ), true ) || $name !== $processor->get_attribute( 'name' ) ) {
+			return false;
+		}
+		return null === $processor->get_attribute( 'data-dsgo-system' )
+			&& 'hidden' !== strtolower( (string) $processor->get_attribute( 'type' ) );
 	}
 }
