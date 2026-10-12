@@ -34,6 +34,7 @@ export default function FormBuilderSave({ attributes }) {
 		fieldFocusColor,
 		fieldErrorColor,
 		fieldSuccessColor,
+		stepProgressColor,
 		submitButtonColor,
 		submitButtonBackgroundColor,
 		submitButtonPaddingVertical,
@@ -97,6 +98,7 @@ export default function FormBuilderSave({ attributes }) {
 		'--dsgo-form-focus-color': convertColorToCSSVar(fieldFocusColor),
 		'--dsgo-form-error-color': convertColorToCSSVar(fieldErrorColor),
 		'--dsgo-form-success-color': convertColorToCSSVar(fieldSuccessColor),
+		'--dsgo-form-progress-color': convertColorToCSSVar(stepProgressColor),
 		// Button colors now applied as inline styles on button element
 	};
 

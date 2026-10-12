@@ -121,6 +121,25 @@ describe('multi-step form submission', () => {
 			expect(stepEl(2).hidden).toBe(false);
 		});
 
+		it('puts the loading state on the real submit, not on Next', async () => {
+			global.fetch.mockReturnValue(new Promise(() => {}));
+			const form = mount('true');
+			form.elements.name.value = 'Ann';
+			const next = form.querySelector('.dsgo-form-steps__next');
+			next.click();
+			next.click();
+			submit(form);
+			await flush();
+			const real = form.querySelector('.dsgo-form__footer button');
+			expect(global.fetch).toHaveBeenCalled();
+			expect(real.classList.contains('dsgo-form__submit--loading')).toBe(
+				true
+			);
+			expect(next.classList.contains('dsgo-form__submit--loading')).toBe(
+				false
+			);
+		});
+
 		it('after success, scrolls to and focuses the message once step 1 is back', async () => {
 			global.fetch.mockResolvedValue({
 				ok: true,

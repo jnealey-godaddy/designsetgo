@@ -77,6 +77,10 @@
 			"enum": [ "steps", "bar", "none" ],
 			"default": "steps"
 		},
+		"stepProgressColor": {
+		  "type": "string",
+		  "default": ""
+		},
 		"webhookUrl": {
 			"type": "string",
 			"default": ""

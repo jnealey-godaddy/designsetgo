@@ -110,7 +110,10 @@ function initFormBuilder() {
 		);
 
 		const formElement = formContainer.querySelector('.dsgo-form');
-		const submitButton = formElement?.querySelector('.dsgo-form__submit');
+		// [type="submit"]: a multi-step form's Next copies the submit classes.
+		const submitButton = formElement?.querySelector(
+			'.dsgo-form__submit[type="submit"]'
+		);
 		const messageContainer = formElement?.querySelector(
 			'.dsgo-form__message'
 		);
