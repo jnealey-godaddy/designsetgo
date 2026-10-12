@@ -119,14 +119,21 @@ function initFormBuilder() {
 			return;
 		}
 
-		// Add timestamp field dynamically (not in save.js to avoid validation errors)
-		// Set at init time so server can verify user spent >= 3s on page (anti-spam).
+		// Timestamp for the server's "too fast" check (anti-spam). Not in
+		// save.js, to avoid validation errors; the server renders one for
+		// visitors without JavaScript, so reuse it rather than post two.
+		// Set at init time so server can verify user spent >= 3s on page.
 		// Re-set on bfcache restore so stale timestamps don't cause false rejections.
-		const timestampField = document.createElement('input');
-		timestampField.type = 'hidden';
-		timestampField.name = 'dsg_timestamp';
+		let timestampField = formElement.querySelector(
+			'input[name="dsg_timestamp"]'
+		);
+		if (!timestampField) {
+			timestampField = document.createElement('input');
+			timestampField.type = 'hidden';
+			timestampField.name = 'dsg_timestamp';
+			formElement.appendChild(timestampField);
+		}
 		timestampField.value = Date.now();
-		formElement.appendChild(timestampField);
 
 		window.addEventListener('pageshow', function (e) {
 			if (e.persisted) {
@@ -253,23 +260,29 @@ function initFormBuilder() {
 			formElement.action = designsetgoForm.adminPostUrl;
 			formElement.method = 'post';
 
-			let actionField = formElement.querySelector('input[name="action"]');
+			// Only the plugin's own copies (data-dsgo-system): an author's field
+			// may share these names, and its value must be left alone.
+			let actionField = formElement.querySelector(
+				'input[name="action"][data-dsgo-system]'
+			);
 			if (!actionField) {
 				actionField = document.createElement('input');
 				actionField.type = 'hidden';
 				actionField.name = 'action';
+				actionField.setAttribute('data-dsgo-system', '');
 				formElement.appendChild(actionField);
 			}
 			actionField.value = 'designsetgo_form_submit';
 			actionField.defaultValue = actionField.value;
 
 			let nonceField = formElement.querySelector(
-				'input[name="_wpnonce"]'
+				'input[name="_wpnonce"][data-dsgo-system]'
 			);
 			if (!nonceField) {
 				nonceField = document.createElement('input');
 				nonceField.type = 'hidden';
 				nonceField.name = '_wpnonce';
+				nonceField.setAttribute('data-dsgo-system', '');
 				formElement.appendChild(nonceField);
 			}
 			nonceField.value = designsetgoForm.ajaxNonce;
@@ -391,7 +404,18 @@ function initFormBuilder() {
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
+		// A result the server printed for visitors without JavaScript. Shown
+		// again below from the URL (replacing it, so it never appears twice),
+		// or hidden: without the URL params it came from a page cache.
+		const hasServerMessage = messageContainer.hasAttribute(
+			'data-dsgo-server-message'
+		);
+		messageContainer.removeAttribute('data-dsgo-server-message');
+
 		const shownFromRedirect = showRedirectStatus();
+		if (hasServerMessage && !shownFromRedirect) {
+			hideMessage(messageContainer);
+		}
 
 		// Restore confirmation message persisted from a previous submission (one-time)
 		if (!shownFromRedirect) {
@@ -453,8 +477,21 @@ function initFormBuilder() {
 			const originalText = submitButton.textContent;
 			submitButton.setAttribute('aria-busy', 'true');
 
-			// Collect form data
+			// Collect form data, leaving out the admin-post fields rendered for
+			// visitors without JS (data-dsgo-system). They are skipped by
+			// element, not name: an author's own field may be called `action`.
+			const systemFields = Array.from(
+				formElement.querySelectorAll(
+					'[data-dsgo-system]:not([name^="dsg_"]):not(:disabled)'
+				)
+			);
+			systemFields.forEach((el) => {
+				el.disabled = true;
+			});
 			const formData = new FormData(formElement);
+			systemFields.forEach((el) => {
+				el.disabled = false;
+			});
 			const fields = [];
 
 			for (const [name, value] of formData.entries()) {
@@ -469,7 +506,7 @@ function initFormBuilder() {
 				}
 
 				const fieldElement = formElement.querySelector(
-					`[name="${name}"]`
+					`[name="${name}"]:not([data-dsgo-system])`
 				);
 				const fieldType =
 					fieldElement?.getAttribute('data-field-type') ||
