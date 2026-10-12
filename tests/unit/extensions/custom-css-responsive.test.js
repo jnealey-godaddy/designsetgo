@@ -6,19 +6,15 @@ import {
 	joinResponsiveCSS,
 } from '../../../src/extensions/custom-css/responsive';
 
+import fixture from '../../fixtures/custom-css-responsive.json';
+
 // What Responsive_CSS::merge() writes for desktop + tablet + mobile input.
-const SERVER_CSS =
-	'selector { color: red; }\n' +
-	'/* dsgo-css:tablet:start */\n@media (max-width: 1024px) {\nselector { color: green; }\n}\n/* dsgo-css:tablet:end */\n' +
-	'/* dsgo-css:mobile:start */\n@media (max-width: 767px) {\nselector { color: blue; }\n}\n/* dsgo-css:mobile:end */';
+// PHPUnit asserts merge() still produces this exact string.
+const SERVER_CSS = fixture.css;
 
 describe('splitResponsiveCSS', () => {
 	it('reads the sections the configure-custom-css ability writes', () => {
-		expect(splitResponsiveCSS(SERVER_CSS)).toEqual({
-			desktop: 'selector { color: red; }',
-			tablet: 'selector { color: green; }',
-			mobile: 'selector { color: blue; }',
-		});
+		expect(splitResponsiveCSS(SERVER_CSS)).toEqual(fixture.input);
 	});
 
 	it('treats CSS without markers as desktop, unchanged', () => {
@@ -53,13 +49,7 @@ describe('splitResponsiveCSS', () => {
 
 describe('joinResponsiveCSS', () => {
 	it('writes exactly what the server writes', () => {
-		expect(
-			joinResponsiveCSS({
-				desktop: 'selector { color: red; }',
-				tablet: 'selector { color: green; }',
-				mobile: 'selector { color: blue; }',
-			})
-		).toBe(SERVER_CSS);
+		expect(joinResponsiveCSS(fixture.input)).toBe(SERVER_CSS);
 	});
 
 	it('leaves desktop-only CSS byte-identical, so existing class hashes hold', () => {

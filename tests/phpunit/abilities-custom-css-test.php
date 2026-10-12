@@ -216,4 +216,45 @@ class Abilities_Custom_CSS_Test extends WP_UnitTestCase {
 		$this->assertWPError( $this->configure( array( 'desktop' => 'selector { color: red; }' ) ) );
 		$this->assertSame( $before, get_post_field( 'post_content', $this->post_id ) );
 	}
+
+	/**
+	 * The editor's Custom CSS tabs split and join this exact string
+	 * (tests/unit/extensions/custom-css-responsive.test.js reads the same
+	 * fixture). Change the format here and the tabs must change with it.
+	 */
+	public function test_merge_writes_the_string_the_editor_tabs_parse(): void {
+		$fixture = json_decode(
+			(string) file_get_contents( dirname( __DIR__ ) . '/fixtures/custom-css-responsive.json' ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			true
+		);
+
+		$this->assertSame( $fixture['css'], \DesignSetGo\Abilities\Responsive_CSS::merge( '', $fixture['input'] ) );
+		// Re-merging a section the editor wrote leaves it unchanged.
+		$this->assertSame( $fixture['css'], \DesignSetGo\Abilities\Responsive_CSS::merge( $fixture['css'], array( 'tablet' => $fixture['input']['tablet'] ) ) );
+	}
+
+	/** The editor tabs read breakpoints from layout-support.json; the server from the contract. */
+	public function test_breakpoints_match_the_editor_tabs(): void {
+		$support     = json_decode( (string) file_get_contents( DESIGNSETGO_PATH . 'includes/data/layout-support.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$breakpoints = \DesignSetGo\Abilities\Generation_Contract::describe()['breakpoints'];
+
+		$this->assertSame( $support['devices']['tablet'], $breakpoints['tabletMax'] );
+		$this->assertSame( $support['devices']['mobile'], $breakpoints['mobileMax'] );
+	}
+
+	/** Hand-edited markup can store a non-string; the ability treats it as no CSS. */
+	public function test_non_string_stored_css_is_replaced_not_fatal(): void {
+		wp_update_post(
+			array(
+				'ID'           => $this->post_id,
+				'post_content' => '<!-- wp:paragraph {"dsgoCustomCSS":["selector { color: purple; }"]} --><p>Odd</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$result = $this->configure( array( 'desktop' => 'selector { color: red; }' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'selector { color: red; }', $this->css() );
+	}
 }

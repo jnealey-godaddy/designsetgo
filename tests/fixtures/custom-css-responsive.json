@@ -1,0 +1,9 @@
+{
+  "_comment": "What Responsive_CSS::merge() writes for this input, and what the editor's Custom CSS tabs (src/extensions/custom-css/responsive.js) must split and join byte for byte. Pinned by tests/phpunit/abilities-custom-css-test.php and tests/unit/extensions/custom-css-responsive.test.js.",
+  "input": {
+    "desktop": "selector { color: red; }",
+    "tablet": "selector { color: green; }",
+    "mobile": "selector { color: blue; }"
+  },
+  "css": "selector { color: red; }\n/* dsgo-css:tablet:start */\n@media (max-width: 1024px) {\nselector { color: green; }\n}\n/* dsgo-css:tablet:end */\n/* dsgo-css:mobile:start */\n@media (max-width: 767px) {\nselector { color: blue; }\n}\n/* dsgo-css:mobile:end */"
+}
