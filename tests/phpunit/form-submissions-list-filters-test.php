@@ -68,8 +68,8 @@ class Test_Form_Submissions_List_Filters extends WP_UnitTestCase {
 
 		$html = $this->render();
 
-		$this->assertStringContainsString( '<option value="contact">contact (2)</option>', $html );
-		$this->assertStringContainsString( "<option value=\"newsletter\" selected='selected'>newsletter (1)</option>", $html );
+		$this->assertStringContainsString( '<option value="contact">contact — 2</option>', $html );
+		$this->assertStringContainsString( "<option value=\"newsletter\" selected='selected'>newsletter — 1</option>", $html );
 		$this->assertStringContainsString( '<label for="dsgo-from">From date</label>', $html );
 		$this->assertStringContainsString( 'name="' . Form_Submissions_Export::NONCE_NAME . '"', $html );
 		$this->assertStringContainsString( '<button type="submit" name="dsgo_export" value="1" class="button">', $html );
@@ -86,10 +86,33 @@ class Test_Form_Submissions_List_Filters extends WP_UnitTestCase {
 
 	public function test_cached_form_list_refreshes_when_a_submission_arrives() {
 		$this->make_submission( 'contact' );
-		$this->assertStringContainsString( 'contact (1)', $this->render() );
+		$this->assertStringContainsString( 'contact — 1', $this->render() );
 
 		$this->make_submission( 'contact' );
-		$this->assertStringContainsString( 'contact (2)', $this->render() );
+		$this->assertStringContainsString( 'contact — 2', $this->render() );
+	}
+
+	public function test_options_name_the_page_the_latest_submission_came_from() {
+		$old_page = self::factory()->post->create( array( 'post_type' => 'page', 'post_title' => 'Old contact page' ) );
+		$page     = self::factory()->post->create( array( 'post_type' => 'page', 'post_title' => 'Contact us' ) );
+		update_post_meta( $this->make_submission( 'contact' ), '_dsg_submission_referer', get_permalink( $old_page ) );
+		update_post_meta( $this->make_submission( 'contact' ), '_dsg_submission_referer', get_permalink( $page ) );
+		$this->make_submission( 'orphan' );
+
+		$html = $this->render();
+
+		$this->assertStringContainsString( '<option value="contact">Contact us (contact) — 2</option>', $html );
+		$this->assertStringContainsString( '<option value="orphan">orphan — 1</option>', $html );
+	}
+
+	public function test_page_titles_are_escaped() {
+		$page = self::factory()->post->create( array( 'post_type' => 'page', 'post_title' => 'Hi <img src=x onerror=alert(1)> & co' ) );
+		update_post_meta( $this->make_submission( 'contact' ), '_dsg_submission_referer', get_permalink( $page ) );
+
+		$html = $this->render();
+
+		$this->assertStringNotContainsString( '<img', $html );
+		$this->assertStringContainsString( '(contact) — 1</option>', $html );
 	}
 
 	public function test_filters_apply_to_the_admin_main_submissions_query() {
