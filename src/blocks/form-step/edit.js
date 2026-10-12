@@ -8,9 +8,13 @@
  * @since 2.10.0
  */
 
+import classnames from 'classnames';
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseColorProps as useColorProps,
+	getTypographyClassesAndStyles,
 	useInnerBlocksProps,
 	InnerBlocks,
 	RichText,
@@ -36,6 +40,10 @@ export default function FormStepEdit({ attributes, setAttributes, clientId }) {
 	);
 
 	const blockProps = useBlockProps({ className: 'dsgo-form-step' });
+	// Colour and typography skip serialization on the wrapper and style the
+	// title instead, as render.php does with designsetgo_route_visual_supports().
+	const colorProps = useColorProps(attributes);
+	const typographyProps = getTypographyClassesAndStyles(attributes);
 	const innerBlocksProps = useInnerBlocksProps(
 		{ className: 'dsgo-form-step__fields' },
 		{
@@ -72,7 +80,15 @@ export default function FormStepEdit({ attributes, setAttributes, clientId }) {
 					</span>
 					<RichText
 						tagName="h3"
-						className="dsgo-form-step__title"
+						className={classnames(
+							'dsgo-form-step__title',
+							colorProps.className,
+							typographyProps.className
+						)}
+						style={{
+							...colorProps.style,
+							...typographyProps.style,
+						}}
 						value={title}
 						onChange={(value) => setAttributes({ title: value })}
 						placeholder={__('Step title', 'designsetgo')}
