@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Typing into an empty Custom CSS box no longer remounts the block on the first keystroke. `withCustomCSSClassAndStyles` swapped `<BlockListBlock>` for a lazy `<Suspense><CustomCSSStyles>` wrapper once `dsgoCustomCSS` was set, so focus left the textarea, only the first character was stored, and the rest of the typing landed in the block's content. The wrapper now lives in an eagerly loaded `styles.js` and renders for every supported block; only the panel stays lazy. Layout overrides' `withLayoutStyles` had the same switch (the Viewport select reset to Desktop after the first override, and multi-character values were cut to their first character) and now always renders `StyledBlock`. `tests/unit/extensions/blocklistblock-stable-wrapper.test.js` pins both.
+- A no-JS retry no longer stores the previous result's `dsgo_form_*` query args in the submission's Source URL.
 - Form submissions CSV export labels a failed notification email "Failed", as the submissions list does, instead of "Not sent".
 - `dsgoCustomCSS` values that aren't strings (hand-edited markup) are skipped by the renderer and the configure-custom-css ability instead of warning "Array to string conversion" or throwing a `TypeError`.
 

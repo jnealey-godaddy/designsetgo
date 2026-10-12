@@ -117,6 +117,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **New:** Custom CSS has Desktop, Tablet and Mobile tabs. Tablet CSS applies at 1024px wide and below, and Mobile CSS at 767px and below.
 * **Security:** Form email logs no longer record recipient addresses or subjects, and Map error logs no longer record the address you entered. Both can contain personal details.
 * **Improved:** Grids set to two or more columns on mobile now keep the column spans you set, instead of forcing every item to one column. Check those Grids on a phone after updating. Single-column mobile Grids still stack as before, and a Grid with Align Rows on still gives each card one column so their rows line up.
+* **Fix:** Typing into a block's empty Custom CSS box no longer jumps out of the box after the first letter. Before, only that letter was kept as CSS and the rest of what you typed went into the block's own text.
 * **Fix:** Screen readers no longer announce the decorative drawing in Icon, Icon List and Icon Button blocks on top of their label.
 * **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost. If a submission fails, the visitor's answers stay filled in and the message says what to fix, such as a required field left empty.
 * **Fix:** Hotspot markers in the editor now sit exactly where they appear on your site. Before, every marker after the first was shown lower than its real position.
