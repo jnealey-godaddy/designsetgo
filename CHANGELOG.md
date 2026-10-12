@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Form Builder**: optional email delivery logs now omit recipient addresses and email subjects, which can contain personal information. Logs retain delivery status and submission ID for troubleshooting.
+- **Map**: failed geocoding warnings no longer include the configured address, which may be a personal location. The warning retains the failure diagnostic and maps continue to use fallback coordinates.
+
 ### Upgrade Notes
 
 - Check mobile layouts on existing Grids configured with two or more mobile columns. Saved column spans now remain in effect, capped at the available columns, instead of every child being forced to one column. A child spanning two columns in a two-column mobile Grid now fills the row. Single-column mobile Grids continue to stack.

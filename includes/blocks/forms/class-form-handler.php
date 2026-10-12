@@ -1215,18 +1215,16 @@ class Form_Handler {
 		update_post_meta( $submission_id, '_dsg_email_to', $email_to );
 		update_post_meta( $submission_id, '_dsg_email_sent_date', current_time( 'mysql' ) );
 
-		// Log email delivery if enabled in settings.
+		// Log delivery status only; recipients and subjects may contain personal data.
 		$form_settings        = $this->get_form_settings();
 		$enable_email_logging = isset( $form_settings['enable_email_logging'] ) ? $form_settings['enable_email_logging'] : false;
 
 		if ( $enable_email_logging ) {
 			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional logging when enabled in settings.
 				sprintf(
-					'DesignSetGo Form: Email %s for submission #%d (To: %s, Subject: %s)',
+					'DesignSetGo Form: Email %s for submission #%d',
 					$email_sent ? 'sent successfully' : 'FAILED to send',
-					$submission_id,
-					$email_to,
-					$email_subject
+					$submission_id
 				)
 			);
 		}

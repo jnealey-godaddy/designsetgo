@@ -130,6 +130,15 @@ npm run security:audit   # Check for vulnerabilities and license issues
 npm run plugin-zip
 ```
 
+To run PHP tests in wp-env, use these commands to rebuild the plugin and run the suite:
+
+```bash
+npm run build
+npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+```
+
+WordPress registers blocks from `build/`, including their metadata and PHP render files. A stale build can cause missing attributes, undefined functions, and fixture mismatches even when the source is current.
+
 ## Current Features
 
 ### 57 Custom Blocks
