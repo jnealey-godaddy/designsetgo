@@ -93,6 +93,27 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 		$this->assertNotContains( '198.51.100.7', $rows[1], 'IP is excluded by default.' );
 	}
 
+	/**
+	 * The CSV uses the submission screen's words: a failed wp_mail() is "Failed".
+	 */
+	public function test_email_status_matches_the_submissions_list() {
+		$fields = array( 'a' => array( 'value' => '1', 'type' => 'text', 'label' => 'A' ) );
+		$this->make_submission( 'f9', '2026-10-01 10:00:00', $fields, array( '_dsg_email_sent' => 'yes' ) );
+		$this->make_submission( 'f9', '2026-10-02 10:00:00', $fields, array( '_dsg_email_sent' => 'no' ) );
+		$this->make_submission( 'f9', '2026-10-03 10:00:00', $fields );
+
+		$rows   = $this->export_rows( array( 'form_id' => 'f9' ) );
+		$column = array_search( 'Email status', $rows[0], true );
+		$this->assertNotFalse( $column );
+		$by_date = array();
+		foreach ( array_slice( $rows, 1 ) as $row ) {
+			$by_date[ substr( $row[1], 0, 10 ) ] = $row[ $column ];
+		}
+		$this->assertSame( 'Sent', $by_date['2026-10-01'] );
+		$this->assertSame( 'Failed', $by_date['2026-10-02'] );
+		$this->assertSame( '', $by_date['2026-10-03'], 'No email configured.' );
+	}
+
 	public function test_union_of_fields_across_changed_form_latest_label_wins() {
 		$this->make_submission( 'f2', '2026-10-01 10:00:00', array( 'a' => array( 'value' => '1', 'type' => 'text', 'label' => 'Old A' ) ) );
 		$this->make_submission( 'f2', '2026-10-02 10:00:00', array( 'a' => array( 'value' => '2', 'type' => 'text', 'label' => 'New A' ), 'b' => array( 'value' => 'B', 'type' => 'text', 'label' => 'B' ) ) );

@@ -94,7 +94,8 @@ class Form_Submissions_Export_Columns {
 				if ( '' === $sent ) {
 					return '';
 				}
-				return 'yes' === $sent ? __( 'Sent', 'designsetgo' ) : __( 'Not sent', 'designsetgo' );
+				// Same words as the submissions list: 'no' means wp_mail() failed.
+				return 'yes' === $sent ? __( 'Sent', 'designsetgo' ) : __( 'Failed', 'designsetgo' );
 			case 'webhook_status':
 				return Form_Webhook_Status::label( $id );
 			case 'ip':
