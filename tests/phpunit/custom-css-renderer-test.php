@@ -227,6 +227,25 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A non-string attribute (hand-edited markup) is skipped without a
+	 * "Array to string conversion" warning.
+	 */
+	public function test_collect_custom_css_ignores_non_string_value() {
+		$block_content = '<div class="wp-block-test">Test</div>';
+		$block         = array(
+			'blockName' => 'designsetgo/test',
+			'attrs'     => array( 'dsgoCustomCSS' => array( 'desktop' => 'selector{color:red}' ) ),
+		);
+
+		$result = $this->renderer->collect_custom_css( $block_content, $block );
+
+		$this->assertSame( $block_content, $result );
+		ob_start();
+		$this->renderer->render_custom_css();
+		$this->assertEmpty( ob_get_clean() );
+	}
+
+	/**
 	 * Test that a malicious custom_css_output filter cannot inject markup.
 	 *
 	 * The filter runs after per-block sanitization, so its result is re-stripped

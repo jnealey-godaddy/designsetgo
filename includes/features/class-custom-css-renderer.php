@@ -103,7 +103,10 @@ class Custom_CSS_Renderer {
 	 */
 	public function collect_custom_css( $block_content, $block ) {
 		// Check if block has custom CSS attribute and a valid block name.
-		if ( isset( $block['attrs']['dsgoCustomCSS'] ) && ! empty( $block['attrs']['dsgoCustomCSS'] ) && isset( $block['blockName'] ) ) {
+		// The attribute is a string. Anything else (hand-edited or imported
+		// markup) is ignored rather than cast, which warned "Array to string
+		// conversion" on every page view.
+		if ( isset( $block['attrs']['dsgoCustomCSS'] ) && is_string( $block['attrs']['dsgoCustomCSS'] ) && '' !== $block['attrs']['dsgoCustomCSS'] && isset( $block['blockName'] ) ) {
 			$custom_css = $block['attrs']['dsgoCustomCSS'];
 
 			/**

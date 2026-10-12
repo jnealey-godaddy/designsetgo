@@ -163,7 +163,10 @@ class Configure_Custom_CSS extends Abstract_Ability {
 			$post_id,
 			$block_name,
 			static function ( $existing ) use ( $css ) {
-				return array( 'dsgoCustomCSS' => Responsive_CSS::merge( $existing['dsgoCustomCSS'] ?? '', $css ) );
+				// A non-string stored value (hand-edited markup) would be a
+				// TypeError in merge(); treat it as no existing CSS.
+				$current = isset( $existing['dsgoCustomCSS'] ) && is_string( $existing['dsgoCustomCSS'] ) ? $existing['dsgoCustomCSS'] : '';
+				return array( 'dsgoCustomCSS' => Responsive_CSS::merge( $current, $css ) );
 			},
 			$block_client_id,
 			$update_all
