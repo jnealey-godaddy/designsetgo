@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Improved
+
+- **Multi-step form styling.** Next is built from the form's submit button (classes and inline style), so it follows the submit colours, sizes, `is-style-*` variation, hover animation and Global Styles / Style Kit `.dsgo-form__submit` rules; it stays `type="button"`, and `view.js` now finds the submit with `.dsgo-form__submit[type="submit"]`. The footer moves into `.dsgo-form-steps__nav`, so Submit takes Next's place on the last step (stacked full width on phones). New `stepProgressColor` attribute (Color panel → Progress Color) writes `--dsgo-form-progress-color`, used by the active/completed step markers and the bar; unset, they keep `currentcolor`. `designsetgo/form-step` gains text colour and typography supports, routed to `.dsgo-form-step__title` (render.php via `designsetgo_route_visual_supports()`, `selectors` for Global Styles). Back inherits the form font and has a 44px target. Step styles stay zero-specificity `:where()` rules.
+- **Icon Button accessibility.** The lazy icon injector marks an Icon Button's SVG `aria-hidden` when the button is named by its text or `aria-label`.
+
+### Fixed
+
+- Form submissions CSV export labels a failed notification email "Failed", as the submissions list does, instead of "Not sent".
+
 ### Security
 
 - **Form Builder**: optional email delivery logs now omit recipient addresses and email subjects, which can contain personal information. Logs retain delivery status and submission ID for troubleshooting.
