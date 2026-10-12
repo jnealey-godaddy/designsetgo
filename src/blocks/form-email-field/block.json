@@ -15,7 +15,8 @@
 	"textdomain": "designsetgo",
 	"icon": "email-alt",
 	"parent": [
-		"designsetgo/form-builder"
+		"designsetgo/form-builder",
+		"designsetgo/form-step"
 	],
 	"attributes": {
 		"dsgoConditions": {

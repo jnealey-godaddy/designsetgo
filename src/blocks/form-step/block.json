@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/form-step",
+  "version": "1.0.0",
+  "title": "Form Step",
+  "category": "designsetgo",
+  "parent": ["designsetgo/form-builder"],
+  "description": "A step of a multi-step form.",
+  "keywords": ["form", "step", "wizard", "page"],
+  "textdomain": "designsetgo",
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "reusable": false
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

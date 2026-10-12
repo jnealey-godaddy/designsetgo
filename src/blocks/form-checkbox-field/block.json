@@ -14,7 +14,8 @@
 		"agree"
 	],
 	"parent": [
-		"designsetgo/form-builder"
+		"designsetgo/form-builder",
+		"designsetgo/form-step"
 	],
 	"textdomain": "designsetgo",
 	"icon": "yes-alt",

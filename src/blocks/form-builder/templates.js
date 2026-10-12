@@ -205,4 +205,55 @@ export const formBuilderTemplates = [
 			],
 		],
 	},
+	{
+		name: 'multi-step',
+		title: __('Multi-step', 'designsetgo'),
+		description: __(
+			'Split into steps: details first, then the message',
+			'designsetgo'
+		),
+		icon: 'list-view',
+		attributes: {
+			submitButtonText: __('Send', 'designsetgo'),
+			emailReplyTo: 'email',
+		},
+		innerBlocks: [
+			[
+				'designsetgo/form-step',
+				{ title: __('Your details', 'designsetgo') },
+				[
+					[
+						'designsetgo/form-text-field',
+						{
+							label: __('Name', 'designsetgo'),
+							fieldName: 'name',
+							required: true,
+						},
+					],
+					[
+						'designsetgo/form-email-field',
+						{
+							label: __('Email', 'designsetgo'),
+							fieldName: 'email',
+							required: true,
+						},
+					],
+				],
+			],
+			[
+				'designsetgo/form-step',
+				{ title: __('Your message', 'designsetgo') },
+				[
+					[
+						'designsetgo/form-textarea-field',
+						{
+							label: __('Message', 'designsetgo'),
+							fieldName: 'message',
+							required: true,
+						},
+					],
+				],
+			],
+		],
+	},
 ];

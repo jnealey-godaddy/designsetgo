@@ -38,25 +38,14 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
 import TurnstileSettings from './components/TurnstileSettings';
+import StepsSettings from './components/StepsSettings';
+import { FORM_FIELD_BLOCKS } from './utils/field-blocks';
+import { collectFormFields } from './utils/use-form-fields';
+import { hasStepChildren, STEP_BLOCK } from './utils/steps';
 
 // Non-default submitButtonVariation values from block.json. Allowlisted before
 // interpolation into the class name. MUST MATCH save.js.
 const SUBMIT_BUTTON_VARIATIONS = ['secondary', 'outline'];
-
-// Blocks that Gutenberg identifies as form fields for the reply-to dropdown.
-const EMAILABLE_FIELD_BLOCKS = new Set([
-	'designsetgo/form-text-field',
-	'designsetgo/form-email-field',
-	'designsetgo/form-textarea-field',
-	'designsetgo/form-number-field',
-	'designsetgo/form-phone-field',
-	'designsetgo/form-url-field',
-	'designsetgo/form-date-field',
-	'designsetgo/form-time-field',
-	'designsetgo/form-select-field',
-	'designsetgo/form-checkbox-field',
-	'designsetgo/form-hidden-field',
-]);
 
 export default function FormBuilderEdit({
 	attributes,
@@ -169,15 +158,14 @@ export default function FormBuilderEdit({
 		[clientId]
 	);
 	const hasInnerBlocks = childBlocks.length > 0;
+	const hasSteps = hasStepChildren(childBlocks);
+	// collectFormFields walks into steps; every type it knows is emailable.
 	const replyToFieldOptions = useMemo(
 		() =>
-			childBlocks
-				.filter((child) => EMAILABLE_FIELD_BLOCKS.has(child.name))
-				.map((child) => ({
-					name: child.attributes?.fieldName || '',
-					label: child.attributes?.label || '',
-				}))
-				.filter((field) => !!field.name),
+			collectFormFields(childBlocks, null).map(({ name, label }) => ({
+				name,
+				label,
+			})),
 		[childBlocks]
 	);
 
@@ -261,19 +249,7 @@ export default function FormBuilderEdit({
 				className: 'dsgo-form__fields',
 			},
 			{
-				allowedBlocks: [
-					'designsetgo/form-text-field',
-					'designsetgo/form-email-field',
-					'designsetgo/form-textarea-field',
-					'designsetgo/form-number-field',
-					'designsetgo/form-phone-field',
-					'designsetgo/form-url-field',
-					'designsetgo/form-date-field',
-					'designsetgo/form-time-field',
-					'designsetgo/form-select-field',
-					'designsetgo/form-checkbox-field',
-					'designsetgo/form-hidden-field',
-				],
+				allowedBlocks: hasSteps ? [STEP_BLOCK] : FORM_FIELD_BLOCKS,
 				orientation: 'vertical',
 			}
 		);
@@ -299,6 +275,7 @@ export default function FormBuilderEdit({
 					panelId={clientId}
 					resetAll={() =>
 						setAttributes({
+							stepProgress: 'steps',
 							submitButtonText: 'Submit',
 							submitButtonAlignment: 'left',
 							submitButtonPosition: 'below',
@@ -333,6 +310,13 @@ export default function FormBuilderEdit({
 						})
 					}
 				>
+					<StepsSettings
+						clientId={clientId}
+						childBlocks={childBlocks}
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+
 					<DsgoInspectorPanel.Item
 						label={__('AJAX Submit', 'designsetgo')}
 						hasValue={() => ajaxSubmit !== true}
@@ -372,41 +356,48 @@ export default function FormBuilderEdit({
 						/>
 					</DsgoInspectorPanel.Item>
 
-					<DsgoInspectorPanel.Item
-						label={__('Button Position', 'designsetgo')}
-						hasValue={() => submitButtonPosition !== 'below'}
-						onDeselect={() =>
-							setAttributes({ submitButtonPosition: 'below' })
-						}
-						isShownByDefault
-					>
-						<SelectControl
+					{!hasSteps && (
+						<DsgoInspectorPanel.Item
 							label={__('Button Position', 'designsetgo')}
-							value={submitButtonPosition}
-							options={[
-								{
-									label: __('Below fields', 'designsetgo'),
-									value: 'below',
-								},
-								{
-									label: __(
-										'Inline with last field',
-										'designsetgo'
-									),
-									value: 'inline',
-								},
-							]}
-							onChange={(value) =>
-								setAttributes({ submitButtonPosition: value })
+							hasValue={() => submitButtonPosition !== 'below'}
+							onDeselect={() =>
+								setAttributes({ submitButtonPosition: 'below' })
 							}
-							help={__(
-								'Place button below all fields or inline with the last field (useful for subscribe forms)',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</DsgoInspectorPanel.Item>
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Button Position', 'designsetgo')}
+								value={submitButtonPosition}
+								options={[
+									{
+										label: __(
+											'Below fields',
+											'designsetgo'
+										),
+										value: 'below',
+									},
+									{
+										label: __(
+											'Inline with last field',
+											'designsetgo'
+										),
+										value: 'inline',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({
+										submitButtonPosition: value,
+									})
+								}
+								help={__(
+									'Place button below all fields or inline with the last field (useful for subscribe forms)',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
 					<DsgoInspectorPanel.Item
 						label={__('Button Style', 'designsetgo')}
@@ -1386,7 +1377,7 @@ export default function FormBuilderEdit({
 			<div {...blockProps}>
 				<div {...innerBlocksPropsWithoutChildren}>
 					{children}
-					{submitButtonPosition === 'inline' && (
+					{submitButtonPosition === 'inline' && !hasSteps && (
 						<button
 							type="button"
 							className={`dsgo-form__submit dsgo-form__submit--inline${submitVariationClass} wp-element-button${submitAnimationClass}`}
@@ -1398,7 +1389,7 @@ export default function FormBuilderEdit({
 					)}
 				</div>
 
-				{submitButtonPosition === 'below' && (
+				{(submitButtonPosition === 'below' || hasSteps) && (
 					<div className="dsgo-form__footer">
 						<button
 							type="button"

@@ -8,6 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { initFormConditions } from './conditions-dom';
+import { initFormSteps } from './steps-dom';
 
 /* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
@@ -96,6 +97,14 @@ function initFormBuilder() {
 		// Conditional fields first, so they're correct before anything else
 		// (and the ready flag the CSS waits for is always set).
 		initFormConditions(
+			formContainer,
+			formContainer.querySelector('.dsgo-form')
+		);
+
+		// Steps next: they read the conditions' field visibility. Must run
+		// before the early return below so the ready flag is always set.
+		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
+		const steps = initFormSteps(
 			formContainer,
 			formContainer.querySelector('.dsgo-form')
 		);
@@ -401,6 +410,16 @@ function initFormBuilder() {
 		if (!ajaxEnabled) {
 			ensureNativePostFields();
 
+			// Multi-step: Enter on an earlier step advances instead of posting
+			// the whole form, and an invalid field on another step is shown there.
+			if (steps.isMultiStep) {
+				formElement.addEventListener('submit', (e) => {
+					if (!steps.beforeSubmit()) {
+						e.preventDefault();
+					}
+				});
+			}
+
 			return;
 		}
 
@@ -415,6 +434,12 @@ function initFormBuilder() {
 			// Clear previous messages and any persisted confirmation state
 			hideMessage(messageContainer);
 			clearConfirmation();
+
+			// Multi-step: Enter on an earlier step advances instead of
+			// submitting, and an invalid field on another step is shown there.
+			if (!steps.beforeSubmit()) {
+				return;
+			}
 
 			// Validate form using HTML5 validation
 			if (!formElement.checkValidity()) {
@@ -656,11 +681,32 @@ function initFormBuilder() {
 					}
 
 					// Scroll to message if not visible
-					if (!isElementInViewport(messageContainer)) {
-						messageContainer.scrollIntoView({
-							behavior: 'smooth',
-							block: 'nearest',
-						});
+					const revealMessage = () => {
+						if (!isElementInViewport(messageContainer)) {
+							messageContainer.scrollIntoView({
+								behavior: 'smooth',
+								block: 'nearest',
+							});
+						}
+					};
+					if (steps.isMultiStep) {
+						// reset() sends the steps back to step 1 on a timer, and
+						// hides the focused submit button. Measure and scroll
+						// after that, with focus on the message.
+						setTimeout(() => {
+							if (!messageContainer.hasAttribute('tabindex')) {
+								messageContainer.setAttribute('tabindex', '-1');
+							}
+							// Focus reads the message itself, so silence the
+							// duplicate announcement copy inside it.
+							messageContainer
+								.querySelector('.screen-reader-text')
+								?.setAttribute('aria-hidden', 'true');
+							messageContainer.focus({ preventScroll: true });
+							revealMessage();
+						}, 0);
+					} else {
+						revealMessage();
 					}
 				} else {
 					throw new Error(result.message || errorMessage);

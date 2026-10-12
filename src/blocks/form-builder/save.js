@@ -45,6 +45,7 @@ export default function FormBuilderSave({ attributes }) {
 		enableHoneypot,
 		enableTurnstile,
 		redirectUrl,
+		stepProgress,
 	} = attributes;
 
 	// If the author never picked a template (so the form has no fields),
@@ -143,6 +144,11 @@ export default function FormBuilderSave({ attributes }) {
 		}),
 		...(redirectUrl && {
 			'data-redirect-url': redirectUrl,
+		}),
+		// Multi-step progress style. Only non-default values are written, so
+		// forms without steps (and default ones) serialize byte-identically.
+		...(['bar', 'none'].includes(stepProgress) && {
+			'data-dsgo-step-progress': stepProgress,
 		}),
 	});
 

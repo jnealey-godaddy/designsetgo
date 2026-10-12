@@ -122,6 +122,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
 * **Improved:** The submission details screen now shows each field's label alongside its field name.
 * **New:** Form fields can show or hide based on other answers ("Show Company name when Customer type is Business"). Set it under a field's Settings → Conditional logic. Hidden fields are skipped when the form is submitted, even if they're required.
+* **New:** Multi-step forms. Use "Split into steps" in a form's Settings (or the Multi-step template) to show long forms one step at a time with Next / Back and a progress indicator. Steps whose fields are all hidden by conditional logic are skipped. Without JavaScript the form shows as one page.
 
 = 2.9.0 - 2026-09-29 =
 
