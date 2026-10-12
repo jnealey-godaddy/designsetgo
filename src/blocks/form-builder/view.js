@@ -260,23 +260,29 @@ function initFormBuilder() {
 			formElement.action = designsetgoForm.adminPostUrl;
 			formElement.method = 'post';
 
-			let actionField = formElement.querySelector('input[name="action"]');
+			// Only the plugin's own copies (data-dsgo-system): an author's field
+			// may share these names, and its value must be left alone.
+			let actionField = formElement.querySelector(
+				'input[name="action"][data-dsgo-system]'
+			);
 			if (!actionField) {
 				actionField = document.createElement('input');
 				actionField.type = 'hidden';
 				actionField.name = 'action';
+				actionField.setAttribute('data-dsgo-system', '');
 				formElement.appendChild(actionField);
 			}
 			actionField.value = 'designsetgo_form_submit';
 			actionField.defaultValue = actionField.value;
 
 			let nonceField = formElement.querySelector(
-				'input[name="_wpnonce"]'
+				'input[name="_wpnonce"][data-dsgo-system]'
 			);
 			if (!nonceField) {
 				nonceField = document.createElement('input');
 				nonceField.type = 'hidden';
 				nonceField.name = '_wpnonce';
+				nonceField.setAttribute('data-dsgo-system', '');
 				formElement.appendChild(nonceField);
 			}
 			nonceField.value = designsetgoForm.ajaxNonce;
@@ -471,26 +477,36 @@ function initFormBuilder() {
 			const originalText = submitButton.textContent;
 			submitButton.setAttribute('aria-busy', 'true');
 
-			// Collect form data
+			// Collect form data, leaving out the admin-post fields rendered for
+			// visitors without JS (data-dsgo-system). They are skipped by
+			// element, not name: an author's own field may be called `action`.
+			const systemFields = Array.from(
+				formElement.querySelectorAll(
+					'[data-dsgo-system]:not([name^="dsg_"]):not(:disabled)'
+				)
+			);
+			systemFields.forEach((el) => {
+				el.disabled = true;
+			});
 			const formData = new FormData(formElement);
+			systemFields.forEach((el) => {
+				el.disabled = false;
+			});
 			const fields = [];
 
 			for (const [name, value] of formData.entries()) {
-				// Skip honeypot and system fields (`action` and `_wpnonce` are
-				// the admin-post fields rendered for visitors without JS)
+				// Skip honeypot and system fields
 				if (
 					name === 'dsg_website' ||
 					name === 'dsg_form_id' ||
 					name === 'dsg_timestamp' ||
-					name === 'dsg_turnstile_token' ||
-					name === 'action' ||
-					name === '_wpnonce'
+					name === 'dsg_turnstile_token'
 				) {
 					continue;
 				}
 
 				const fieldElement = formElement.querySelector(
-					`[name="${name}"]`
+					`[name="${name}"]:not([data-dsgo-system])`
 				);
 				const fieldType =
 					fieldElement?.getAttribute('data-field-type') ||

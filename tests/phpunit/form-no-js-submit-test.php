@@ -214,6 +214,24 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An author's field named like an admin-post field neither suppresses the
+	 * plugin's own copy nor is mistaken for it.
+	 */
+	public function test_author_field_named_action_does_not_replace_the_handler_field() {
+		$markup = '<div class="dsgo-form-builder" data-form-id="nojs-author"><form class="dsgo-form" method="post">'
+			. '<input type="hidden" name="action" value="crm-route"/><input type="text" name="_wpnonce" value="mine"/>'
+			. '</form></div>';
+		$html   = apply_filters( 'render_block_designsetgo/form-builder', $markup, array() );
+
+		$this->assertSame( array( 'crm-route', Form_No_JS_Submit::ACTION ), $this->input_values( $html, 'action' ), 'Ours comes last, so PHP routes on it.' );
+		$this->assertCount( 2, $this->input_values( $html, '_wpnonce' ) );
+
+		$xpath = $this->xpath( $html );
+		$this->assertSame( 3, $xpath->query( '//input[@data-dsgo-system]' )->length, 'action, _wpnonce and dsg_timestamp are marked as ours.' );
+		$this->assertSame( 0, $xpath->query( '//input[@value="crm-route"][@data-dsgo-system]' )->length );
+	}
+
+	/**
 	 * Fields already in the markup are not added again.
 	 */
 	public function test_fields_are_not_duplicated_when_rendered_twice() {

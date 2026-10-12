@@ -11,13 +11,14 @@
 const VIEW = '../../../src/blocks/form-builder/view.js';
 const SERVER_TIMESTAMP = '1000000000000';
 
-function mountForm({ ajax = true, message = '' } = {}) {
+function mountForm({ ajax = true, message = '', authorField = '' } = {}) {
 	document.body.insertAdjacentHTML(
 		'afterbegin',
 		`<div class="dsgo-form-builder" data-form-id="contact" data-ajax-submit="${ajax}" data-success-message="Thanks!" data-error-message="Nope.">
 			<form class="dsgo-form" action="/wp-admin/admin-post.php" method="post" novalidate>
 				<div class="dsgo-form__fields">
 					<input type="text" name="your_name" value="Pat" data-field-type="text" />
+					${authorField}
 				</div>
 				<input type="text" name="dsg_website" value="" />
 				<input type="hidden" name="dsg_form_id" value="contact" />
@@ -26,9 +27,9 @@ function mountForm({ ajax = true, message = '' } = {}) {
 					message ||
 					'<div class="dsgo-form__message" role="status" aria-live="polite" aria-atomic="true" style="display:none"></div>'
 				}
-				<input type="hidden" name="action" value="designsetgo_form_submit" />
-				<input type="hidden" name="_wpnonce" value="servernonce" />
-				<input type="hidden" name="dsg_timestamp" value="${SERVER_TIMESTAMP}" />
+				<input type="hidden" name="action" value="designsetgo_form_submit" data-dsgo-system />
+				<input type="hidden" name="_wpnonce" value="servernonce" data-dsgo-system />
+				<input type="hidden" name="dsg_timestamp" value="${SERVER_TIMESTAMP}" data-dsgo-system />
 			</form>
 		</div>`
 	);
@@ -115,6 +116,49 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		expect(Number(body.timestamp)).toBeGreaterThan(
 			Number(SERVER_TIMESTAMP)
 		);
+	});
+
+	it("submits an author's own field named action over AJAX", async () => {
+		const form = mountForm({
+			ajax: true,
+			authorField:
+				'<input type="hidden" name="action" value="crm-route" data-field-type="hidden" />',
+		});
+		init();
+
+		form.dispatchEvent(
+			new Event('submit', { bubbles: true, cancelable: true })
+		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+		expect(body.fields).toEqual([
+			{ name: 'your_name', value: 'Pat', type: 'text' },
+			{ name: 'action', value: 'crm-route', type: 'hidden' },
+		]);
+		expect(Number(body.timestamp)).toBeGreaterThan(
+			Number(SERVER_TIMESTAMP)
+		);
+		// The rendered admin-post fields are enabled again afterwards.
+		expect(
+			form.querySelector('[name="action"][data-dsgo-system]').disabled
+		).toBe(false);
+	});
+
+	it("leaves an author's field named action alone on the native path", () => {
+		const form = mountForm({
+			ajax: false,
+			authorField:
+				'<input type="hidden" name="action" value="crm-route" data-field-type="hidden" />',
+		});
+		init();
+
+		expect(
+			form.querySelector('[name="action"]:not([data-dsgo-system])').value
+		).toBe('crm-route');
+		expect(
+			form.querySelectorAll('[name="action"][data-dsgo-system]')
+		).toHaveLength(1);
 	});
 
 	it('shows a server-printed result once when the URL carries it', () => {

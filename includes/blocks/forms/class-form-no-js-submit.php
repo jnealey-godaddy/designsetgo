@@ -87,16 +87,21 @@ class Form_No_JS_Submit {
 
 		// Never add a field the markup already carries (a second pass of this
 		// filter, or a field someone else injected): duplicate names post twice.
+		// Only our own copies count for `action` and `_wpnonce`: an author's
+		// field may share those names, and is a value to submit, not ours.
 		$present = array();
 		while ( $processor->next_tag( array( 'tag_name' => 'INPUT' ) ) ) {
-			$present[ self::attribute( $processor, 'name' ) ] = true;
+			$name = self::attribute( $processor, 'name' );
+			if ( 0 === strpos( $name, 'dsg_' ) || null !== $processor->get_attribute( 'data-dsgo-system' ) ) {
+				$present[ $name ] = true;
+			}
 		}
 
 		$html   = $processor->get_updated_html();
 		$hidden = '';
 		foreach ( $this->hidden_fields() as $name => $value ) {
 			if ( ! isset( $present[ $name ] ) ) {
-				$hidden .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '"/>';
+				$hidden .= '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '" data-dsgo-system/>';
 			}
 		}
 
