@@ -42,11 +42,10 @@ class Form_Submissions_List_Filters {
 		echo '<select name="dsgo_form" id="dsgo-form-filter"><option value="">' . esc_html__( 'All forms', 'designsetgo' ) . '</option>';
 		foreach ( $forms as $form ) {
 			printf(
-				'<option value="%1$s"%2$s>%3$s (%4$d)</option>',
+				'<option value="%1$s"%2$s>%3$s</option>',
 				esc_attr( $form->form_id ),
 				selected( $current['form_id'], $form->form_id, false ),
-				esc_html( $form->form_id ),
-				(int) $form->total
+				esc_html( self::option_label( $form ) )
 			);
 		}
 		echo '</select>';
@@ -64,15 +63,58 @@ class Form_Submissions_List_Filters {
 	}
 
 	/**
-	 * Form IDs with their submission counts. Cached until any post or post
-	 * meta changes (core bumps the `posts` last-changed stamp for both).
+	 * "Contact (b4ae2351) — 4" when the form's page is known, else "b4ae2351 — 4".
 	 *
-	 * @return object[] Rows with form_id and total.
+	 * Form IDs alone are opaque, and two pages can hold forms with the same
+	 * title, so the ID stays in the label.
+	 *
+	 * @param object $form Row from forms().
+	 * @return string Option label.
+	 */
+	private static function option_label( $form ): string {
+		if ( '' !== $form->page_title ) {
+			return sprintf(
+				/* translators: 1: page title, 2: form ID, 3: number of submissions. */
+				__( '%1$s (%2$s) — %3$d', 'designsetgo' ),
+				$form->page_title,
+				$form->form_id,
+				(int) $form->total
+			);
+		}
+		return sprintf(
+			/* translators: 1: form ID, 2: number of submissions. */
+			__( '%1$s — %2$d', 'designsetgo' ),
+			$form->form_id,
+			(int) $form->total
+		);
+	}
+
+	/**
+	 * Title of the page a submission came from, or '' when it can't be found.
+	 *
+	 * @param int $submission_id Submission post ID.
+	 * @return string Page title.
+	 */
+	private static function source_page_title( int $submission_id ): string {
+		$referer = get_post_meta( $submission_id, '_dsg_submission_referer', true );
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.url_to_postid_url_to_postid -- Not a VIP site; admin-only, once per form, cached with the list in forms().
+		$page_id = is_string( $referer ) && '' !== $referer ? url_to_postid( $referer ) : 0;
+		return $page_id ? wp_strip_all_tags( get_the_title( $page_id ) ) : '';
+	}
+
+	/**
+	 * Form IDs with their submission counts and the title of the page the
+	 * latest submission came from. Cached until any post or post meta changes
+	 * (core bumps the `posts` last-changed stamp for both).
+	 *
+	 * @return object[] Rows with form_id, total and page_title.
 	 */
 	private static function forms(): array {
 		global $wpdb;
 
-		$key   = 'dsgo_submission_forms:' . wp_cache_get_last_changed( 'posts' );
+		// v2: rows gained latest_id and page_title. Rows an older release
+		// cached under the unversioned key lack them.
+		$key   = 'dsgo_submission_forms:v2:' . wp_cache_get_last_changed( 'posts' );
 		$forms = wp_cache_get( $key, 'designsetgo' );
 		if ( is_array( $forms ) ) {
 			return $forms;
@@ -81,11 +123,14 @@ class Form_Submissions_List_Filters {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- No API for distinct meta values; cached above.
 		$forms = (array) $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT pm.meta_value AS form_id, COUNT(*) AS total FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s GROUP BY pm.meta_value ORDER BY pm.meta_value",
+				"SELECT pm.meta_value AS form_id, COUNT(*) AS total, MAX(p.ID) AS latest_id FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s GROUP BY pm.meta_value ORDER BY pm.meta_value",
 				'_dsg_form_id',
 				Form_Submissions_Export::POST_TYPE
 			)
 		);
+		foreach ( $forms as $form ) {
+			$form->page_title = self::source_page_title( (int) $form->latest_id );
+		}
 		wp_cache_set( $key, $forms, 'designsetgo' );
 
 		return $forms;

@@ -16,6 +16,7 @@ import {
 	firstInvalid,
 	forgetGrownSteps,
 } from './steps-state';
+import { revealBelowHeader } from './utils/reveal-below-header';
 
 const PROGRESS_STYLES = ['steps', 'bar', 'none'];
 const NOOP = { isMultiStep: false, beforeSubmit: () => true, reset() {} };
@@ -234,10 +235,14 @@ function setUp(container, form, steps) {
 		if (focus) {
 			const heading = current.querySelector('.dsgo-form-step__title');
 			if (heading) {
-				heading.focus();
-				if (typeof heading.scrollIntoView === 'function') {
-					heading.scrollIntoView({ block: 'nearest' });
-				}
+				// Focus without the browser's own scroll, which can leave the
+				// progress indicator under a sticky header; reveal it with
+				// the heading instead.
+				heading.focus({ preventScroll: true });
+				revealBelowHeader(
+					progress && !progress.hidden ? progress : heading,
+					heading
+				);
 			}
 		}
 		if (announce) {

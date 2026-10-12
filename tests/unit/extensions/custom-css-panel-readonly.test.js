@@ -8,7 +8,13 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-jest.mock('@wordpress/i18n', () => ({ __: (t) => t }));
+jest.mock('@wordpress/i18n', () => ({
+	__: (t) => t,
+	sprintf: (format, ...args) => {
+		let i = 0;
+		return format.replace(/%(\d\$)?[sd]/g, () => String(args[i++]));
+	},
+}));
 
 jest.mock('@wordpress/block-editor', () => ({
 	InspectorControls: ({ children }) => <div>{children}</div>,
@@ -17,6 +23,7 @@ jest.mock('@wordpress/block-editor', () => ({
 jest.mock('@wordpress/components', () => ({
 	PanelBody: ({ children }) => <div>{children}</div>,
 	Notice: ({ children }) => <div role="alert">{children}</div>,
+	TabPanel: ({ tabs, children }) => <div>{children(tabs[0])}</div>,
 	TextareaControl: ({ label, value, readOnly }) => (
 		<textarea aria-label={label} defaultValue={value} readOnly={readOnly} />
 	),

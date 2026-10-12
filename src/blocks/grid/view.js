@@ -35,14 +35,23 @@ import { measureRenderedColumns } from './utils/count-rendered-columns';
 			// Apply initial constraints
 			this.handleResize();
 
-			// Debounced resize handler
-			let resizeTimeout;
+			// Re-apply before the next paint. A trailing debounce left
+			// oversized spans unclamped for its whole delay after crossing a
+			// breakpoint, so a span-4 card briefly created an extra implicit
+			// column and pushed its siblings around. The frame gate is
+			// per-instance: a shared flag would let only the first grid run.
+			let frame = 0;
 			this.handleResize = this.handleResize.bind(this);
 			window.addEventListener(
 				'resize',
 				() => {
-					clearTimeout(resizeTimeout);
-					resizeTimeout = setTimeout(() => this.handleResize(), 150);
+					if (frame) {
+						return;
+					}
+					frame = window.requestAnimationFrame(() => {
+						frame = 0;
+						this.handleResize();
+					});
 				},
 				{ passive: true }
 			);

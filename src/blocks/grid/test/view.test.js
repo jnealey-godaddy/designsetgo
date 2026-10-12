@@ -296,3 +296,62 @@ describe('grid view.js - responsive templates constrain actual tracks', () => {
 		expect(inner.children[0].style.gridColumn).toBe('span 3');
 	});
 });
+
+describe('grid view.js - resize re-applies constraints on the next frame', () => {
+	const initialWidth = window.innerWidth;
+	afterEach(() => {
+		document.body.innerHTML = '';
+		jest.restoreAllMocks();
+		window.innerWidth = initialWidth;
+	});
+
+	test('every grid re-runs once per frame, without waiting for a debounce', () => {
+		const frames = [];
+		jest.spyOn(window, 'requestAnimationFrame').mockImplementation(
+			(callback) => frames.push(callback)
+		);
+		const first = new DSGGrid(buildGrid({ match: false }));
+		const second = new DSGGrid(buildGrid({ match: false }));
+		const firstSpy = jest.spyOn(first, 'getResponsiveColumns');
+		const secondSpy = jest.spyOn(second, 'getResponsiveColumns');
+
+		// Grids from earlier tests still listen on window, so compare
+		// counts rather than assuming only these two exist.
+		window.dispatchEvent(new Event('resize'));
+		const perResize = frames.length;
+		window.dispatchEvent(new Event('resize'));
+		// One frame request per grid, however many resize events arrive.
+		expect(frames).toHaveLength(perResize);
+
+		frames.splice(0).forEach((callback) => callback());
+		expect(firstSpy).toHaveBeenCalledTimes(1);
+		expect(secondSpy).toHaveBeenCalledTimes(1);
+
+		// The gate reopens after the frame runs.
+		window.dispatchEvent(new Event('resize'));
+		expect(frames).toHaveLength(perResize);
+	});
+
+	test('a span wider than the mobile column count is clamped on the frame', () => {
+		const frames = [];
+		jest.spyOn(window, 'requestAnimationFrame').mockImplementation(
+			(callback) => frames.push(callback)
+		);
+		window.innerWidth = 1280;
+		const grid = new DSGGrid(
+			buildGrid({ cols: 4, mobile: 2, match: false })
+		);
+		const card = grid.inner.children[0];
+		card.style.gridColumn = 'span 3';
+
+		window.innerWidth = 390;
+		window.dispatchEvent(new Event('resize'));
+		frames.splice(0).forEach((callback) => callback());
+		expect(card.style.gridColumn).toBe('span 2');
+
+		window.innerWidth = 1280;
+		window.dispatchEvent(new Event('resize'));
+		frames.splice(0).forEach((callback) => callback());
+		expect(card.style.gridColumn).toBe('span 3');
+	});
+});

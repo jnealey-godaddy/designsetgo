@@ -11,10 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Multi-step form styling.** Next is built from the form's submit button (classes and inline style), so it follows the submit colours, sizes, `is-style-*` variation, hover animation and Global Styles / Style Kit `.dsgo-form__submit` rules; it stays `type="button"`, and `view.js` now finds the submit with `.dsgo-form__submit[type="submit"]`. The footer moves into `.dsgo-form-steps__nav`, so Submit takes Next's place on the last step (stacked full width on phones). New `stepProgressColor` attribute (Color panel → Progress Color) writes `--dsgo-form-progress-color`, used by the active/completed step markers and the bar; unset, they keep `currentcolor`. `designsetgo/form-step` gains text colour and typography supports, routed to `.dsgo-form-step__title` (render.php via `designsetgo_route_visual_supports()`, `selectors` for Global Styles). Back inherits the form font and has a 44px target. Step styles stay zero-specificity `:where()` rules.
 - **Icon Button accessibility.** The lazy icon injector marks an Icon Button's SVG `aria-hidden` when the button is named by its text or `aria-label`.
+- **Custom CSS breakpoints in the editor.** The Custom CSS panel has Desktop / Tablet / Mobile tabs. They read and write the same `/* dsgo-css:{tablet|mobile}:start|end */` sections in `dsgoCustomCSS` that `designsetgo/configure-custom-css` writes (`src/extensions/custom-css/responsive.js` mirrors `Responsive_CSS::merge()`). CSS with no tablet or mobile rules is stored byte-identically, so existing class hashes don't change.
+- **No-JS form failures keep answers and say why.** On an error, the admin-post redirect adds an allowlisted `dsgo_form_error` code and `dsgo_form_field` (validation and required-field errors now carry `field` in their `WP_Error` data). The message box prints a fixed sentence for the code, names the field by its label in the rendered markup, and marks the control `aria-invalid`. The answers travel in a signed, HttpOnly `dsgo_form_retry` cookie (10 minutes, cleared on `template_redirect` of the next status page; hidden fields excluded; longest answers dropped first above 3,000 bytes) and are refilled by `Form_No_JS_Refill`. Nothing is stored server-side.
+- **Multi-step forms reveal steps below a sticky header.** Changing step focuses the title with `preventScroll` and scrolls the progress indicator to just below any fixed or sticky top bar (`utils/reveal-below-header.js`); `scrollIntoView` honoured only `scroll-padding-top`.
+- **Grid span clamping on resize** runs on the next animation frame, per grid, instead of after a 150ms debounce, so an oversized span no longer adds a temporary implicit column while resizing across a breakpoint.
+- **Layout overrides inspector.** A "Layout overrides" heading, per-type example placeholders instead of repeated help, and plainer value labels ("Default", "Start of row or column"). Tablet and Mobile Column Template help now names its screen widths.
+- **Form submissions filter** labels each form with the page its latest submission came from.
 
 ### Fixed
 
 - Form submissions CSV export labels a failed notification email "Failed", as the submissions list does, instead of "Not sent".
+- `dsgoCustomCSS` values that aren't strings (hand-edited markup) are skipped by the renderer and the configure-custom-css ability instead of warning "Array to string conversion" or throwing a `TypeError`.
 
 ### Security
 

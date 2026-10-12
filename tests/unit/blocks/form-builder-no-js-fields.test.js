@@ -184,6 +184,27 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		expect(window.location.search).toBe('');
 	});
 
+	it('keeps the reason the server printed for a failed native post', () => {
+		window.history.replaceState(
+			null,
+			'',
+			'/contact/?dsgo_form_status=error&dsgo_form_id=contact&dsgo_form_error=required_field_missing&dsgo_form_field=your_name'
+		);
+		const form = mountForm({
+			ajax: false,
+			message:
+				'<div class="dsgo-form__message dsgo-form__message--error" id="dsgo-form-message-contact" role="alert" tabindex="-1" aria-live="polite" aria-atomic="true" data-dsgo-server-message="error">Nope. <span class="dsgo-form__message-detail">Please fill in “Your name”.</span></div>',
+		});
+		init();
+
+		const box = form.querySelector('.dsgo-form__message');
+		expect(box.style.display).toBe('block');
+		expect(box.firstChild.nodeValue).toBe(
+			'Nope. Please fill in “Your name”.'
+		);
+		expect(window.location.search).toBe('');
+	});
+
 	it('hides a server-printed result the URL does not carry (a cached page)', () => {
 		const form = mountForm({ message: SERVER_SUCCESS });
 		init();

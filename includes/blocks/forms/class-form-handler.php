@@ -454,7 +454,10 @@ class Form_Handler {
 						$field_name,
 						$validation_result->get_error_message()
 					),
-					array( 'status' => 400 )
+					array(
+						'status' => 400,
+						'field'  => $field_name,
+					)
 				);
 			}
 
@@ -472,7 +475,10 @@ class Form_Handler {
 				return new WP_Error(
 					'required_field_missing',
 					__( 'Please complete all required fields.', 'designsetgo' ),
-					array( 'status' => 400 )
+					array(
+						'status' => 400,
+						'field'  => $field_name,
+					)
 				);
 			}
 		}
@@ -666,13 +672,24 @@ class Form_Handler {
 
 		$redirect = is_wp_error( $result ) ? '' : $this->get_success_redirect_url( $form_id, $request );
 
+		if ( is_wp_error( $result ) ) {
+			// Without JavaScript the visitor comes back to a fresh page: keep
+			// their answers, and say why it failed (Form_No_JS_Retry).
+			Form_No_JS_Retry::remember( $form_id, $fields, (string) $result->get_error_code() );
+		}
+
 		if ( '' === $redirect ) {
 			$redirect = add_query_arg(
-				array(
-					'dsgo_form_status' => is_wp_error( $result ) ? 'error' : 'success',
-					'dsgo_form_id'     => $form_id,
+				array_merge(
+					array(
+						'dsgo_form_status' => is_wp_error( $result ) ? 'error' : 'success',
+						'dsgo_form_id'     => $form_id,
+					),
+					is_wp_error( $result ) ? Form_No_JS_Retry::redirect_args( $result ) : array()
 				),
-				$referer
+				// A retry is posted from the previous result's URL: drop its
+				// reason, or a later result would name the earlier field.
+				remove_query_arg( array( 'dsgo_form_error', 'dsgo_form_field' ), $referer )
 			);
 
 			// Land on the result Form_No_JS_Submit prints, not the page top.
