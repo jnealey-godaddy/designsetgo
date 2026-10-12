@@ -1,0 +1,17 @@
+/**
+ * Layout overrides - editor styles.
+ *
+ * @package DesignSetGo
+ */
+
+// Sets the overrides apart from the block's own controls above them in the
+// same Settings panel. Matches the inspector's uppercase sub-heading style.
+.dsgo-layout-controls__heading {
+	margin: 8px 0 12px;
+	padding-top: 16px;
+	border-top: 1px solid #ddd;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.4;
+	text-transform: uppercase;
+}

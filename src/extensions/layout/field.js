@@ -1,7 +1,7 @@
 import { useEffect, useState } from '@wordpress/element';
 import { SelectControl, TextControl } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
-import { labels, valueLabels } from './labels';
+import { labels, valueLabels, typeExamples } from './labels';
 
 /**
  * Keep invalid drafts local, so CSS functions can be entered character by character.
@@ -52,7 +52,9 @@ export default function LayoutField({
 			/>
 		);
 	}
-	let help = __('Leave empty to use the block default.', 'designsetgo');
+	// "Leave empty to use the block default" is said once, at the top of
+	// the overrides, rather than under every field.
+	let help;
 	if (inherited !== undefined) {
 		help = sprintf(
 			/* translators: %s: CSS value inherited from a larger viewport. */
@@ -71,7 +73,11 @@ export default function LayoutField({
 			{...common}
 			help={help}
 			aria-invalid={invalid || undefined}
-			placeholder={inherited === undefined ? '' : String(inherited)}
+			placeholder={
+				inherited === undefined
+					? typeExamples[definition.type] || ''
+					: String(inherited)
+			}
 		/>
 	);
 }

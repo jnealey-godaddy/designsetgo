@@ -102,6 +102,9 @@ export default function LayoutControls({
 				onDeselect={() => setDevice('desktop')}
 				isShownByDefault
 			>
+				<h3 className="dsgo-layout-controls__heading">
+					{__('Layout overrides', 'designsetgo')}
+				</h3>
 				<SelectControl
 					label={__('Viewport', 'designsetgo')}
 					value={device}
@@ -131,11 +134,11 @@ export default function LayoutControls({
 					help={
 						device === 'desktop'
 							? __(
-									'Optional overrides take priority over native controls. Clear an override to restore the native value. DOM reading order stays unchanged.',
+									'Optional. A value here takes priority over the block’s own setting; leave a field empty to keep that setting. Screen reader order stays the same.',
 									'designsetgo'
 								)
 							: __(
-									'Empty overrides inherit from larger viewports. DOM reading order stays unchanged.',
+									'Empty fields use the value from the larger screen sizes. Screen reader order stays the same.',
 									'designsetgo'
 								)
 					}

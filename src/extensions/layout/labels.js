@@ -84,7 +84,7 @@ export const groupFields = {
 
 export const valueLabels = {
 	auto: __('Auto', 'designsetgo'),
-	normal: __('Normal', 'designsetgo'),
+	normal: __('Default', 'designsetgo'),
 	row: __('Row', 'designsetgo'),
 	column: __('Column', 'designsetgo'),
 	'row-reverse': __('Reversed row', 'designsetgo'),
@@ -95,13 +95,15 @@ export const valueLabels = {
 	start: __('Start', 'designsetgo'),
 	end: __('End', 'designsetgo'),
 	center: __('Center', 'designsetgo'),
-	'flex-start': __('Flex start', 'designsetgo'),
-	'flex-end': __('Flex end', 'designsetgo'),
+	// `start`/`end` follow the writing direction; `flex-start`/`flex-end`
+	// follow the row or column direction, which differs once it is reversed.
+	'flex-start': __('Start of row or column', 'designsetgo'),
+	'flex-end': __('End of row or column', 'designsetgo'),
 	'space-between': __('Space between', 'designsetgo'),
 	'space-around': __('Space around', 'designsetgo'),
 	'space-evenly': __('Space evenly', 'designsetgo'),
 	stretch: __('Stretch', 'designsetgo'),
-	baseline: __('Baseline', 'designsetgo'),
+	baseline: __('Text baseline', 'designsetgo'),
 	visible: __('Visible', 'designsetgo'),
 	hidden: __('Hidden', 'designsetgo'),
 	clip: __('Clip', 'designsetgo'),
@@ -109,4 +111,22 @@ export const valueLabels = {
 	static: __('Static', 'designsetgo'),
 	relative: __('Relative', 'designsetgo'),
 	absolute: __('Absolute', 'designsetgo'),
+};
+
+/**
+ * Example values per property type, shown as placeholders so each field
+ * says what it accepts without repeating help text on every row.
+ */
+export const typeExamples = {
+	size: __('e.g. 320px, 50%, 20rem', 'designsetgo'),
+	length: __('e.g. 24px, 2rem', 'designsetgo'),
+	gap: __('e.g. 24px, 2rem', 'designsetgo'),
+	offset: __('e.g. 0, 24px, 10%', 'designsetgo'),
+	ratio: __('e.g. 16/9', 'designsetgo'),
+	integer: __('e.g. 2', 'designsetgo'),
+	number: __('e.g. 1', 'designsetgo'),
+	tracks: __('e.g. auto 1fr auto', 'designsetgo'),
+	areas: __('e.g. "header header" "aside main"', 'designsetgo'),
+	line: __('e.g. span 2, or 1 / 3', 'designsetgo'),
+	identifier: __('e.g. main', 'designsetgo'),
 };

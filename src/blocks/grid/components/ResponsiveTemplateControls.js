@@ -24,12 +24,20 @@ export default function ResponsiveTemplateControls({
 				[
 					'tabletColumnTemplate',
 					__('Tablet Column Template', 'designsetgo'),
+					__(
+						'Column widths from 768px to 1024px, replacing Tablet Columns. Leave empty to use Tablet Columns.',
+						'designsetgo'
+					),
 				],
 				[
 					'mobileColumnTemplate',
 					__('Mobile Column Template', 'designsetgo'),
+					__(
+						'Column widths at 767px and below, replacing Mobile Columns. Leave empty to use Mobile Columns.',
+						'designsetgo'
+					),
 				],
-			].map(([attribute, label]) => (
+			].map(([attribute, label, help]) => (
 				<DsgoInspectorPanel.Item
 					key={attribute}
 					label={label}
@@ -45,11 +53,8 @@ export default function ResponsiveTemplateControls({
 								[attribute]: sanitizeColumnTemplate(value),
 							})
 						}
-						placeholder="minmax(0, 2fr) minmax(0, 1fr)"
-						help={__(
-							'Overrides the column count at this screen size. Leave empty to use the column count.',
-							'designsetgo'
-						)}
+						placeholder={__('e.g. 2fr 1fr', 'designsetgo')}
+						help={help}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
