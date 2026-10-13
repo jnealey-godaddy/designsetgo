@@ -682,10 +682,13 @@ class Settings {
 	 * Only non-empty string secrets are redacted; an empty value stays empty so
 	 * the UI renders an empty field when no secret has been saved.
 	 *
+	 * Public so every channel that returns settings (REST and the
+	 * get/update-settings abilities) redacts the same keys.
+	 *
 	 * @param array $settings Full settings array.
 	 * @return array Settings with secrets redacted.
 	 */
-	private static function redact_secrets( array $settings ): array {
+	public static function redact_secrets( array $settings ): array {
 		foreach ( self::write_only_secret_keys() as $group => $fields ) {
 			foreach ( $fields as $field ) {
 				if ( isset( $settings[ $group ][ $field ] )

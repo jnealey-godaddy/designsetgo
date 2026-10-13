@@ -160,6 +160,35 @@ class Settings_Abilities_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Write-only secrets come back redacted, as from the REST endpoint, and a
+	 * read-then-write round trip of that response keeps the stored secrets.
+	 */
+	public function test_settings_abilities_redact_secrets_and_round_trip_safely(): void {
+		update_option(
+			Settings::OPTION_NAME,
+			array(
+				'integrations' => array(
+					'turnstile_secret_key' => 'SEEDED-TURNSTILE-SECRET',
+					'form_webhook_secret'  => 'SEEDED-WEBHOOK-SECRET',
+				),
+			)
+		);
+		Settings::invalidate_cache();
+
+		$read = ( new Get_Settings() )->execute( array() );
+		$this->assertSame( Settings::REDACTED_PLACEHOLDER, $read['integrations']['turnstile_secret_key'] );
+		$this->assertSame( Settings::REDACTED_PLACEHOLDER, $read['integrations']['form_webhook_secret'] );
+		$this->assertStringNotContainsString( 'SEEDED-', wp_json_encode( $read ) );
+
+		$written = ( new Update_Settings() )->execute( array( 'integrations' => $read['integrations'] ) );
+		$this->assertStringNotContainsString( 'SEEDED-', wp_json_encode( $written ) );
+
+		$saved = Settings::get_settings();
+		$this->assertSame( 'SEEDED-TURNSTILE-SECRET', $saved['integrations']['turnstile_secret_key'] );
+		$this->assertSame( 'SEEDED-WEBHOOK-SECRET', $saved['integrations']['form_webhook_secret'] );
+	}
+
+	/**
 	 * Updating one group leaves other groups untouched.
 	 */
 	public function test_update_one_group_does_not_affect_other_groups(): void {
