@@ -7,34 +7,9 @@
  * @package DesignSetGo
  */
 
-/**
- * Fix alignfull behavior when video background wrapper is inside root container
- *
- * When a block has a video background, it gets wrapped in .dsgo-has-video-background.
- * This wrapper needs to:
- * 1. Remove max-width constraint that WordPress applies via :where(:not(.alignfull))
- * 2. Apply negative margins to break out of the root container's padding
- *
- * WordPress applies constraints via these selectors:
- * - .is-root-container > :where(:not(.alignfull)) { max-width: 1200px; margin: auto; }
- * - .is-layout-constrained > :where(:not(.alignfull)) { max-width: content-size; margin: auto; }
- *
- * The inner block inherits alignfull from WordPress, but the wrapper needs these overrides.
- */
-// Override WordPress max-width and margin:auto constraints on the wrapper
-.block-editor-block-list__layout.is-root-container > .dsgo-has-video-background,
-.is-layout-constrained > .dsgo-has-video-background {
-	max-width: none !important;
-	margin-left: 0 !important;
-	margin-right: 0 !important;
-}
-
-// Apply negative margins to break out of global padding
-.block-editor-block-list__layout.is-root-container.has-global-padding > .dsgo-has-video-background {
-	margin-right: calc(var(--wp--style--root--padding-right) * -1) !important;
-	margin-left: calc(var(--wp--style--root--padding-left) * -1) !important;
-}
-
+// The class sits on the block element itself, as on the front end, so the
+// block keeps WordPress's own alignment and width rules. (The editor used to
+// wrap the block in an extra div and had to undo them on the wrapper.)
 .dsgo-has-video-background {
 	position: relative;
 	// Use clip instead of hidden — clips video to border-radius without
@@ -77,9 +52,10 @@
 		z-index: 2;
 	}
 
-	// Visual indicator in editor only
-	&::after {
-		content: 'Video Background';
+	// Visual indicator in editor only. A real element inside the video layer
+	// (editor-preview.js), not ::after: the block itself carries this class
+	// now, and Section uses its own ::before/::after for overlays.
+	.dsgo-video-background-editor__label {
 		position: absolute;
 		top: 8px;
 		right: 8px;
@@ -89,9 +65,10 @@
 		border-radius: 4px;
 		font-size: 11px;
 		font-weight: 600;
+		line-height: 1.4;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
-		z-index: 10;
+		z-index: 2;
 		pointer-events: none;
 	}
 }

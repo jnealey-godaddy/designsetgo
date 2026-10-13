@@ -14,6 +14,7 @@ import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { isExtensionEnabled } from '../../utils/is-extension-enabled';
+import { BackgroundVideoBlock } from './editor-preview';
 
 /**
  * Container blocks that support background video
@@ -41,11 +42,6 @@ const ALLOWED_BLOCKS = [
 const BackgroundVideoPanel = lazy(() =>
 	import(/* webpackChunkName: "ext-background-video" */ './edit').then(
 		(m) => ({ default: m.BackgroundVideoPanel })
-	)
-);
-const BackgroundVideoPreview = lazy(() =>
-	import(/* webpackChunkName: "ext-background-video" */ './edit').then(
-		(m) => ({ default: m.BackgroundVideoPreview })
 	)
 );
 
@@ -117,23 +113,19 @@ if (isExtensionEnabled('background-video')) {
 }
 
 /**
- * Add background video wrapper in editor (lazy-loaded)
+ * Show the background video in the editor
+ *
+ * Always the same component for an allowed block, video or not: switching
+ * element type when a video is added or removed remounts the block.
  */
 const withBackgroundVideoEdit = createHigherOrderComponent((BlockListBlock) => {
 	return (props) => {
-		const { attributes, name } = props;
-
-		if (!ALLOWED_BLOCKS.includes(name) || !attributes.dsgoVideoUrl) {
+		if (!ALLOWED_BLOCKS.includes(props.name)) {
 			return <BlockListBlock {...props} />;
 		}
 
 		return (
-			<Suspense fallback={<BlockListBlock {...props} />}>
-				<BackgroundVideoPreview
-					BlockListBlock={BlockListBlock}
-					{...props}
-				/>
-			</Suspense>
+			<BackgroundVideoBlock BlockListBlock={BlockListBlock} {...props} />
 		);
 	};
 }, 'withBackgroundVideoEdit');
