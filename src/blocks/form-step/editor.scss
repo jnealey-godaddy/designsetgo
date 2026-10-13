@@ -1,4 +1,7 @@
+// The step is a `flex: 0 0 100%` item (style.scss): with content-box sizing
+// this editor-only padding and border pushed it past the form's edge.
 .editor-styles-wrapper .dsgo-form-step {
+	box-sizing: border-box;
 	padding: 12px;
 	border: 1px dashed rgba(0, 0, 0, 0.2);
 	border-radius: 4px;
