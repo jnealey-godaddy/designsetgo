@@ -127,8 +127,8 @@ class Form_Submissions {
 
 		foreach ( $fields as $field_name => $field_data ) {
 			$raw   = isset( $field_data['value'] ) ? $field_data['value'] : '';
-			$text  = self::format_field_value( $raw );
 			$type  = isset( $field_data['type'] ) ? $field_data['type'] : 'text';
+			$text  = self::display_value( $raw, (string) $type );
 			$label = isset( $field_data['label'] ) && '' !== $field_data['label'] ? (string) $field_data['label'] : '';
 
 			// Format value based on type.
@@ -171,6 +171,23 @@ class Form_Submissions {
 		}
 
 		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	/**
+	 * A stored value as a site owner should read it.
+	 *
+	 * A ticked single checkbox stores its value attribute, "1" unless the
+	 * author set one; show that default as "Yes". Webhook payloads keep the
+	 * stored value.
+	 *
+	 * @param mixed  $value Stored value.
+	 * @param string $type  Field type.
+	 * @return string Text.
+	 */
+	public static function display_value( $value, string $type ): string {
+		$text = self::format_field_value( $value );
+
+		return 'checkbox' === $type && '1' === $text ? __( 'Yes', 'designsetgo' ) : $text;
 	}
 
 	/**

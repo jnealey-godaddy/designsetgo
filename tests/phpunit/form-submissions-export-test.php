@@ -144,12 +144,16 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 			array(
 				'note'   => array( 'value' => $tricky, 'type' => 'textarea', 'label' => 'Note' ),
 				'topics' => array( 'value' => array( 'News', 'Offers' ), 'type' => 'checkbox', 'label' => 'Topics' ),
+				'agree'  => array( 'value' => '1', 'type' => 'checkbox', 'label' => 'Agree' ),
+				'count'  => array( 'value' => '1', 'type' => 'number', 'label' => 'Count' ),
 			)
 		);
 
 		$rows = $this->export_rows( array( 'form_id' => 'f4' ) );
 		$this->assertSame( $tricky, $rows[1][4] );
 		$this->assertSame( 'News, Offers', $rows[1][5] );
+		$this->assertSame( 'Yes', $rows[1][6], 'A ticked checkbox reads Yes, as on the submission screen.' );
+		$this->assertSame( '1', $rows[1][7] );
 	}
 
 	/**

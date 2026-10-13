@@ -77,7 +77,11 @@ class Form_Submissions_Export_Columns {
 	private static function cell( string $key, int $id, array $fields ): string {
 		if ( 0 === strpos( $key, 'field:' ) ) {
 			$name = substr( $key, 6 );
-			return isset( $fields[ $name ]['value'] ) ? Form_Submissions::format_field_value( $fields[ $name ]['value'] ) : '';
+			if ( ! isset( $fields[ $name ]['value'] ) ) {
+				return '';
+			}
+			$type = isset( $fields[ $name ]['type'] ) && is_string( $fields[ $name ]['type'] ) ? $fields[ $name ]['type'] : 'text';
+			return Form_Submissions::display_value( $fields[ $name ]['value'], $type );
 		}
 
 		switch ( $key ) {
