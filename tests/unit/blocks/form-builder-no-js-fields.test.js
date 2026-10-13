@@ -60,6 +60,12 @@ function init() {
 	document.dispatchEvent(new Event('dsgo-content-loaded'));
 }
 
+// Where a native post goes, as path + query (view.js writes an absolute URL).
+function postTarget(form) {
+	const url = new URL(form.action);
+	return url.pathname + url.search;
+}
+
 function count(form, name) {
 	return form.querySelectorAll(`input[name="${name}"]`).length;
 }
@@ -104,7 +110,7 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		init();
 
 		expect(count(form, 'action')).toBe(0);
-		expect(form.getAttribute('action')).toBe(POST_URL);
+		expect(postTarget(form)).toBe(POST_URL);
 		expect(count(form, '_wpnonce')).toBe(1);
 		expect(count(form, 'dsg_timestamp')).toBe(1);
 		// The script's own values win: the time it ran, its localized nonce.
@@ -174,23 +180,39 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		expect(
 			form.querySelectorAll('[name="action"][data-dsgo-system]')
 		).toHaveLength(0);
-		expect(form.getAttribute('action')).toBe(POST_URL);
+		expect(postTarget(form)).toBe(POST_URL);
 	});
 
-	it("drops a cached page's hidden action so the author's field posts alone", () => {
-		const form = mountForm({
-			ajax: false,
-			legacy: true,
-			authorField:
-				'<input type="hidden" name="action" value="crm-route" data-field-type="hidden" />',
-		});
-		init();
+	// A full-page cache keeps the inline designsetgoForm from before the action
+	// moved into the URL (a bare admin-post.php) next to the legacy hidden
+	// field, while view.js itself loads fresh from disk.
+	it.each([
+		['the cached bare URL', '/wp-admin/admin-post.php'],
+		['the current URL', POST_URL],
+	])(
+		"routes a cached page's native post with %s and posts the author's action alone",
+		(_label, adminPostUrl) => {
+			global.designsetgoForm.adminPostUrl = adminPostUrl;
+			const form = mountForm({
+				ajax: false,
+				legacy: true,
+				authorField:
+					'<input type="hidden" name="action" value="crm-route" data-field-type="hidden" />',
+			});
+			init();
 
-		expect(form.getAttribute('action')).toBe(POST_URL);
-		expect(
-			[...form.querySelectorAll('[name="action"]')].map((el) => el.value)
-		).toEqual(['crm-route']);
-	});
+			const url = new URL(form.action);
+			expect(url.pathname).toBe('/wp-admin/admin-post.php');
+			expect(url.searchParams.getAll('action')).toEqual([
+				'designsetgo_form_submit',
+			]);
+			expect(
+				[...form.querySelectorAll('[name="action"]')].map(
+					(el) => el.value
+				)
+			).toEqual(['crm-route']);
+		}
+	);
 
 	it('shows a server-printed result once when the URL carries it', () => {
 		window.history.replaceState(

@@ -263,7 +263,18 @@ function initFormBuilder() {
 			// The admin-post action is in this URL's query string, not a hidden
 			// `action` field, so an author's own field named `action` posts
 			// intact. Drop the field a page cached before that change carries.
-			formElement.action = designsetgoForm.adminPostUrl;
+			// Such a page also carries the old inline adminPostUrl (a bare
+			// admin-post.php) while this script loads fresh from disk, so add
+			// the action whenever the URL lacks it: removing the field is only
+			// safe once the URL routes the post.
+			const postUrl = new URL(
+				designsetgoForm.adminPostUrl,
+				window.location.href
+			);
+			if (!postUrl.searchParams.has('action')) {
+				postUrl.searchParams.set('action', 'designsetgo_form_submit');
+			}
+			formElement.action = postUrl.toString();
 			formElement.method = 'post';
 			formElement
 				.querySelector('input[name="action"][data-dsgo-system]')
