@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.0
+Stable tag: 2.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,29 +110,29 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
-= Unreleased =
+= 2.10.0 - 2026-10-13 =
 
-* **New:** Grid has Tablet and Mobile Column Templates, so tablets and phones can have uneven column widths too, such as a narrow column beside a wide one.
+* **New:** Multi-step forms. Use "Split into steps" in a form's Settings (or the Multi-step template) to show a long form one step at a time, with Next / Back and a progress indicator. Next matches your Submit button, Submit takes its place on the last step, and you can set a Progress colour and style each step title. Once the form is sent, only your success message shows. Without JavaScript the form shows as one page.
+* **New:** Form fields can show or hide based on other answers ("Show Company name when Customer type is Business"). Set it under a field's Settings → Conditional logic. Hidden fields are skipped when the form is submitted, even if they're required, and steps whose fields are all hidden are skipped too.
+* **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, each submission shows its delivery status with a Resend option, and the URL field warns you when an address can't receive submissions.
+* **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names), and the form filter names the page each form is on.
 * **New:** Layout overrides for Section, Row and Grid, and for the blocks directly inside them. Under the block's Settings, set its size, spacing, gap, position and layering separately for desktop, tablet and mobile.
+* **New:** Grid has Tablet and Mobile Column Templates, so tablets and phones can have uneven column widths too, such as a narrow column beside a wide one.
 * **New:** Custom CSS has Desktop, Tablet and Mobile tabs. Tablet CSS applies at 1024px wide and below, and Mobile CSS at 767px and below.
-* **Security:** Form email logs no longer record recipient addresses or subjects, and Map error logs no longer record the address you entered. Both can contain personal details.
 * **Improved:** Grids set to two or more columns on mobile now keep the column spans you set, instead of forcing every item to one column. Check those Grids on a phone after updating. Single-column mobile Grids still stack as before, and a Grid with Align Rows on still gives each card one column so their rows line up.
-* **Fix:** Adding or removing a background video in the editor no longer closes the block's settings and moves you out of the panel you were working in.
-* **Improved:** A ticked checkbox reads "Yes" on the submission screen and in the CSV export, instead of "1".
+* **Improved:** The submission details screen shows each field's label alongside its field name, and a ticked checkbox reads "Yes" there and in the CSV export instead of "1".
+* **Improved:** Bundled patterns use fictional company and person names instead of real brands.
+* **Security:** Your Turnstile secret key and form webhook signing secret are no longer shown to AI assistants connected to your site through DesignSetGo's settings tools. They stay hidden, as they already were on the settings screen.
+* **Security:** Form email logs no longer record recipient addresses or subjects, and Map error logs no longer record the address you entered. Both can contain personal details.
+* **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost. If a submission fails, the visitor's answers stay filled in and the message says what to fix, such as a required field left empty.
 * **Fix:** Typing into a block's empty Custom CSS box no longer jumps out of the box after the first letter. Before, only that letter was kept as CSS and the rest of what you typed went into the block's own text.
+* **Fix:** Adding or removing a background video in the editor no longer closes the block's settings and moves you out of the panel you were working in.
 * **Fix:** Screen readers no longer announce the decorative drawing in Icon, Icon List and Icon Button blocks on top of their label.
-* **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost. A field you named "action" is sent too. If a submission fails, the visitor's answers stay filled in and the message says what to fix, such as a required field left empty.
 * **Fix:** Hotspot markers in the editor now sit exactly where they appear on your site. Before, every marker after the first was shown lower than its real position.
 * **Fix:** An Advanced Heading's font size, line height and letter spacing now apply to the heading, instead of being overridden by your theme's heading styles.
 * **Fix:** Form message boxes, date pickers and dropdowns use your theme's font instead of the browser's default.
 * **Fix:** Outline buttons in the bundled patterns show their label instead of a solid dark box. This also fixes buttons already on your pages.
 * **Fix:** Countdown patterns start 30 days out when inserted, instead of showing "The countdown has ended!".
-* **Improved:** Bundled patterns use fictional company and person names instead of real brands.
-* **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names), and the form filter names the page each form is on.
-* **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option. The URL field warns you when an address can't receive submissions, such as one on a private network.
-* **Improved:** The submission details screen now shows each field's label alongside its field name.
-* **New:** Form fields can show or hide based on other answers ("Show Company name when Customer type is Business"). Set it under a field's Settings → Conditional logic. Hidden fields are skipped when the form is submitted, even if they're required.
-* **New:** Multi-step forms. Use "Split into steps" in a form's Settings (or the Multi-step template) to show long forms one step at a time with Next / Back and a progress indicator. Steps whose fields are all hidden by conditional logic are skipped. Without JavaScript the form shows as one page. The Next button matches your Submit button's colours, size and style, Submit takes Next's place on the last step, and you can set a Progress colour (Color panel) and each step title's font and colour (or style every step title at once under Styles → Blocks → Form Step). Once the form is sent, only your success message shows.
 
 = 2.9.0 - 2026-09-29 =
 
@@ -265,6 +265,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.10.0 =
+Adds multi-step and conditional forms, form webhooks and CSV export, and per-device layout controls. Grids with two or more mobile columns now keep their column spans, so check those on a phone after updating.
 
 = 2.9.0 =
 Security, performance and compatibility update. Purge page/CDN and Markdown caches; check export cleanup, countdown timezones and Turnstile keys. Editing without edit_css can remove per-block custom CSS. Regenerate static exports after cleanup.

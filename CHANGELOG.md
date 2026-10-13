@@ -5,7 +5,7 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.10.0] - 2026-10-13
 
 ### Improved
 
@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- The `designsetgo/get-settings` and `designsetgo/update-settings` abilities now return settings through `Settings::redact_secrets()` (now public), as the REST endpoints do, so the Turnstile secret and the form webhook signing secret no longer reach agent transcripts. A read-then-write round trip keeps the stored secrets.
 - **Form Builder**: optional email delivery logs now omit recipient addresses and email subjects, which can contain personal information. Logs retain delivery status and submission ID for troubleshooting.
 - **Map**: failed geocoding warnings and errors no longer include the configured address or raw error objects that may contain address-bearing request URLs. Logs retain failure diagnostics and maps continue to use fallback coordinates.
 
