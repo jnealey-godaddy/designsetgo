@@ -110,7 +110,7 @@ class Update_Settings extends Abstract_Ability {
 
 		return $this->success(
 			array(
-				'settings' => $updated,
+				'settings' => Settings::redact_secrets( $updated ),
 			)
 		);
 	}

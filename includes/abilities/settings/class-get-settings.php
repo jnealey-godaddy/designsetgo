@@ -95,6 +95,8 @@ class Get_Settings extends Abstract_Ability {
 	 * @return array<string, mixed>
 	 */
 	public function execute( array $_input ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
-		return Settings::get_settings();
+		// Secrets are write-only on every channel, as on the REST endpoint:
+		// an agent's transcript and tool logs must not hold them.
+		return Settings::redact_secrets( Settings::get_settings() );
 	}
 }
