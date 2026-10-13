@@ -48,9 +48,10 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 	 *
 	 * @param string $form_id Form ID.
 	 * @param array  $attrs   Extra block attributes.
+	 * @param string $extra   Extra field block markup.
 	 * @return string
 	 */
-	private function form_block( $form_id, array $attrs = array() ) {
+	private function form_block( $form_id, array $attrs = array(), $extra = '' ) {
 		$attrs   = array_merge(
 			array(
 				'formId'      => $form_id,
@@ -64,6 +65,7 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 			. $wrapper['opening']
 			. '<!-- wp:designsetgo/form-text-field {"fieldName":"your_name","required":true} /-->'
 			. '<!-- wp:designsetgo/form-email-field {"fieldName":"email"} /-->'
+			. $extra
 			. $wrapper['closing']
 			. '<!-- /wp:designsetgo/form-builder -->';
 	}
@@ -198,8 +200,9 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 		$html  = do_blocks( $this->form_block( 'nojs-fields' ) );
 		$xpath = $this->xpath( $html );
 
-		$this->assertSame( admin_url( 'admin-post.php' ), $xpath->query( '//form' )->item( 0 )->getAttribute( 'action' ) );
-		$this->assertSame( array( Form_No_JS_Submit::ACTION ), $this->input_values( $html, 'action' ) );
+		$this->assertSame( Form_No_JS_Submit::post_url(), $xpath->query( '//form' )->item( 0 )->getAttribute( 'action' ) );
+		$this->assertStringContainsString( 'admin-post.php?action=' . Form_No_JS_Submit::ACTION, Form_No_JS_Submit::post_url() );
+		$this->assertSame( array(), $this->input_values( $html, 'action' ), 'The action is in the URL, not the POST body.' );
 
 		$nonce = $this->input_values( $html, '_wpnonce' );
 		$this->assertCount( 1, $nonce );
@@ -210,12 +213,13 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( time() * 1000, (int) $timestamp[0], 5000, 'Milliseconds, as view.js sends.' );
 
 		// Inside the form, so they are posted with it.
-		$this->assertSame( 3, $xpath->query( '//form//input[@type="hidden"][@name="action" or @name="_wpnonce" or @name="dsg_timestamp"]' )->length );
+		$this->assertSame( 2, $xpath->query( '//form//input[@type="hidden"][@name="_wpnonce" or @name="dsg_timestamp"]' )->length );
 	}
 
 	/**
 	 * An author's field named like an admin-post field neither suppresses the
-	 * plugin's own copy nor is mistaken for it.
+	 * plugin's own copy nor is mistaken for it, and `action` is left to the
+	 * author entirely.
 	 */
 	public function test_author_field_named_action_does_not_replace_the_handler_field() {
 		$markup = '<div class="dsgo-form-builder" data-form-id="nojs-author"><form class="dsgo-form" method="post">'
@@ -223,11 +227,11 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 			. '</form></div>';
 		$html   = apply_filters( 'render_block_designsetgo/form-builder', $markup, array() );
 
-		$this->assertSame( array( 'crm-route', Form_No_JS_Submit::ACTION ), $this->input_values( $html, 'action' ), 'Ours comes last, so PHP routes on it.' );
+		$this->assertSame( array( 'crm-route' ), $this->input_values( $html, 'action' ), 'Routing is in the URL, so the author keeps the only `action`.' );
 		$this->assertCount( 2, $this->input_values( $html, '_wpnonce' ) );
 
 		$xpath = $this->xpath( $html );
-		$this->assertSame( 3, $xpath->query( '//input[@data-dsgo-system]' )->length, 'action, _wpnonce and dsg_timestamp are marked as ours.' );
+		$this->assertSame( 2, $xpath->query( '//input[@data-dsgo-system]' )->length, '_wpnonce and dsg_timestamp are marked as ours.' );
 		$this->assertSame( 0, $xpath->query( '//input[@value="crm-route"][@data-dsgo-system]' )->length );
 	}
 
@@ -238,7 +242,7 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 		$once  = do_blocks( $this->form_block( 'nojs-dupes' ) );
 		$twice = apply_filters( 'render_block_designsetgo/form-builder', $once, array() );
 
-		foreach ( array( 'action', '_wpnonce', 'dsg_timestamp', 'dsg_form_id' ) as $name ) {
+		foreach ( array( '_wpnonce', 'dsg_timestamp', 'dsg_form_id' ) as $name ) {
 			$this->assertCount( 1, $this->input_values( $twice, $name ), $name );
 		}
 	}
@@ -256,7 +260,7 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 				'email'     => 'pat@example.com',
 			)
 		);
-		$this->assertSame( admin_url( 'admin-post.php' ), $form['action'] );
+		$this->assertSame( Form_No_JS_Submit::post_url(), $form['action'] );
 
 		// The visitor spent five seconds on the page.
 		$form['post']['dsg_timestamp'] = (string) ( (int) $form['post']['dsg_timestamp'] - 5000 );
@@ -383,5 +387,100 @@ class Test_Form_No_JS_Submit extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'dsgo_form_status=error', $location );
 		$this->assertStringContainsString( 'role="alert"', $this->render_redirect_target( $location, $this->form_block( 'nojs-turnstile', array( 'enableTurnstile' => true ) ) ) );
+	}
+
+	/**
+	 * A field named `action` is stored from a no-JS POST, which admin-post.php
+	 * reaches through admin_init because $_REQUEST['action'] is now the
+	 * author's value.
+	 */
+	public function test_author_field_named_action_is_stored_without_javascript() {
+		$markup  = $this->form_block( 'nojs-action', array(), '<!-- wp:designsetgo/form-text-field {"fieldName":"action"} /-->' );
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_type'    => 'page',
+				'post_content' => wp_slash( $markup ),
+			)
+		);
+		$form    = $this->browser_post(
+			do_blocks( $markup ),
+			array(
+				'your_name' => 'Pat',
+				'action'    => 'Call me back',
+			)
+		);
+		$form['post']['dsg_timestamp'] = (string) ( (int) $form['post']['dsg_timestamp'] - 5000 );
+
+		$query = array();
+		wp_parse_str( (string) wp_parse_url( $form['action'], PHP_URL_QUERY ), $query );
+
+		global $pagenow;
+		$saved = array( $pagenow, $_GET, $_SERVER['REQUEST_METHOD'] ?? null, $_POST, $_REQUEST ); // phpcs:ignore WordPress.Security.NonceVerification
+		$pagenow                   = 'admin-post.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		$_GET                      = $query;
+		$_POST                     = wp_slash( $form['post'] );
+		$_REQUEST                  = array_merge( $_GET, $_POST );
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['HTTP_REFERER']   = get_permalink( $post_id );
+		$this->assertSame( 'Call me back', wp_unslash( $_REQUEST['action'] ), 'admin-post.php would route on the author\'s value.' ); // phpcs:ignore WordPress.Security.NonceVerification
+
+		$throw = static function ( $location ) {
+			throw new \RuntimeException( $location ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test-only control flow; never output.
+		};
+		add_filter( 'wp_redirect', $throw );
+		$location = '';
+		try {
+			$this->handler->maybe_handle_post_submission();
+		} catch ( \RuntimeException $redirect ) {
+			$location = $redirect->getMessage();
+		} finally {
+			remove_filter( 'wp_redirect', $throw );
+			list( $pagenow, $_GET, $method, $_POST, $_REQUEST ) = $saved; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$_SERVER['REQUEST_METHOD']                          = $method;
+			unset( $_SERVER['HTTP_REFERER'] );
+		}
+
+		$this->assertStringContainsString( 'dsgo_form_status=success', $location );
+		$submissions = get_posts(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'any',
+				'meta_key'    => '_dsg_form_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_query_meta_key
+				'meta_value'  => 'nojs-action', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_query_meta_value
+			)
+		);
+		$this->assertCount( 1, $submissions );
+		$stored = get_post_meta( $submissions[0]->ID, '_dsg_form_fields', true );
+		$this->assertSame( 'Call me back', $stored['action']['value'] ?? null );
+	}
+
+	/**
+	 * Only a POST to admin-post.php?action=designsetgo_form_submit is taken
+	 * on admin_init; every other admin request passes through.
+	 */
+	public function test_admin_init_ignores_other_requests() {
+		global $pagenow;
+		$saved = array( $pagenow, $_GET, $_SERVER['REQUEST_METHOD'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification
+
+		// Were any of these handled, handle_post_submission() would wp_die()
+		// (no referer, no form) and the test would error.
+		$cases = array(
+			array( 'admin-post.php', 'GET', Form_No_JS_Submit::ACTION ),
+			array( 'admin-post.php', 'POST', 'something_else' ),
+			array( 'options.php', 'POST', Form_No_JS_Submit::ACTION ),
+		);
+		try {
+			foreach ( $cases as list( $page, $method, $action ) ) {
+				$pagenow                   = $page; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				$_SERVER['REQUEST_METHOD'] = $method;
+				$_GET                      = array( 'action' => $action );
+				$this->handler->maybe_handle_post_submission();
+				$this->addToAssertionCount( 1 );
+			}
+		} finally {
+			list( $pagenow, $_GET, $method ) = $saved; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$_SERVER['REQUEST_METHOD']       = $method;
+		}
 	}
 }

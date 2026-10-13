@@ -260,24 +260,17 @@ function initFormBuilder() {
 		const errorMessage = formContainer.getAttribute('data-error-message');
 
 		function ensureNativePostFields() {
+			// The admin-post action is in this URL's query string, not a hidden
+			// `action` field, so an author's own field named `action` posts
+			// intact. Drop the field a page cached before that change carries.
 			formElement.action = designsetgoForm.adminPostUrl;
 			formElement.method = 'post';
+			formElement
+				.querySelector('input[name="action"][data-dsgo-system]')
+				?.remove();
 
-			// Only the plugin's own copies (data-dsgo-system): an author's field
-			// may share these names, and its value must be left alone.
-			let actionField = formElement.querySelector(
-				'input[name="action"][data-dsgo-system]'
-			);
-			if (!actionField) {
-				actionField = document.createElement('input');
-				actionField.type = 'hidden';
-				actionField.name = 'action';
-				actionField.setAttribute('data-dsgo-system', '');
-				formElement.appendChild(actionField);
-			}
-			actionField.value = 'designsetgo_form_submit';
-			actionField.defaultValue = actionField.value;
-
+			// Only the plugin's own copy (data-dsgo-system): an author's field
+			// may share the name, and its value must be left alone.
 			let nonceField = formElement.querySelector(
 				'input[name="_wpnonce"][data-dsgo-system]'
 			);
@@ -736,9 +729,11 @@ function initFormBuilder() {
 					};
 					if (steps.isMultiStep) {
 						// reset() sends the steps back to step 1 on a timer, and
-						// hides the focused submit button. Measure and scroll
-						// after that, with focus on the message.
+						// hides the focused submit button. After that, hide the
+						// steps so the message stands alone, then measure and
+						// scroll with focus on the message.
 						setTimeout(() => {
+							steps.finish();
 							if (!messageContainer.hasAttribute('tabindex')) {
 								messageContainer.setAttribute('tabindex', '-1');
 							}

@@ -2,8 +2,9 @@
  * Form Builder — the view script works with the fields and result message the
  * server renders for visitors without JavaScript.
  *
- * Form_No_JS_Submit adds `action`, `_wpnonce` and `dsg_timestamp` to every
- * form, and prints the admin-post result into the message box. The script must
+ * Form_No_JS_Submit points every form at admin-post.php?action=…, adds
+ * `_wpnonce` and `dsg_timestamp`, and prints the admin-post result into the
+ * message box. The script must
  * reuse those fields rather than post a second copy, keep them out of the AJAX
  * field list, and never show the printed message twice.
  */
@@ -11,11 +12,24 @@
 const VIEW = '../../../src/blocks/form-builder/view.js';
 const SERVER_TIMESTAMP = '1000000000000';
 
-function mountForm({ ajax = true, message = '', authorField = '' } = {}) {
+const POST_URL = '/wp-admin/admin-post.php?action=designsetgo_form_submit';
+// What Form_No_JS_Submit rendered before the action moved into the URL; a
+// page cache can still serve it.
+const LEGACY_ACTION =
+	'<input type="hidden" name="action" value="designsetgo_form_submit" data-dsgo-system />';
+
+function mountForm({
+	ajax = true,
+	message = '',
+	authorField = '',
+	legacy = false,
+} = {}) {
 	document.body.insertAdjacentHTML(
 		'afterbegin',
 		`<div class="dsgo-form-builder" data-form-id="contact" data-ajax-submit="${ajax}" data-success-message="Thanks!" data-error-message="Nope.">
-			<form class="dsgo-form" action="/wp-admin/admin-post.php" method="post" novalidate>
+			<form class="dsgo-form" action="${
+				legacy ? '/wp-admin/admin-post.php' : POST_URL
+			}" method="post" novalidate>
 				<div class="dsgo-form__fields">
 					<input type="text" name="your_name" value="Pat" data-field-type="text" />
 					${authorField}
@@ -27,7 +41,7 @@ function mountForm({ ajax = true, message = '', authorField = '' } = {}) {
 					message ||
 					'<div class="dsgo-form__message" role="status" aria-live="polite" aria-atomic="true" style="display:none"></div>'
 				}
-				<input type="hidden" name="action" value="designsetgo_form_submit" data-dsgo-system />
+				${legacy ? LEGACY_ACTION : ''}
 				<input type="hidden" name="_wpnonce" value="servernonce" data-dsgo-system />
 				<input type="hidden" name="dsg_timestamp" value="${SERVER_TIMESTAMP}" data-dsgo-system />
 			</form>
@@ -64,7 +78,7 @@ describe('form-builder with server-rendered no-JS fields', () => {
 			restUrl: '/wp-json/designsetgo/v1/form/submit',
 			ajaxUrl: '/wp-admin/admin-ajax.php',
 			ajaxNonce: 'scriptnonce',
-			adminPostUrl: '/wp-admin/admin-post.php',
+			adminPostUrl: POST_URL,
 			postId: '0',
 		};
 		global.fetch = jest.fn(() =>
@@ -89,7 +103,8 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		const form = mountForm({ ajax: false });
 		init();
 
-		expect(count(form, 'action')).toBe(1);
+		expect(count(form, 'action')).toBe(0);
+		expect(form.getAttribute('action')).toBe(POST_URL);
 		expect(count(form, '_wpnonce')).toBe(1);
 		expect(count(form, 'dsg_timestamp')).toBe(1);
 		// The script's own values win: the time it ran, its localized nonce.
@@ -141,7 +156,7 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		);
 		// The rendered admin-post fields are enabled again afterwards.
 		expect(
-			form.querySelector('[name="action"][data-dsgo-system]').disabled
+			form.querySelector('[name="_wpnonce"][data-dsgo-system]').disabled
 		).toBe(false);
 	});
 
@@ -158,7 +173,23 @@ describe('form-builder with server-rendered no-JS fields', () => {
 		).toBe('crm-route');
 		expect(
 			form.querySelectorAll('[name="action"][data-dsgo-system]')
-		).toHaveLength(1);
+		).toHaveLength(0);
+		expect(form.getAttribute('action')).toBe(POST_URL);
+	});
+
+	it("drops a cached page's hidden action so the author's field posts alone", () => {
+		const form = mountForm({
+			ajax: false,
+			legacy: true,
+			authorField:
+				'<input type="hidden" name="action" value="crm-route" data-field-type="hidden" />',
+		});
+		init();
+
+		expect(form.getAttribute('action')).toBe(POST_URL);
+		expect(
+			[...form.querySelectorAll('[name="action"]')].map((el) => el.value)
+		).toEqual(['crm-route']);
 	});
 
 	it('shows a server-printed result once when the URL carries it', () => {
