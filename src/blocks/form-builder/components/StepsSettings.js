@@ -5,7 +5,12 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { Button, SelectControl } from '@wordpress/components';
+import {
+	Button,
+	SelectControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalVStack as VStack,
+} from '@wordpress/components';
 import { useDispatch } from '@wordpress/data';
 import { DsgoInspectorPanel } from '../../../components/shared';
 import { hasStepChildren, splitIntoSteps, mergeSteps } from '../utils/steps';
@@ -37,7 +42,9 @@ export default function StepsSettings({
 			isShownByDefault
 		>
 			{hasSteps ? (
-				<>
+				// Spacing between the select and the button; the select drops
+				// its own bottom margin (__nextHasNoMarginBottom).
+				<VStack spacing={3}>
 					<SelectControl
 						label={__('Progress indicator', 'designsetgo')}
 						value={stepProgress}
@@ -65,9 +72,9 @@ export default function StepsSettings({
 					>
 						{__('Merge into one page', 'designsetgo')}
 					</Button>
-				</>
+				</VStack>
 			) : (
-				<>
+				<VStack spacing={3}>
 					<p>
 						{__(
 							'Split a long form into steps that visitors fill in one at a time.',
@@ -81,7 +88,7 @@ export default function StepsSettings({
 					>
 						{__('Split into steps', 'designsetgo')}
 					</Button>
-				</>
+				</VStack>
 			)}
 		</DsgoInspectorPanel.Item>
 	);
