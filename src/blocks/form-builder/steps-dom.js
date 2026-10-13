@@ -19,7 +19,12 @@ import {
 import { revealBelowHeader } from './utils/reveal-below-header';
 
 const PROGRESS_STYLES = ['steps', 'bar', 'none'];
-const NOOP = { isMultiStep: false, beforeSubmit: () => true, reset() {} };
+const NOOP = {
+	isMultiStep: false,
+	beforeSubmit: () => true,
+	reset() {},
+	finish() {},
+};
 
 function makeButton(label, className) {
 	const button = document.createElement('button');
@@ -64,7 +69,7 @@ function makeNextButton(submit) {
  *
  * @param {HTMLElement}      container .dsgo-form-builder wrapper.
  * @param {HTMLElement|null} form      The form element.
- * @return {{isMultiStep: boolean, beforeSubmit: Function, reset: Function}} Controller.
+ * @return {{isMultiStep: boolean, beforeSubmit: Function, reset: Function, finish: Function}} Controller.
  */
 export function initFormSteps(container, form) {
 	let steps = [];
@@ -157,6 +162,7 @@ function setUp(container, form, steps) {
 	}
 
 	let current = steps[0];
+	let finished = false;
 	const completed = new Set();
 	const fieldCounts = new Map();
 
@@ -206,6 +212,16 @@ function setUp(container, form, steps) {
 	};
 
 	const render = ({ focus = false, announce = false } = {}) => {
+		if (finished) {
+			// Sent: leave only the success message, not "Step 1 of 3" and a
+			// Next button that read as "start again".
+			[...steps, nav, progress, inlineSubmit, turnstile].forEach((el) => {
+				if (el) {
+					el.hidden = true;
+				}
+			});
+			return;
+		}
 		forgetGrownSteps(steps, fieldCounts, completed);
 		const list = activeSteps();
 		if (!list.includes(current)) {
@@ -325,5 +341,9 @@ function setUp(container, form, steps) {
 			return true;
 		},
 		reset,
+		finish() {
+			finished = true;
+			render();
+		},
 	};
 }
