@@ -40,6 +40,7 @@ import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
 import TurnstileSettings from './components/TurnstileSettings';
 import StepsSettings from './components/StepsSettings';
 import WebhookUrlControl from './components/WebhookUrlControl';
+import AddStepToolbar from './components/AddStepToolbar';
 import { FORM_FIELD_BLOCKS } from './utils/field-blocks';
 import { collectFormFields } from './utils/use-form-fields';
 import { hasStepChildren, STEP_BLOCK } from './utils/steps';
@@ -254,6 +255,10 @@ export default function FormBuilderEdit({
 			{
 				allowedBlocks: hasSteps ? [STEP_BLOCK] : FORM_FIELD_BLOCKS,
 				orientation: 'vertical',
+				// With steps, fields are added inside a step and steps from
+				// the toolbar (AddStepToolbar). The form's own "+" sat on the
+				// last step's "+" and offered field blocks.
+				renderAppender: hasSteps ? false : undefined,
 			}
 		);
 
@@ -271,6 +276,12 @@ export default function FormBuilderEdit({
 
 	return (
 		<>
+			{hasSteps && (
+				<AddStepToolbar
+					clientId={clientId}
+					childCount={childBlocks.length}
+				/>
+			)}
 			<InspectorControls>
 				<DsgoInspectorPanel
 					title={__('Settings', 'designsetgo')}
