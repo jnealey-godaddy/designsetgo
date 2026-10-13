@@ -13,21 +13,18 @@ import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 import { isExtensionEnabled } from '../../utils/is-extension-enabled';
+import { CustomCSSStyles } from './styles';
 
 /**
  * List of blocks to exclude from custom CSS control
  */
 const EXCLUDED_BLOCKS = ['core/html', 'core/code'];
 
-// Lazy-load editor components
+// Lazy-load the inspector panel. CustomCSSStyles is imported eagerly: see
+// withCustomCSSClassAndStyles.
 const CustomCSSPanel = lazy(() =>
 	import(/* webpackChunkName: "ext-custom-css" */ './edit').then((m) => ({
 		default: m.CustomCSSPanel,
-	}))
-);
-const CustomCSSStyles = lazy(() =>
-	import(/* webpackChunkName: "ext-custom-css" */ './edit').then((m) => ({
-		default: m.CustomCSSStyles,
 	}))
 );
 
@@ -95,28 +92,23 @@ if (isExtensionEnabled('custom-css')) {
 }
 
 /**
- * Add custom CSS class AND inject styles into editor (lazy-loaded)
+ * Add custom CSS class AND inject styles into editor
  */
 const withCustomCSSClassAndStyles = createHigherOrderComponent(
 	(BlockListBlock) => {
 		return (props) => {
-			const { attributes, name } = props;
+			const { name } = props;
 
-			if (!shouldExtendBlock(name)) {
+			if (!shouldExtendBlock(name) || EXCLUDED_BLOCKS.includes(name)) {
 				return <BlockListBlock {...props} />;
 			}
 
-			if (!attributes.dsgoCustomCSS || EXCLUDED_BLOCKS.includes(name)) {
-				return <BlockListBlock {...props} />;
-			}
-
+			// Always the same component for a supported block, CSS or not.
+			// Switching element type when the CSS goes from empty to set
+			// remounts the block on the first keystroke, and the rest of
+			// the typing lands in the block's content.
 			return (
-				<Suspense fallback={<BlockListBlock {...props} />}>
-					<CustomCSSStyles
-						BlockListBlock={BlockListBlock}
-						{...props}
-					/>
-				</Suspense>
+				<CustomCSSStyles BlockListBlock={BlockListBlock} {...props} />
 			);
 		};
 	},

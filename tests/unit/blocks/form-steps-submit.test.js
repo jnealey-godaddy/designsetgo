@@ -140,7 +140,7 @@ describe('multi-step form submission', () => {
 			);
 		});
 
-		it('after success, scrolls to and focuses the message once step 1 is back', async () => {
+		it('after success, hides the steps and focuses the message on its own', async () => {
 			global.fetch.mockResolvedValue({
 				ok: true,
 				status: 200,
@@ -157,7 +157,7 @@ describe('multi-step form submission', () => {
 			const seen = [];
 			message.scrollIntoView = jest.fn(() => {
 				seen.push({
-					step1Shown: !stepEl(1).hidden,
+					stepsShown: [1, 2, 3].filter((n) => !stepEl(n).hidden),
 					focused: document.activeElement === message,
 				});
 			});
@@ -172,7 +172,19 @@ describe('multi-step form submission', () => {
 
 			expect(global.fetch).toHaveBeenCalledTimes(1);
 			expect(message.textContent).toContain('Thanks');
-			expect(stepEl(1).hidden).toBe(false);
+			// No "Step 1 of 3" and Next button under the thank-you.
+			expect([1, 2, 3].map((n) => stepEl(n).hidden)).toEqual([
+				true,
+				true,
+				true,
+			]);
+			expect(document.querySelector('.dsgo-form-steps__nav').hidden).toBe(
+				true
+			);
+			expect(
+				document.querySelector('.dsgo-form-steps__progress').hidden
+			).toBe(true);
+			expect(message.style.display).toBe('block');
 			expect(message.getAttribute('tabindex')).toBe('-1');
 			expect(document.activeElement).toBe(message);
 			expect(
@@ -180,7 +192,7 @@ describe('multi-step form submission', () => {
 					.querySelector('.screen-reader-text')
 					.getAttribute('aria-hidden')
 			).toBe('true');
-			expect(seen).toEqual([{ step1Shown: true, focused: true }]);
+			expect(seen).toEqual([{ stepsShown: [], focused: true }]);
 		});
 
 		it('leaves the single-page success path as it was', async () => {

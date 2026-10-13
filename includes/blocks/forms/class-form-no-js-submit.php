@@ -8,11 +8,12 @@
  * browser posted to the page itself, nothing handled it, and the visitor's
  * answers were lost.
  *
- * This fills in at render time what view.js would have: the action URL, the
- * admin-post `action`, a nonce and a timestamp. It also prints the result of
- * the admin-post redirect into the form's message box, which only view.js
- * did before. Rendering it server-side leaves save(), its deprecations and
- * the PHP serializer mirror untouched, and fixes every form already saved.
+ * This fills in at render time what view.js would have: the action URL
+ * (admin-post.php, routed by its query string), a nonce and a timestamp. It
+ * also prints the result of the admin-post redirect into the form's message
+ * box, which only view.js did before. Rendering it server-side leaves save(),
+ * its deprecations and the PHP serializer mirror untouched, and fixes every
+ * form already saved.
  *
  * @package DesignSetGo
  * @since 2.10.0
@@ -31,6 +32,20 @@ class Form_No_JS_Submit {
 	 * Admin-post action, and the nonce action it verifies.
 	 */
 	const ACTION = 'designsetgo_form_submit';
+
+	/**
+	 * Where a form posts when it doesn't submit over AJAX.
+	 *
+	 * The admin-post action travels in the URL, not as a hidden `action`
+	 * field: an author's own field may be called `action`, and the two would
+	 * collide in the POST body, losing one value (Form_Handler catches these
+	 * requests on admin_init, before admin-post.php routes on `action`).
+	 *
+	 * @return string URL.
+	 */
+	public static function post_url() {
+		return add_query_arg( 'action', self::ACTION, admin_url( 'admin-post.php' ) );
+	}
 
 	/**
 	 * Constructor.
@@ -82,13 +97,13 @@ class Form_No_JS_Submit {
 			return $block_content;
 		}
 		if ( '' === self::attribute( $processor, 'action' ) ) {
-			$processor->set_attribute( 'action', admin_url( 'admin-post.php' ) );
+			$processor->set_attribute( 'action', self::post_url() );
 		}
 
 		// Never add a field the markup already carries (a second pass of this
 		// filter, or a field someone else injected): duplicate names post twice.
-		// Only our own copies count for `action` and `_wpnonce`: an author's
-		// field may share those names, and is a value to submit, not ours.
+		// Only our own copy counts for `_wpnonce`: an author's field may share
+		// the name, and is a value to submit, not ours.
 		$present = array();
 		while ( $processor->next_tag( array( 'tag_name' => 'INPUT' ) ) ) {
 			$name = self::attribute( $processor, 'name' );
@@ -173,7 +188,6 @@ class Form_No_JS_Submit {
 	 */
 	private function hidden_fields() {
 		return array(
-			'action'        => self::ACTION,
 			'_wpnonce'      => wp_create_nonce( self::ACTION ),
 			'dsg_timestamp' => time() . '000',
 		);

@@ -246,6 +246,19 @@ class Test_Form_No_JS_Retry extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'dsgo_form_status=success', $again );
 		$this->assertStringNotContainsString( 'dsgo_form_error', $again );
 		$this->assertStringNotContainsString( 'dsgo_form_field', $again );
+
+		// The stored Source URL names the page, not the earlier failure.
+		$submissions = get_posts(
+			array(
+				'post_type'      => 'dsgo_form_submission',
+				'post_status'    => 'any',
+				'posts_per_page' => 1,
+				'orderby'        => 'ID',
+				'order'          => 'DESC',
+			)
+		);
+		$this->assertNotEmpty( $submissions );
+		$this->assertSame( get_permalink( $post_id ), get_post_meta( $submissions[0]->ID, '_dsg_submission_referer', true ) );
 	}
 
 	public function test_too_fast_is_explained_without_naming_a_field() {

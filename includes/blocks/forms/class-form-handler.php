@@ -130,7 +130,12 @@ class Form_Handler {
 		add_action( 'wp_ajax_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
 		add_action( 'wp_ajax_nopriv_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
 
-		// Non-AJAX form POST handler.
+		// Non-AJAX form POST handler. Forms post to admin-post.php?action=…
+		// (Form_No_JS_Submit::post_url()) and are caught on admin_init, before
+		// admin-post.php routes on $_REQUEST['action'], which an author's own
+		// field named `action` would override. The admin_post hooks still
+		// serve pages cached with the older hidden `action` field.
+		add_action( 'admin_init', array( $this, 'maybe_handle_post_submission' ), 0 );
 		add_action( 'admin_post_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
 		add_action( 'admin_post_nopriv_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
 
@@ -589,6 +594,28 @@ class Form_Handler {
 	}
 
 	/**
+	 * Handle a form posted to Form_No_JS_Submit::post_url().
+	 *
+	 * Runs on admin_init, which admin-post.php fires before it routes on
+	 * $_REQUEST['action']. WordPress builds that from $_GET and $_POST with
+	 * POST winning, so an author's field named `action` would otherwise send
+	 * the request to an action nobody handles.
+	 */
+	public function maybe_handle_post_submission() {
+		global $pagenow;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Routing only; handle_post_submission() verifies the nonce.
+		$action = isset( $_GET['action'] ) && is_string( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( sanitize_key( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) : '';
+
+		if ( 'admin-post.php' !== $pagenow || 'POST' !== $method || Form_No_JS_Submit::ACTION !== $action ) {
+			return;
+		}
+
+		$this->handle_post_submission();
+	}
+
+	/**
 	 * Handle non-AJAX form submission via admin_post.
 	 *
 	 * Processes standard form POST and redirects back with a status query param.
@@ -635,12 +662,14 @@ class Form_Handler {
 			}
 		}
 
-		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce', 'action' );
+		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce' );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		foreach ( $_POST as $key => $value ) {
-			// Skip system fields.
-			if ( in_array( $key, $system_fields, true ) ) {
+			// Skip system fields. `action` is ours only when it carries our
+			// value (a page cached before the action moved into the URL);
+			// otherwise it is an author's field.
+			if ( in_array( $key, $system_fields, true ) || ( 'action' === $key && Form_No_JS_Submit::ACTION === $value ) ) {
 				continue;
 			}
 
@@ -902,7 +931,7 @@ class Form_Handler {
 		update_post_meta( $post_id, '_dsg_form_fields', wp_slash( $fields ) );
 		update_post_meta( $post_id, '_dsg_submission_ip', $this->security->get_client_ip() );
 		update_post_meta( $post_id, '_dsg_submission_user_agent', wp_slash( $this->get_user_agent() ) );
-		update_post_meta( $post_id, '_dsg_submission_referer', wp_slash( wp_get_referer() ) );
+		update_post_meta( $post_id, '_dsg_submission_referer', wp_slash( $this->get_submission_source_url() ) );
 		update_post_meta( $post_id, '_dsg_submission_date', current_time( 'mysql' ) );
 
 		// Clear cached form submission count.
@@ -949,7 +978,7 @@ class Form_Handler {
 				'nonce'        => wp_create_nonce( 'wp_rest' ),
 				'restUrl'      => rest_url( 'designsetgo/v1/form/submit' ),
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'adminPostUrl' => admin_url( 'admin-post.php' ),
+				'adminPostUrl' => Form_No_JS_Submit::post_url(),
 				'ajaxNonce'    => wp_create_nonce( 'designsetgo_form_submit' ),
 				// Sent back as sourcePostId so a form ID shared by several pages
 				// resolves to the copy on this one.
@@ -1497,6 +1526,23 @@ class Form_Handler {
 			'labels'          => $labels,
 			'conditions'      => Form_Conditions::extract( $inner_blocks ),
 		);
+	}
+
+	/**
+	 * The page a submission was sent from, for the stored Source URL.
+	 *
+	 * A no-JS retry is posted from the previous result's URL, so drop the
+	 * plugin's own result args: the record should name the page, not an
+	 * earlier failure.
+	 *
+	 * @return string Referer without result args, or '' when there is none.
+	 */
+	private function get_submission_source_url() {
+		$referer = wp_get_referer();
+		if ( ! $referer ) {
+			return '';
+		}
+		return remove_query_arg( array( 'dsgo_form_status', 'dsgo_form_id', 'dsgo_form_error', 'dsgo_form_field' ), $referer );
 	}
 
 	/**

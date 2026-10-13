@@ -73,6 +73,8 @@ const withChildControls = createHigherOrderComponent(
 function StyledBlock({ BlockListBlock, ...props }) {
 	const className = getLayoutClass(props.name, props.attributes.dsgoLayout);
 	const selector = `#block-${props.clientId}[data-block].${className}`;
+	// compileLayoutCSS() is '' without overrides, which useStyleOverride
+	// ignores, so blocks without overrides cost nothing here.
 	useStyleOverride({
 		id: `dsgo-layout-${props.clientId}`,
 		css: compileLayoutCSS(
@@ -81,6 +83,9 @@ function StyledBlock({ BlockListBlock, ...props }) {
 			selector
 		),
 	});
+	if (!className) {
+		return <BlockListBlock {...props} />;
+	}
 	return (
 		<BlockListBlock
 			{...props}
@@ -96,13 +101,12 @@ function StyledBlock({ BlockListBlock, ...props }) {
 
 const withLayoutStyles = createHigherOrderComponent(
 	(BlockListBlock) => (props) => {
-		if (
-			!support.blocks[props.name] ||
-			!shouldExtendBlock(props.name) ||
-			!getLayoutClass(props.name, props.attributes.dsgoLayout)
-		) {
+		if (!support.blocks[props.name] || !shouldExtendBlock(props.name)) {
 			return <BlockListBlock {...props} />;
 		}
+		// Same component whether or not the block has overrides: switching
+		// element type when the first override is set remounts the block,
+		// which resets the Viewport select and drops focus mid-typing.
 		return <StyledBlock {...props} BlockListBlock={BlockListBlock} />;
 	},
 	'withLayoutStyles'

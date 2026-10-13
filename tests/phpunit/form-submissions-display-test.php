@@ -22,6 +22,13 @@ class Test_Form_Submissions_Display extends WP_UnitTestCase {
 		$this->assertSame( 'x', Form_Submissions::format_field_value( array( 'x', array( 'nested' ), null ) ) );
 	}
 
+	public function test_default_checkbox_value_reads_yes() {
+		$this->assertSame( 'Yes', Form_Submissions::display_value( '1', 'checkbox' ) );
+		$this->assertSame( 'opt-in', Form_Submissions::display_value( 'opt-in', 'checkbox' ), 'An author-set value is shown as stored.' );
+		$this->assertSame( '1', Form_Submissions::display_value( '1', 'number' ) );
+		$this->assertSame( 'News, Offers', Form_Submissions::display_value( array( 'News', 'Offers' ), 'checkbox' ) );
+	}
+
 	public function test_details_render_labels_and_arrays() {
 		$id = self::factory()->post->create( array( 'post_type' => 'dsgo_form_submission', 'post_status' => 'private' ) );
 		update_post_meta(
@@ -30,6 +37,7 @@ class Test_Form_Submissions_Display extends WP_UnitTestCase {
 			array(
 				'topics'    => array( 'value' => array( 'News', 'Offers' ), 'type' => 'checkbox', 'label' => 'Topics <b>' ),
 				'legacy_nm' => array( 'value' => 'Old', 'type' => 'text' ),
+				'agree'     => array( 'value' => '1', 'type' => 'checkbox', 'label' => 'I agree' ),
 			)
 		);
 
@@ -41,5 +49,6 @@ class Test_Form_Submissions_Display extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Topics &lt;b&gt;', $html, 'Labels are escaped.' );
 		$this->assertStringContainsString( '<code>topics</code>', $html );
 		$this->assertStringContainsString( '<strong>legacy_nm</strong>', $html, 'Pre-label submissions show the name.' );
+		$this->assertMatchesRegularExpression( '#<code>agree</code></td><td>Yes</td>#', $html );
 	}
 }
