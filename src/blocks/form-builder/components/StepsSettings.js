@@ -75,7 +75,8 @@ export default function StepsSettings({
 									_n(
 										'%d field sits outside the steps, so visitors see it on every step.',
 										'%d fields sit outside the steps, so visitors see them on every step.',
-										strays.length
+										strays.length,
+										'designsetgo'
 									),
 									strays.length
 								)}

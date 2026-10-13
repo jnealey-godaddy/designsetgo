@@ -5,6 +5,12 @@ module.exports = {
 	root: true,
 	extends: ['plugin:@wordpress/eslint-plugin/recommended'],
 	rules: {
+		// The preset also allows `default`, so a missing domain (core's
+		// catalogue: the string never translates) passed lint.
+		'@wordpress/i18n-text-domain': [
+			'error',
+			{ allowedTextDomain: 'designsetgo' },
+		],
 		'import/no-extraneous-dependencies': 'off',
 		'import/no-unresolved': 'off',
 		'jsdoc/require-param-description': 'off',
