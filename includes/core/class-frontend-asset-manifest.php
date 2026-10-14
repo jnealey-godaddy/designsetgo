@@ -227,9 +227,13 @@ class Frontend_Asset_Manifest {
 
 		$entry = array( 'deps' => $deps );
 
-		// A handle without a src is an alias that only groups dependencies.
+		// A handle without a src is an alias that only groups dependencies, as
+		// is one whose URL a `script_loader_src` filter blanked.
 		if ( $script->src ) {
-			$entry['src'] = self::asset_url( $wp_scripts, $script, 'script_loader_src' );
+			$src = self::printed_url( $wp_scripts, $handle, 'SCRIPT', 'src', array( "{$handle}-js" ) );
+			if ( '' !== $src ) {
+				$entry['src'] = $src;
+			}
 		}
 
 		// Localized data and translations run before the script, as WordPress
@@ -269,7 +273,13 @@ class Frontend_Asset_Manifest {
 			return false;
 		}
 
-		$entry = array( 'href' => self::asset_url( $wp_styles, $style, 'style_loader_src' ) );
+		// An RTL site may print `<handle>-rtl-css` in place of `<handle>-css`.
+		$href = self::printed_url( $wp_styles, $handle, 'LINK', 'href', array( "{$handle}-css", "{$handle}-rtl-css" ) );
+		if ( '' === $href ) {
+			return false;
+		}
+
+		$entry = array( 'href' => $href );
 
 		$after = $wp_styles->get_data( $handle, 'after' );
 		if ( is_array( $after ) && $after ) {
@@ -282,36 +292,44 @@ class Frontend_Asset_Manifest {
 	}
 
 	/**
-	 * Resolve a registered asset's URL the way WordPress does when printing it.
+	 * The URL WordPress prints for a registered asset.
+	 *
+	 * Core renders the tag, so the URL gets its version argument and
+	 * `script_loader_src` / `style_loader_src` exactly as the printed tags do,
+	 * and a CDN or asset-optimization plugin rewrites it the same way.
 	 *
 	 * @param \WP_Dependencies $registry Scripts or styles registry.
-	 * @param \_WP_Dependency  $asset    Registered asset.
-	 * @param string           $filter   `script_loader_src` or `style_loader_src`.
-	 * @return string URL.
+	 * @param string           $handle   Asset handle.
+	 * @param string           $tag      `SCRIPT` or `LINK`.
+	 * @param string           $attr     `src` or `href`.
+	 * @param string[]         $ids      Printed element IDs, in order of preference.
+	 * @return string URL, or '' when WordPress prints none.
 	 */
-	private static function asset_url( $registry, $asset, $filter ) {
-		$src = (string) $asset->src;
+	private static function printed_url( $registry, $handle, $tag, $attr, array $ids ) {
+		// Concatenation would queue the tag instead of printing it.
+		$do_concat           = $registry->do_concat;
+		$registry->do_concat = false;
+		ob_start();
+		$registry->do_item( $handle );
+		$html                = (string) ob_get_clean();
+		$registry->do_concat = $do_concat;
 
-		if (
-			! preg_match( '|^(https?:)?//|', $src )
-			&& ! ( $registry->content_url && str_starts_with( $src, $registry->content_url ) )
-		) {
-			$src = $registry->base_url . $src;
+		$urls      = array();
+		$processor = new \WP_HTML_Tag_Processor( $html );
+		while ( $processor->next_tag( array( 'tag_name' => $tag ) ) ) {
+			$id  = $processor->get_attribute( 'id' );
+			$url = $processor->get_attribute( $attr );
+			if ( is_string( $id ) && is_string( $url ) && in_array( $id, $ids, true ) ) {
+				$urls[ $id ] = $url;
+			}
 		}
 
-		$ver = null === $asset->ver ? '' : ( $asset->ver ? $asset->ver : $registry->default_version );
-		if ( '' !== (string) $ver ) {
-			$src = add_query_arg( 'ver', $ver, $src );
+		foreach ( $ids as $id ) {
+			if ( isset( $urls[ $id ] ) ) {
+				return $urls[ $id ];
+			}
 		}
 
-		// Core's own filters, so a CDN or asset-optimization plugin rewrites
-		// these URLs exactly as it does the printed tags.
-		if ( 'style_loader_src' === $filter ) {
-			/** This filter is documented in wp-includes/class-wp-styles.php */
-			return (string) apply_filters( 'style_loader_src', $src, $asset->handle ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
-		}
-
-		/** This filter is documented in wp-includes/class-wp-scripts.php */
-		return (string) apply_filters( 'script_loader_src', $src, $asset->handle ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
+		return '';
 	}
 }
