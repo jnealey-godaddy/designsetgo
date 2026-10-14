@@ -78,6 +78,42 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'ver=', $manifest['styles']['designsetgo-tabs-style']['href'] );
 	}
 
+	public function test_urls_go_through_core_loader_filters() {
+		$seen = array();
+		$cdn  = function ( $src, $handle ) use ( &$seen ) {
+			$seen[] = $handle;
+			return str_replace( home_url(), 'https://cdn.example.com', $src ) . '&cdn=1';
+		};
+		add_filter( 'script_loader_src', $cdn, 10, 2 );
+		add_filter( 'style_loader_src', $cdn, 10, 2 );
+
+		$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
+
+		remove_filter( 'script_loader_src', $cdn, 10 );
+		remove_filter( 'style_loader_src', $cdn, 10 );
+		$src  = $manifest['scripts']['designsetgo-tabs-view-script']['src'];
+		$href = $manifest['styles']['designsetgo-tabs-style']['href'];
+
+		$this->assertContains( 'designsetgo-tabs-view-script', $seen );
+		$this->assertContains( 'designsetgo-tabs-style', $seen );
+		$this->assertStringStartsWith( 'https://cdn.example.com/', $src );
+		$this->assertStringStartsWith( 'https://cdn.example.com/', $href );
+		// Plain URLs for JavaScript, not the HTML-escaped attribute value.
+		$this->assertStringEndsWith( '&cdn=1', $src );
+		$this->assertStringEndsWith( '&cdn=1', $href );
+	}
+
+	public function test_rtl_sites_get_the_stylesheet_wordpress_prints() {
+		wp_styles()->text_direction = 'rtl';
+		wp_style_add_data( 'designsetgo-tabs-style', 'rtl', 'replace' );
+
+		$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
+
+		wp_styles()->text_direction = 'ltr';
+		unset( wp_styles()->registered['designsetgo-tabs-style']->extra['rtl'] );
+		$this->assertStringContainsString( '-rtl.css', $manifest['styles']['designsetgo-tabs-style']['href'] );
+	}
+
 	public function test_extension_bundles_match_on_needles() {
 		$manifest   = \DesignSetGo\Frontend_Asset_Manifest::build();
 		$animations = self::trigger( $manifest, 'needles', 'has-dsgo-animation' );
