@@ -99,6 +99,7 @@ Admins can see each submission's status under **DesignSetGo → Form Submissions
 ## Restrictions
 
 - The URL must be `http` or `https`, on port 80, 443 or 8080, and resolve to a public IP. Loopback, private and link-local addresses are refused (WordPress's `wp_http_validate_url()`).
+- To send to one of those addresses anyway, allow its host with WordPress's `http_request_host_is_external` filter. Before WordPress 7.1, link-local (169.254.0.0/16) and CGNAT (100.64.0.0/10) hosts are refused by DesignSetGo rather than WordPress, so allow them with `designsetgo_form_webhook_allow_reserved_host` instead.
 - The URL comes from the saved block, never from the visitor's request, and is copied onto the submission, so later edits to the form don't redirect pending retries.
 - Anyone who can edit the page can read the URL in the block markup. Don't put a password in it; use the signing secret.
 
@@ -108,6 +109,7 @@ Admins can see each submission's status under **DesignSetGo → Form Submissions
 | --- | --- | --- |
 | `designsetgo_form_webhook_payload` | filter | `( array $payload, int $submission_id, string $form_id )`. Change the payload. A non-array return is ignored. |
 | `designsetgo_form_webhook_url` | filter | `( string $url, string $form_id, int $submission_id )`. Return `''` to block a destination. The result is validated again. |
+| `designsetgo_form_webhook_allow_reserved_host` | filter | `( bool $allow, string $host, string $url )`. Before WordPress 7.1 only: return true to send to a link-local or CGNAT host. From 7.1, use `http_request_host_is_external`. |
 | `designsetgo_form_webhook_timeout` | filter | `( int $seconds )`. Default 5, clamped to 1–30. |
 | `designsetgo_form_webhook_retry_delays` | filter | `( int[] $delays )`. Seconds before each retry; the count is the number of retries, and an empty array disables them. |
 | `designsetgo_form_webhook_send_after_response` | filter | `( bool $after_response )`. Whether the first attempt runs at shutdown (true) or on WP-Cron (false). Defaults to whether the server can flush the response early. |

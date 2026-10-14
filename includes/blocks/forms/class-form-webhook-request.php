@@ -126,8 +126,9 @@ class Form_Webhook_Request {
 
 	/**
 	 * Core's URL check, plus the reserved ranges it only rejects from
-	 * WordPress 7.1: before that, link-local (cloud metadata), CGNAT and
-	 * 0.0.0.0/8 pass `wp_http_validate_url()` and `wp_safe_remote_post()`.
+	 * WordPress 7.1: before that, link-local (cloud metadata) and CGNAT
+	 * pass `wp_http_validate_url()` and `wp_safe_remote_post()`. From 7.1
+	 * core rejects them itself, subject to `http_request_host_is_external`.
 	 *
 	 * @param string $url URL.
 	 * @return bool
@@ -135,6 +136,10 @@ class Form_Webhook_Request {
 	private static function is_safe_url( string $url ): bool {
 		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
 			return false;
+		}
+
+		if ( is_wp_version_compatible( '7.1' ) ) {
+			return true;
 		}
 
 		$host = trim( (string) wp_parse_url( $url, PHP_URL_HOST ), '.' );
@@ -149,12 +154,24 @@ class Form_Webhook_Request {
 		}
 
 		$parts    = array_map( 'intval', explode( '.', $ip ) );
-		$reserved = 0 === $parts[0]                                     // 0.0.0.0/8 (this network).
-			|| ( 169 === $parts[0] && 254 === $parts[1] )               // 169.254.0.0/16 (link-local, cloud metadata).
+		$reserved = ( 169 === $parts[0] && 254 === $parts[1] )             // 169.254.0.0/16 (link-local, cloud metadata).
 			|| ( 100 === $parts[0] && 64 <= $parts[1] && 127 >= $parts[1] ); // 100.64.0.0/10 (CGNAT).
+		if ( ! $reserved ) {
+			return true;
+		}
 
-		/** This filter is documented in wp-includes/http.php */
-		return ! $reserved || (bool) apply_filters( 'http_request_host_is_external', false, $host, $url ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core filter, re-applied so the site's external-host allowlist also covers these ranges.
+		/**
+		 * Filters whether a webhook may be sent to a link-local or CGNAT host
+		 * before WordPress 7.1. From 7.1 core rejects these ranges itself, and
+		 * `http_request_host_is_external` decides instead.
+		 *
+		 * @since 2.10.1
+		 *
+		 * @param bool   $allow Whether to allow the host. Default false.
+		 * @param string $host  Host name of the receiver URL.
+		 * @param string $url   Receiver URL.
+		 */
+		return (bool) apply_filters( 'designsetgo_form_webhook_allow_reserved_host', false, $host, $url );
 	}
 
 	/**
