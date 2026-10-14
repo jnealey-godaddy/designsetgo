@@ -107,7 +107,7 @@ class Form_Submissions_Export {
 	}
 
 	/**
-	 * Write the CSV for the given filters to a stream.
+	 * Write the CSV for the given filters to the response output.
 	 *
 	 * Two passes over the matching IDs, in batches: the first collects every
 	 * field name (so the header is complete), the second writes rows. Memory
@@ -115,12 +115,15 @@ class Form_Submissions_Export {
 	 * export's start time, so a submission arriving mid-export can't add a
 	 * row whose fields have no column.
 	 *
-	 * @param resource $handle Writable stream.
-	 * @param array    $args   Filter args from request_args().
+	 * The handle needs no fclose(): it closes, flushing, when it goes out of
+	 * scope at return.
+	 *
+	 * @param array $args Filter args from request_args().
 	 */
-	public function write_csv( $handle, array $args ): void {
+	public function write_csv( array $args ): void {
 		$args['until'] = wp_date( 'Y-m-d H:i:s', time() - 1 );
-		fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Streaming to the response.
+		echo "\xEF\xBB\xBF"; // UTF-8 BOM so spreadsheets detect the encoding.
+		$handle = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming to the response.
 
 		$names  = array();
 		$labels = array();
@@ -172,19 +175,16 @@ class Form_Submissions_Export {
 		$args     = self::request_args( $_GET );
 		$filename = 'submissions-' . ( '' !== $args['form_id'] ? sanitize_file_name( $args['form_id'] ) : 'all' ) . '-' . wp_date( 'Y-m-d' ) . '.csv';
 
-		// A timeout mid-stream would leave a silently truncated file.
+		// No set_time_limit(): Plugin Check forbids it, and core's export_wp()
+		// streams without it. Batching keeps CPU time (what max_execution_time
+		// counts on most hosts) low; the wait is mostly DB and output I/O.
 		wp_raise_memory_limit( 'admin' );
-		if ( function_exists( 'set_time_limit' ) ) {
-			set_time_limit( 0 );
-		}
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 
-		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming to the response.
-		$this->write_csv( $out, $args );
-		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		$this->write_csv( $args );
 		exit;
 	}
 
