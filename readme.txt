@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.10.0
+Stable tag: 2.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,7 +110,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
-= Unreleased =
+= 2.11.0 - 2026-10-14 =
 
 * **Security:** Form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) are blocked, and the way to allow one depends on your WordPress version. Current WordPress releases (7.1, and 6.7.6, 6.8.7, 6.9.6 and 7.0.3 or later) block these addresses themselves, and WordPress's `http_request_host_is_external` filter allows them. On older versions DesignSetGo blocks them instead, and only the `designsetgo_form_webhook_allow_reserved_host` filter allows them.
 * **Fix:** When a page refreshes in place while you edit it, blocks that weren't on the page before load their right-to-left styles on RTL sites. Their scripts also still load when a caching or optimization plugin rewrites the page's script tags.
@@ -270,6 +270,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.11.0 =
+Fixes for form webhooks and in-place page refreshes. Webhooks to link-local or carrier-grade NAT addresses are blocked; see the changelog for the filter that allows one on your WordPress version.
 
 = 2.10.0 =
 Adds multi-step and conditional forms, form webhooks and CSV export, and per-device layout controls. Grids with two or more mobile columns now keep their column spans, so check those on a phone after updating.
