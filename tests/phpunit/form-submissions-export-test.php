@@ -60,9 +60,13 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 	 */
 	private function export_rows( array $args ) {
 		ob_start();
-		$this->export->write_csv( array_merge( array( 'form_id' => '', 'from' => '', 'to' => '' ), $args ) );
+		try {
+			$this->export->write_csv( array_merge( array( 'form_id' => '', 'from' => '', 'to' => '' ), $args ) );
+		} finally {
+			$csv = (string) ob_get_clean();
+		}
 		$handle = fopen( 'php://memory', 'w+' );
-		fwrite( $handle, ob_get_clean() );
+		fwrite( $handle, $csv );
 		rewind( $handle );
 		$bom = fread( $handle, 3 );
 		$this->assertSame( "\xEF\xBB\xBF", $bom );

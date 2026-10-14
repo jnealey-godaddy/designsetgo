@@ -248,12 +248,13 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Deliver to a CGNAT receiver with the given filter returning true.
+	 * Deliver to a receiver with the given filter returning true.
 	 *
 	 * @param string $hook Filter to open.
+	 * @param string $url  Receiver URL.
 	 * @return array{0: int, 1: array} Submission ID and the filter's arguments.
 	 */
-	private function submit_with_open_filter( $hook ) {
+	private function submit_with_open_filter( $hook, $url = 'http://100.64.0.1/hook' ) {
 		$seen  = array();
 		$allow = function ( $allow, $host, $url ) use ( &$seen ) {
 			$seen = array( $host, $url );
@@ -262,10 +263,24 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		add_filter( $hook, $allow, 10, 3 );
 
 		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
-		$this->submit( $id, 'http://100.64.0.1/hook' );
+		$this->submit( $id, $url );
 
 		remove_filter( $hook, $allow, 10 );
 		return array( $id, $seen );
+	}
+
+	/**
+	 * Link-local and CGNAT receivers, including the edges of each range.
+	 *
+	 * @return array<string,array{0:string}>
+	 */
+	public function reserved_receivers() {
+		return array(
+			'cloud metadata' => array( 'http://169.254.169.254/latest/meta-data/' ),
+			'link-local low' => array( 'http://169.254.0.1/hook' ),
+			'cgnat low'      => array( 'http://100.64.0.1/hook' ),
+			'cgnat high'     => array( 'http://100.127.255.254/hook' ),
+		);
 	}
 
 	public function test_core_allowlist_admits_a_reserved_receiver_from_7_1() {
@@ -279,25 +294,36 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
 
-	public function test_opt_in_filter_cannot_widen_core_from_7_1() {
+	/**
+	 * @dataProvider reserved_receivers
+	 *
+	 * @param string $url Receiver URL.
+	 */
+	public function test_opt_in_filter_is_not_consulted_from_7_1( $url ) {
 		if ( ! is_wp_version_compatible( '7.1' ) ) {
 			$this->markTestSkipped( 'Core rejects link-local and CGNAT hosts from WordPress 7.1.' );
 		}
 
-		list( $id ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host' );
+		list( $id, $seen ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host', $url );
 
+		$this->assertSame( array(), $seen );
 		$this->assertCount( 0, $this->requests );
 		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
 
-	public function test_opt_in_filter_admits_a_reserved_receiver_before_7_1() {
+	/**
+	 * @dataProvider reserved_receivers
+	 *
+	 * @param string $url Receiver URL.
+	 */
+	public function test_opt_in_filter_admits_a_reserved_receiver_before_7_1( $url ) {
 		if ( is_wp_version_compatible( '7.1' ) ) {
 			$this->markTestSkipped( 'Only WordPress before 7.1 needs the opt-in.' );
 		}
 
-		list( $id, $seen ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host' );
+		list( $id, $seen ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host', $url );
 
-		$this->assertSame( array( '100.64.0.1', 'http://100.64.0.1/hook' ), $seen );
+		$this->assertSame( array( wp_parse_url( $url, PHP_URL_HOST ), $url ), $seen );
 		$this->assertCount( 1, $this->requests );
 		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
@@ -311,6 +337,40 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 
 		$this->assertCount( 0, $this->requests );
 		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * Just outside 100.64.0.0/10: public, so delivered with no opt-in asked.
+	 *
+	 * @dataProvider cgnat_neighbours
+	 *
+	 * @param string $url Receiver URL.
+	 */
+	public function test_opt_in_filter_is_not_consulted_for_public_hosts( $url ) {
+		$asked = false;
+		$deny  = function () use ( &$asked ) {
+			$asked = true;
+			return false;
+		};
+		add_filter( 'designsetgo_form_webhook_allow_reserved_host', $deny );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id, $url );
+
+		remove_filter( 'designsetgo_form_webhook_allow_reserved_host', $deny );
+		$this->assertFalse( $asked );
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * @return array<string,array{0:string}>
+	 */
+	public function cgnat_neighbours() {
+		return array(
+			'below' => array( 'http://100.63.255.255/hook' ),
+			'above' => array( 'http://100.128.0.1/hook' ),
+		);
 	}
 
 	/**
