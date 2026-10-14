@@ -316,7 +316,7 @@ class Frontend_Asset_Manifest {
 
 		$urls      = array();
 		$processor = new \WP_HTML_Tag_Processor( $html );
-		while ( $processor->next_tag( $tag ) ) {
+		while ( $processor->next_tag( array( 'tag_name' => $tag ) ) ) {
 			$id  = $processor->get_attribute( 'id' );
 			$url = $processor->get_attribute( $attr );
 			if ( is_string( $id ) && is_string( $url ) && in_array( $id, $ids, true ) ) {
