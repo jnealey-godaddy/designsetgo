@@ -154,7 +154,7 @@ class Form_Webhook_Request {
 			|| ( 100 === $parts[0] && 64 <= $parts[1] && 127 >= $parts[1] ); // 100.64.0.0/10 (CGNAT).
 
 		/** This filter is documented in wp-includes/http.php */
-		return ! $reserved || (bool) apply_filters( 'http_request_host_is_external', false, $host, $url );
+		return ! $reserved || (bool) apply_filters( 'http_request_host_is_external', false, $host, $url ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core filter, re-applied so the site's external-host allowlist also covers these ranges.
 	}
 
 	/**
