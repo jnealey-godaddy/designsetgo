@@ -110,6 +110,11 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
+= Unreleased =
+
+* **Security:** On WordPress versions before 7.1, form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) now need the `designsetgo_form_webhook_allow_reserved_host` filter. WordPress's `http_request_host_is_external` filter no longer allows them on those versions. From WordPress 7.1, WordPress checks these addresses itself and its own filter applies.
+* **Fix:** When a page refreshes in place while you edit it, blocks that weren't on the page before load their right-to-left styles on RTL sites. Their scripts also still load when a caching or optimization plugin rewrites the page's script tags.
+
 = 2.10.0 - 2026-10-13 =
 
 * **New:** Multi-step forms. Use "Split into steps" in a form's Settings (or the Multi-step template) to show a long form one step at a time, with Next / Back and a progress indicator. Next matches your Submit button, Submit takes its place on the last step, and you can set a Progress colour and style each step title. Once the form is sent, only your success message shows. Without JavaScript the form shows as one page.
