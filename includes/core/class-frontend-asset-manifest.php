@@ -230,9 +230,9 @@ class Frontend_Asset_Manifest {
 		// A handle without a src is an alias that only groups dependencies, as
 		// is one whose URL a `script_loader_src` filter blanked.
 		if ( $script->src ) {
-			$src = self::printed_url( $wp_scripts, $handle, 'SCRIPT', 'src', array( "{$handle}-js" ) );
-			if ( '' !== $src ) {
-				$entry['src'] = $src;
+			$urls = self::printed_urls( $wp_scripts, $handle, 'script_loader_tag' );
+			if ( $urls ) {
+				$entry['src'] = $urls[0];
 			}
 		}
 
@@ -273,13 +273,15 @@ class Frontend_Asset_Manifest {
 			return false;
 		}
 
-		// An RTL site may print `<handle>-rtl-css` in place of `<handle>-css`.
-		$href = self::printed_url( $wp_styles, $handle, 'LINK', 'href', array( "{$handle}-css", "{$handle}-rtl-css" ) );
-		if ( '' === $href ) {
+		$urls = self::printed_urls( $wp_styles, $handle, 'style_loader_tag' );
+		if ( ! $urls ) {
 			return false;
 		}
 
-		$entry = array( 'href' => $href );
+		// An RTL site gets the stylesheet's tag, then its RTL one. `replace`
+		// prints only the RTL one; otherwise it adds to the main stylesheet.
+		$rtl   = $style->extra['rtl'] ?? null;
+		$entry = array( 'href' => 'replace' === $rtl ? $urls[ count( $urls ) - 1 ] : $urls[0] );
 
 		$after = $wp_styles->get_data( $handle, 'after' );
 		if ( is_array( $after ) && $after ) {
@@ -292,44 +294,47 @@ class Frontend_Asset_Manifest {
 	}
 
 	/**
-	 * The URL WordPress prints for a registered asset.
+	 * The URLs WordPress prints for a registered asset, in tag order.
 	 *
 	 * Core renders the tag, so the URL gets its version argument and
 	 * `script_loader_src` / `style_loader_src` exactly as the printed tags do,
-	 * and a CDN or asset-optimization plugin rewrites it the same way.
+	 * and a CDN or asset-optimization plugin rewrites it the same way. The URL
+	 * is read from the `*_loader_tag` filter's own argument, ahead of every
+	 * other callback, so a plugin that rewrites the tag itself (delay-JS moving
+	 * `src` to `data-src`, a changed `id`) can't hide it.
 	 *
 	 * @param \WP_Dependencies $registry Scripts or styles registry.
 	 * @param string           $handle   Asset handle.
-	 * @param string           $tag      `SCRIPT` or `LINK`.
-	 * @param string           $attr     `src` or `href`.
-	 * @param string[]         $ids      Printed element IDs, in order of preference.
-	 * @return string URL, or '' when WordPress prints none.
+	 * @param string           $hook     `script_loader_tag` or `style_loader_tag`.
+	 * @return string[] URLs; none when WordPress prints no tag (a blanked or
+	 *                  conditional asset).
 	 */
-	private static function printed_url( $registry, $handle, $tag, $attr, array $ids ) {
+	private static function printed_urls( $registry, $handle, $hook ) {
+		$urls    = array();
+		$capture = static function ( $tag, $tag_handle, $url ) use ( $handle, &$urls ) {
+			if ( $tag_handle === $handle && is_string( $url ) && '' !== $url ) {
+				$urls[] = $url;
+			}
+			return $tag;
+		};
+
 		// Concatenation would queue the tag instead of printing it.
 		$do_concat           = $registry->do_concat;
 		$registry->do_concat = false;
+		add_filter( $hook, $capture, PHP_INT_MIN, 3 );
 		ob_start();
-		$registry->do_item( $handle );
-		$html                = (string) ob_get_clean();
-		$registry->do_concat = $do_concat;
-
-		$urls      = array();
-		$processor = new \WP_HTML_Tag_Processor( $html );
-		while ( $processor->next_tag( array( 'tag_name' => $tag ) ) ) {
-			$id  = $processor->get_attribute( 'id' );
-			$url = $processor->get_attribute( $attr );
-			if ( is_string( $id ) && is_string( $url ) && in_array( $id, $ids, true ) ) {
-				$urls[ $id ] = $url;
-			}
+		try {
+			$registry->do_item( $handle );
+		} finally {
+			ob_end_clean();
+			remove_filter( $hook, $capture, PHP_INT_MIN );
+			$registry->do_concat = $do_concat;
 		}
 
-		foreach ( $ids as $id ) {
-			if ( isset( $urls[ $id ] ) ) {
-				return $urls[ $id ];
-			}
-		}
-
-		return '';
+		// A stylesheet's `href` arrives escaped for the attribute (`&#038;`);
+		// the manifest carries plain URLs for JavaScript.
+		return 'style_loader_tag' === $hook
+			? array_map( array( \WP_HTML_Decoder::class, 'decode_attribute' ), $urls )
+			: $urls;
 	}
 }

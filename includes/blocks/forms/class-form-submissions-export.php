@@ -122,8 +122,11 @@ class Form_Submissions_Export {
 	 */
 	public function write_csv( array $args ): void {
 		$args['until'] = wp_date( 'Y-m-d H:i:s', time() - 1 );
+		$handle        = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming to the response.
+		if ( false === $handle ) {
+			return;
+		}
 		echo "\xEF\xBB\xBF"; // UTF-8 BOM so spreadsheets detect the encoding.
-		$handle = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming to the response.
 
 		$names  = array();
 		$labels = array();
@@ -178,6 +181,8 @@ class Form_Submissions_Export {
 		// No set_time_limit(): Plugin Check forbids it, and core's export_wp()
 		// streams without it. Batching keeps CPU time (what max_execution_time
 		// counts on most hosts) low; the wait is mostly DB and output I/O.
+		// Where the limit counts wall-clock time (Windows), a very large
+		// export can still be cut off, leaving a silently truncated file.
 		wp_raise_memory_limit( 'admin' );
 
 		nocache_headers();

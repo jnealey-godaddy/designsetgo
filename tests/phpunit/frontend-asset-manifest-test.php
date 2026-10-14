@@ -99,19 +99,100 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		$this->assertStringStartsWith( 'https://cdn.example.com/', $src );
 		$this->assertStringStartsWith( 'https://cdn.example.com/', $href );
 		// Plain URLs for JavaScript, not the HTML-escaped attribute value.
-		$this->assertStringEndsWith( '&cdn=1', $src );
-		$this->assertStringEndsWith( '&cdn=1', $href );
+		foreach ( array( $src, $href ) as $url ) {
+			$this->assertMatchesRegularExpression( '/[?&]ver=[^&]+&cdn=1$/', $url );
+			$this->assertStringNotContainsString( '&#038;', $url );
+			$this->assertStringNotContainsString( '&amp;', $url );
+		}
 	}
 
-	public function test_rtl_sites_get_the_stylesheet_wordpress_prints() {
-		wp_styles()->text_direction = 'rtl';
-		wp_style_add_data( 'designsetgo-tabs-style', 'rtl', 'replace' );
+	public function test_tag_rewriting_filters_cannot_hide_urls() {
+		$expected = \DesignSetGo\Frontend_Asset_Manifest::build();
+
+		// What delay-JS and async-CSS plugins do to the printed tags.
+		$delay = function ( $tag ) {
+			return str_replace( array( ' src=', ' id=' ), array( ' data-src=', ' data-id=' ), $tag );
+		};
+		add_filter( 'script_loader_tag', $delay );
+		add_filter( 'style_loader_tag', '__return_empty_string' );
 
 		$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
 
-		wp_styles()->text_direction = 'ltr';
-		unset( wp_styles()->registered['designsetgo-tabs-style']->extra['rtl'] );
-		$this->assertStringContainsString( '-rtl.css', $manifest['styles']['designsetgo-tabs-style']['href'] );
+		remove_filter( 'script_loader_tag', $delay );
+		remove_filter( 'style_loader_tag', '__return_empty_string' );
+		$this->assertSame(
+			$expected['scripts']['designsetgo-tabs-view-script']['src'],
+			$manifest['scripts']['designsetgo-tabs-view-script']['src'] ?? null
+		);
+		$this->assertSame(
+			$expected['styles']['designsetgo-tabs-style']['href'],
+			$manifest['styles']['designsetgo-tabs-style']['href'] ?? null
+		);
+	}
+
+	public function test_blanked_urls_are_left_out() {
+		$blank = function ( $src, $handle ) {
+			return in_array( $handle, array( 'designsetgo-tabs-view-script', 'designsetgo-tabs-style' ), true ) ? '' : $src;
+		};
+		add_filter( 'script_loader_src', $blank, 10, 2 );
+		add_filter( 'style_loader_src', $blank, 10, 2 );
+
+		$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
+
+		remove_filter( 'script_loader_src', $blank, 10 );
+		remove_filter( 'style_loader_src', $blank, 10 );
+		$tabs = self::trigger( $manifest, 'selector', '.wp-block-designsetgo-tabs' );
+
+		// WordPress prints no tag for either, so neither does the manifest.
+		$this->assertArrayHasKey( 'designsetgo-tabs-view-script', $manifest['scripts'] );
+		$this->assertArrayNotHasKey( 'src', $manifest['scripts']['designsetgo-tabs-view-script'] );
+		$this->assertArrayNotHasKey( 'designsetgo-tabs-style', $manifest['styles'] );
+		$this->assertNotContains( 'designsetgo-tabs-style', $tabs['styles'] ?? array() );
+	}
+
+	public function test_build_leaves_the_registries_as_it_found_them() {
+		$scripts            = wp_scripts();
+		$styles             = wp_styles();
+		$scripts->do_concat = true;
+		$before             = array( $scripts->done, $scripts->in_footer, $styles->done, ob_get_level() );
+
+		\DesignSetGo\Frontend_Asset_Manifest::build();
+
+		$state              = array( $scripts->done, $scripts->in_footer, $styles->done, ob_get_level() );
+		$do_concat          = $scripts->do_concat;
+		$scripts->do_concat = false;
+		$this->assertSame( $before, $state );
+		$this->assertTrue( $do_concat );
+		foreach ( array( 'script_loader_tag', 'style_loader_tag' ) as $hook ) {
+			$hook = $GLOBALS['wp_filter'][ $hook ] ?? null;
+			$this->assertEmpty( $hook ? ( $hook->callbacks[ PHP_INT_MIN ] ?? array() ) : array() );
+		}
+
+		// The real tags still print.
+		wp_enqueue_script( 'designsetgo-tabs-view-script' );
+		wp_enqueue_style( 'designsetgo-tabs-style' );
+		$this->assertStringContainsString( 'id="designsetgo-tabs-view-script-js"', get_echo( 'wp_print_scripts' ) );
+		$this->assertStringContainsString( "id='designsetgo-tabs-style-css'", get_echo( 'wp_print_styles' ) );
+	}
+
+	public function test_rtl_sites_get_the_stylesheet_wordpress_prints() {
+		$styles    = wp_styles();
+		$direction = $styles->text_direction;
+		$extra     = $styles->registered['designsetgo-tabs-style']->extra;
+		$ltr       = \DesignSetGo\Frontend_Asset_Manifest::build()['styles']['designsetgo-tabs-style']['href'];
+
+		$styles->text_direction = 'rtl';
+		wp_style_add_data( 'designsetgo-tabs-style', 'rtl', 'replace' );
+		try {
+			$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
+		} finally {
+			$styles->text_direction                               = $direction;
+			$styles->registered['designsetgo-tabs-style']->extra = $extra;
+		}
+
+		$href = $manifest['styles']['designsetgo-tabs-style']['href'];
+		$this->assertStringContainsString( '-rtl.css', $href );
+		$this->assertSame( str_replace( '.css', '-rtl.css', strtok( $ltr, '?' ) ), strtok( $href, '?' ) );
 	}
 
 	public function test_extension_bundles_match_on_needles() {
