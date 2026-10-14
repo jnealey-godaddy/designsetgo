@@ -172,11 +172,10 @@ class Form_Submissions_Export {
 		$args     = self::request_args( $_GET );
 		$filename = 'submissions-' . ( '' !== $args['form_id'] ? sanitize_file_name( $args['form_id'] ) : 'all' ) . '-' . wp_date( 'Y-m-d' ) . '.csv';
 
-		// A timeout mid-stream would leave a silently truncated file.
+		// No set_time_limit(): Plugin Check forbids it, and core's export_wp()
+		// streams without it. Batching keeps CPU time (what max_execution_time
+		// counts on most hosts) low; the wait is mostly DB and output I/O.
 		wp_raise_memory_limit( 'admin' );
-		if ( function_exists( 'set_time_limit' ) ) {
-			set_time_limit( 0 );
-		}
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
