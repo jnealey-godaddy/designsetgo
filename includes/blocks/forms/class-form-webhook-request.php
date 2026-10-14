@@ -125,10 +125,33 @@ class Form_Webhook_Request {
 	}
 
 	/**
-	 * Core's URL check, plus the reserved ranges it only rejects from
-	 * WordPress 7.1: before that, link-local (cloud metadata) and CGNAT
-	 * pass `wp_http_validate_url()` and `wp_safe_remote_post()`. From 7.1
-	 * core rejects them itself, subject to `http_request_host_is_external`.
+	 * Whether core's URL check rejects link-local and CGNAT hosts itself.
+	 *
+	 * WordPress 7.1 added the check and backported it to 6.7.6, 6.8.7, 6.9.6
+	 * and 7.0.3, so the version number can't tell. Core is asked directly, with
+	 * `http_request_host_is_external` held closed so a site's own allowlist
+	 * can't hide the answer. An IP literal needs no DNS lookup.
+	 *
+	 * @internal
+	 *
+	 * @return bool
+	 */
+	public static function core_rejects_reserved_hosts(): bool {
+		$closed = static function () {
+			return false;
+		};
+		add_filter( 'http_request_host_is_external', $closed, PHP_INT_MAX );
+		$rejects = false === wp_http_validate_url( 'http://100.64.0.1/' );
+		remove_filter( 'http_request_host_is_external', $closed, PHP_INT_MAX );
+
+		return $rejects;
+	}
+
+	/**
+	 * Core's URL check, plus the link-local (cloud metadata) and CGNAT ranges
+	 * on WordPress versions whose check lets them through. Where core rejects
+	 * them itself, `http_request_host_is_external` decides, and this adds
+	 * nothing.
 	 *
 	 * @param string $url URL.
 	 * @return bool
@@ -138,7 +161,7 @@ class Form_Webhook_Request {
 			return false;
 		}
 
-		if ( is_wp_version_compatible( '7.1' ) ) {
+		if ( self::core_rejects_reserved_hosts() ) {
 			return true;
 		}
 
@@ -161,11 +184,13 @@ class Form_Webhook_Request {
 		}
 
 		/**
-		 * Filters whether a webhook may be sent to a link-local or CGNAT host
-		 * before WordPress 7.1. From 7.1 core rejects these ranges itself, and
-		 * `http_request_host_is_external` decides instead.
+		 * Filters whether a webhook may be sent to a link-local or CGNAT host,
+		 * on WordPress versions whose own URL check doesn't reject these ranges
+		 * (before 6.7.6, 6.8.7, 6.9.6, 7.0.3 and 7.1). Elsewhere core rejects
+		 * them itself, `http_request_host_is_external` decides, and this filter
+		 * is not consulted.
 		 *
-		 * @since 2.10.1
+		 * @since 2.11.0
 		 *
 		 * @param bool   $allow Whether to allow the host. Default false.
 		 * @param string $host  Host name of the receiver URL.

@@ -283,9 +283,31 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_core_allowlist_admits_a_reserved_receiver_from_7_1() {
-		if ( ! is_wp_version_compatible( '7.1' ) ) {
-			$this->markTestSkipped( 'Core rejects link-local and CGNAT hosts from WordPress 7.1.' );
+	/**
+	 * Whether this WordPress rejects link-local hosts itself, asked of core
+	 * independently of the class under test (a different address, no filter).
+	 *
+	 * @return bool
+	 */
+	private static function core_check_present() {
+		return false === wp_http_validate_url( 'http://169.254.169.254/' );
+	}
+
+	public function test_reserved_host_probe_matches_core_and_ignores_the_site_allowlist() {
+		$expected = self::core_check_present();
+		add_filter( 'http_request_host_is_external', '__return_true' );
+
+		$probed = Form_Webhook_Request::core_rejects_reserved_hosts();
+
+		remove_filter( 'http_request_host_is_external', '__return_true' );
+		$this->assertSame( $expected, $probed );
+		// The probe leaves no callback behind.
+		$this->assertFalse( isset( $GLOBALS['wp_filter']['http_request_host_is_external']->callbacks[ PHP_INT_MAX ] ) );
+	}
+
+	public function test_core_allowlist_admits_a_reserved_receiver_where_core_checks() {
+		if ( ! self::core_check_present() ) {
+			$this->markTestSkipped( 'This WordPress lets link-local and CGNAT hosts through its URL check.' );
 		}
 
 		list( $id ) = $this->submit_with_open_filter( 'http_request_host_is_external' );
@@ -299,9 +321,9 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 	 *
 	 * @param string $url Receiver URL.
 	 */
-	public function test_opt_in_filter_is_not_consulted_from_7_1( $url ) {
-		if ( ! is_wp_version_compatible( '7.1' ) ) {
-			$this->markTestSkipped( 'Core rejects link-local and CGNAT hosts from WordPress 7.1.' );
+	public function test_opt_in_filter_is_not_consulted_where_core_checks( $url ) {
+		if ( ! self::core_check_present() ) {
+			$this->markTestSkipped( 'This WordPress lets link-local and CGNAT hosts through its URL check.' );
 		}
 
 		list( $id, $seen ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host', $url );
@@ -316,9 +338,9 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 	 *
 	 * @param string $url Receiver URL.
 	 */
-	public function test_opt_in_filter_admits_a_reserved_receiver_before_7_1( $url ) {
-		if ( is_wp_version_compatible( '7.1' ) ) {
-			$this->markTestSkipped( 'Only WordPress before 7.1 needs the opt-in.' );
+	public function test_opt_in_filter_admits_a_reserved_receiver_where_core_does_not_check( $url ) {
+		if ( self::core_check_present() ) {
+			$this->markTestSkipped( 'Only WordPress whose URL check lets these hosts through needs the opt-in.' );
 		}
 
 		list( $id, $seen ) = $this->submit_with_open_filter( 'designsetgo_form_webhook_allow_reserved_host', $url );
@@ -328,9 +350,9 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
 
-	public function test_core_allowlist_does_not_admit_a_reserved_receiver_before_7_1() {
-		if ( is_wp_version_compatible( '7.1' ) ) {
-			$this->markTestSkipped( 'Only WordPress before 7.1 needs the opt-in.' );
+	public function test_core_allowlist_does_not_admit_a_reserved_receiver_where_core_does_not_check() {
+		if ( self::core_check_present() ) {
+			$this->markTestSkipped( 'Only WordPress whose URL check lets these hosts through needs the opt-in.' );
 		}
 
 		list( $id ) = $this->submit_with_open_filter( 'http_request_host_is_external' );

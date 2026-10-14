@@ -112,7 +112,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 = Unreleased =
 
-* **Security:** On WordPress versions before 7.1, form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) now need the `designsetgo_form_webhook_allow_reserved_host` filter. WordPress's `http_request_host_is_external` filter no longer allows them on those versions. From WordPress 7.1, WordPress checks these addresses itself and its own filter applies.
+* **Security:** Form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) are blocked, and the way to allow one depends on your WordPress version. Current WordPress releases (7.1, and 6.7.6, 6.8.7, 6.9.6 and 7.0.3 or later) block these addresses themselves, and WordPress's `http_request_host_is_external` filter allows them. On older versions DesignSetGo blocks them instead, and only the `designsetgo_form_webhook_allow_reserved_host` filter allows them.
 * **Fix:** When a page refreshes in place while you edit it, blocks that weren't on the page before load their right-to-left styles on RTL sites. Their scripts also still load when a caching or optimization plugin rewrites the page's script tags.
 
 = 2.10.0 - 2026-10-13 =
