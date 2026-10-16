@@ -27,6 +27,8 @@ if ( ! function_exists( 'designsetgo_render_form_number_field' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_form_number_field( $attributes, $content, $block ) {
+		unset( $content, $block );
+
 		$field_name     = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
 		$label          = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 		$placeholder    = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';

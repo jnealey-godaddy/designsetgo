@@ -175,7 +175,7 @@ if ( ! function_exists( 'designsetgo_render_dynamic_image' ) ) {
 				$link_open .= ' ' . $key . '="' . $val . '"';
 			}
 			$link_open .= '>';
-			$img_html = $link_open . $img_html . '</a>';
+			$img_html   = $link_open . $img_html . '</a>';
 		}
 
 		printf(

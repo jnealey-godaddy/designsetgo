@@ -25,25 +25,25 @@ class Public_Blocks {
 				continue;
 			}
 			$children = $block['innerBlocks'] ?? array();
-			$visible = array();
-			$keep = array();
+			$visible  = array();
+			$keep     = array();
 			foreach ( $children as $index => $child ) {
-				$filtered = self::filter( array( $child ), $context );
+				$filtered       = self::filter( array( $child ), $context );
 				$keep[ $index ] = ! empty( $filtered );
 				if ( $keep[ $index ] ) {
 					$visible[] = $filtered[0];
 				}
 			}
 			$block['innerBlocks'] = $visible;
-			$index = 0;
-			$inner_content = array();
+			$index                = 0;
+			$inner_content        = array();
 			foreach ( $block['innerContent'] ?? array() as $chunk ) {
 				if ( is_string( $chunk ) || ! empty( $keep[ $index++ ] ) ) {
 					$inner_content[] = $chunk;
 				}
 			}
 			$block['innerContent'] = $inner_content;
-			$output[] = $block;
+			$output[]              = $block;
 		}
 		return $output;
 	}

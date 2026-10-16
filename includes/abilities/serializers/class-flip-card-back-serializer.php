@@ -32,6 +32,8 @@ class Flip_Card_Back_Serializer {
 	 * @return array<string, string>|null Opening and closing markup, or null.
 	 */
 	public static function wrapper( string $block_name, array $attributes ): ?array {
+		unset( $block_name, $attributes );
+
 		return array(
 			'opening' => '<div class="wp-block-designsetgo-flip-card-back dsgo-flip-card__face dsgo-flip-card__back">',
 			'closing' => '</div>',

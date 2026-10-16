@@ -45,7 +45,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 
 		if ( null === $shapes ) {
 			$generated = __DIR__ . '/../generated/shape-dividers.php';
-			$shapes    = file_exists( $generated ) ? (array) require $generated : array();
+			$shapes    = file_exists( $generated ) ? (array) require $generated : array(); // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- generated data file; path resolved from plugin directory
 		}
 
 		return $shapes;

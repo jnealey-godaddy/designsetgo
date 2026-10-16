@@ -83,10 +83,10 @@ class Form_No_JS_Refill {
 		}
 		$filled = preg_replace_callback(
 			'#(<textarea\b[^>]*?)\s+data-dsgo-refill="(\d+)"([^>]*>).*?(</textarea>)#is',
-			static function ( $match ) use ( $textareas ) {
-				$value = $textareas[ (int) $match[2] ] ?? '';
+			static function ( $matches ) use ( $textareas ) {
+				$value = $textareas[ (int) $matches[2] ] ?? '';
 				$lead  = 1 === strspn( $value, "\n\r", 0, 1 ) ? "\n" : '';
-				return $match[1] . $match[3] . $lead . esc_textarea( $value ) . $match[4];
+				return $matches[1] . $matches[3] . $lead . esc_textarea( $value ) . $matches[4];
 			},
 			$html
 		);

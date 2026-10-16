@@ -286,7 +286,7 @@ class Batch_Update extends Abstract_Ability {
 
 			// Process inner blocks.
 			if ( ! empty( $block['innerBlocks'] ) ) {
-				$result               = $this->update_blocks_by_name( $block['innerBlocks'], $block_name, $attributes, $filter );
+				$result = $this->update_blocks_by_name( $block['innerBlocks'], $block_name, $attributes, $filter );
 				if ( is_wp_error( $result ) ) {
 					return $result;
 				}

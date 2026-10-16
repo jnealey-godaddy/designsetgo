@@ -47,7 +47,7 @@ class Form_Submissions_Export_Columns {
 
 		$fields = array();
 		foreach ( $headers as $name => $header ) {
-			$header                    = (string) $header;
+			$header                     = (string) $header;
 			$fields[ 'field:' . $name ] = $counts[ $header ] > 1 ? sprintf( '%s (%s)', $header, $name ) : $header;
 		}
 

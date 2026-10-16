@@ -61,7 +61,7 @@ if ( ! function_exists( 'designsetgo_render_pill' ) ) {
 		// value, is what identifies "not yet migrated" here. `justification`
 		// always reads back as a value (its own block.json default fills in
 		// when the key is missing), so it cannot be used to detect that.
-		$legacy_align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+		$legacy_align  = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
 		$justification = in_array( $legacy_align, array( 'left', 'center', 'right' ), true )
 			? $legacy_align
 			: ( isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center' );

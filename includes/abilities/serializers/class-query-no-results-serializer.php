@@ -32,6 +32,8 @@ class Query_No_Results_Serializer {
 	 * @return array<string, string>|null Opening and closing markup, or null.
 	 */
 	public static function wrapper( string $block_name, array $attributes ): ?array {
+		unset( $block_name, $attributes );
+
 		// Mirrors src/blocks/query-no-results/save.js.
 		return array(
 			'opening' => '<div class="wp-block-designsetgo-query-no-results dsgo-query-no-results">',

@@ -176,9 +176,10 @@ class Form_Webhook_Request {
 			return true; // Unresolvable; core already decided.
 		}
 
-		$parts    = array_map( 'intval', explode( '.', $ip ) );
-		$reserved = ( 169 === $parts[0] && 254 === $parts[1] )             // 169.254.0.0/16 (link-local, cloud metadata).
-			|| ( 100 === $parts[0] && 64 <= $parts[1] && 127 >= $parts[1] ); // 100.64.0.0/10 (CGNAT).
+		$parts = array_map( 'intval', explode( '.', $ip ) );
+		// 169.254.0.0/16 is link-local (cloud metadata); 100.64.0.0/10 is CGNAT.
+		$reserved = ( 169 === $parts[0] && 254 === $parts[1] )
+			|| ( 100 === $parts[0] && 64 <= $parts[1] && 127 >= $parts[1] );
 		if ( ! $reserved ) {
 			return true;
 		}

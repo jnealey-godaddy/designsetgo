@@ -26,6 +26,8 @@ if ( ! function_exists( 'designsetgo_render_form_hidden_field' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_form_hidden_field( $attributes, $content, $block ) {
+		unset( $content, $block );
+
 		$field_name = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
 		$value      = isset( $attributes['value'] ) ? (string) $attributes['value'] : '';
 

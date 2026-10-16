@@ -171,10 +171,10 @@ class Form_No_JS_Retry {
 	 * be expired: the answers are offered once, then forgotten.
 	 */
 	public static function capture(): void {
-		if ( ! isset( $_COOKIE[ self::COOKIE ] ) || ! is_string( $_COOKIE[ self::COOKIE ] ) ) {
+		if ( ! isset( $_COOKIE[ self::COOKIE ] ) || ! is_string( $_COOKIE[ self::COOKIE ] ) ) { // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- No-JS fallback; the retry cookie is the only channel.
 			return;
 		}
-		$decoded = self::decode( sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) );
+		$decoded = self::decode( sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE ] ) ) ); // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- No-JS fallback; the retry cookie is the only channel.
 		if ( null !== $decoded ) {
 			self::$captured[ $decoded[0] ] = $decoded[1];
 		}

@@ -90,8 +90,8 @@ class Card_Serializer {
 		// so a javascript: or data: URL produces no element at all
 		// rather than an escaped one. The mirror emitted no image in any
 		// case, so every card with a picture failed validation.
-		$card_image_url  = isset( $attributes['imageUrl'] ) && is_string( $attributes['imageUrl'] ) ? $attributes['imageUrl'] : '';
-		$card_image_html = '';
+		$card_image_url       = isset( $attributes['imageUrl'] ) && is_string( $attributes['imageUrl'] ) ? $attributes['imageUrl'] : '';
+		$card_image_html      = '';
 		$card_background_html = '';
 
 		if ( ! empty( $attributes['showImage'] )
@@ -123,7 +123,7 @@ class Card_Serializer {
 
 				// 'original' writes no aspect-ratio; the named ratios use
 				// a spaced `16 / 9` form, which React renders verbatim.
-				$card_ratio = isset( $attributes['imageAspectRatio'] ) ? (string) $attributes['imageAspectRatio'] : 'original';
+				$card_ratio   = isset( $attributes['imageAspectRatio'] ) ? (string) $attributes['imageAspectRatio'] : 'original';
 				$named_ratios = array(
 					'16-9' => '16 / 9',
 					'4-3'  => '4 / 3',
