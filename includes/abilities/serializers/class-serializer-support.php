@@ -87,13 +87,13 @@ class Serializer_Support {
 	 * said 1, so the block failed validation the moment it was opened. Integers
 	 * still render as integers, so nothing that was already correct changes.
 	 *
-	 * @param mixed     $value   Attribute value.
-	 * @param int|float $default Fallback when the value is not numeric.
+	 * @param mixed     $value    Attribute value.
+	 * @param int|float $fallback Fallback when the value is not numeric.
 	 * @return int|float Numeric value.
 	 */
-	public static function numeric_attribute( $value, $default = 0 ) {
+	public static function numeric_attribute( $value, $fallback = 0 ) {
 		if ( ! is_numeric( $value ) ) {
-			return $default;
+			return $fallback;
 		}
 
 		$number = +$value;

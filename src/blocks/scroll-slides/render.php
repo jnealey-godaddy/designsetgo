@@ -56,7 +56,7 @@ if ( ! function_exists( 'designsetgo_render_scroll_slides' ) ) {
 			echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-rendered save.js output.
 			return;
 		}
-		require_once $helpers;
+		require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		$items_html = '';
 		if ( isset( $GLOBALS['designsetgo_query_items_html'][ $query_id ] ) ) {

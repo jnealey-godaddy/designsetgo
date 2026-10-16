@@ -551,8 +551,8 @@ class Block_Inserter {
 			)
 		);
 
-		// Alignment is derived from the block's OWN declared support, not read
-		// out of apply_block_supports().
+		// Alignment is derived from the support the block itself declares, not
+		// from the classes that apply_block_supports() happens to emit.
 		//
 		// Twelve blocks declare `supports.align` and never emitted the class,
 		// and reading it from apply_block_supports() fixed that - but it also
@@ -674,8 +674,8 @@ class Block_Inserter {
 			}
 
 			// Consumed by the root pass; the target pass must not repeat them.
-			$root_classes           = array();
-			$anchor_id              = '';
+			$root_classes            = array();
+			$anchor_id               = '';
 			$extension_props['data'] = array();
 		} else {
 			// Same element, so the root-bound props join the support classes and
@@ -863,9 +863,9 @@ class Block_Inserter {
 		// src/extensions/reveal-control/index.js (addRevealClasses). Note it
 		// applies no shouldExtendBlock() gate, so neither does this.
 		if ( in_array( $block_name, self::REVEAL_CONTAINER_BLOCKS, true ) && ! empty( $attributes['enableRevealOnHover'] ) ) {
-			$classes[]                       = 'dsgo-has-reveal';
-			$reveal_animation                = isset( $attributes['revealAnimationType'] ) ? (string) $attributes['revealAnimationType'] : '';
-			$data['data-reveal-animation']   = '' !== $reveal_animation ? $reveal_animation : 'fade';
+			$classes[]                     = 'dsgo-has-reveal';
+			$reveal_animation              = isset( $attributes['revealAnimationType'] ) ? (string) $attributes['revealAnimationType'] : '';
+			$data['data-reveal-animation'] = '' !== $reveal_animation ? $reveal_animation : 'fade';
 		} elseif ( ! empty( $attributes['dsgoRevealOnHover'] ) ) {
 			$classes[] = 'dsgo-reveal-item';
 		}
@@ -877,14 +877,14 @@ class Block_Inserter {
 		// attribute only exists where it applies, and the JS applies no
 		// further block check.
 		if ( ! empty( $attributes['dsgoVideoUrl'] ) && is_string( $attributes['dsgoVideoUrl'] ) ) {
-			$classes[]                           = 'dsgo-has-video-background';
-			$data['data-video-url']              = $attributes['dsgoVideoUrl'];
-			$data['data-video-poster']           = isset( $attributes['dsgoVideoPoster'] ) ? (string) $attributes['dsgoVideoPoster'] : '';
-			$data['data-video-muted']            = empty( $attributes['dsgoVideoMuted'] ) ? 'false' : 'true';
-			$data['data-video-loop']             = empty( $attributes['dsgoVideoLoop'] ) ? 'false' : 'true';
-			$data['data-video-autoplay']         = empty( $attributes['dsgoVideoAutoplay'] ) ? 'false' : 'true';
-			$data['data-video-mobile-hide']      = empty( $attributes['dsgoVideoMobileHide'] ) ? 'false' : 'true';
-			$data['data-video-overlay-color']    = Serializer_Support::convert_color_value_to_css_var(
+			$classes[]                        = 'dsgo-has-video-background';
+			$data['data-video-url']           = $attributes['dsgoVideoUrl'];
+			$data['data-video-poster']        = isset( $attributes['dsgoVideoPoster'] ) ? (string) $attributes['dsgoVideoPoster'] : '';
+			$data['data-video-muted']         = empty( $attributes['dsgoVideoMuted'] ) ? 'false' : 'true';
+			$data['data-video-loop']          = empty( $attributes['dsgoVideoLoop'] ) ? 'false' : 'true';
+			$data['data-video-autoplay']      = empty( $attributes['dsgoVideoAutoplay'] ) ? 'false' : 'true';
+			$data['data-video-mobile-hide']   = empty( $attributes['dsgoVideoMobileHide'] ) ? 'false' : 'true';
+			$data['data-video-overlay-color'] = Serializer_Support::convert_color_value_to_css_var(
 				isset( $attributes['dsgoVideoOverlayColor'] ) ? (string) $attributes['dsgoVideoOverlayColor'] : ''
 			);
 		}
@@ -898,8 +898,8 @@ class Block_Inserter {
 			&& is_string( $attributes['dsgoLinkUrl'] )
 			&& '' !== trim( $attributes['dsgoLinkUrl'] )
 		) {
-			$classes[]                 = 'dsgo-clickable';
-			$data['data-link-url']     = $attributes['dsgoLinkUrl'];
+			$classes[]             = 'dsgo-clickable';
+			$data['data-link-url'] = $attributes['dsgoLinkUrl'];
 
 			// The JS writes the literal '_blank' for ANY truthy target, not the
 			// attribute's own value.

@@ -132,7 +132,7 @@ class Block_Configurator {
 	 * @return array<string, mixed>|WP_Error Success data or error.
 	 */
 	public static function update_block_attributes( int $post_id, string $block_name, array $attributes, ?string $client_id = null, bool $update_all = false ) {
-		return self::transform_block_attributes( $post_id, $block_name, static fn( $existing ) => $attributes, $client_id, $update_all ); // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Callback signature.
+		return self::transform_block_attributes( $post_id, $block_name, static fn() => $attributes, $client_id, $update_all );
 	}
 
 	/**
@@ -844,8 +844,8 @@ class Block_Configurator {
 						$layout_error = $synced;
 						return $blocks;
 					}
-					$block          = $synced;
-					$updated        = true;
+					$block   = $synced;
+					$updated = true;
 				}
 
 				++$counter;

@@ -39,7 +39,7 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 		if ( ! file_exists( $helpers ) ) {
 			return;
 		}
-		require_once $helpers;
+		require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		$state = designsetgo_query_get_last_state( $query_id );
 
@@ -67,7 +67,7 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 		// Horizontal alignment of the pagination control. Drives the SCSS
 		// `is-align-{left|center|right}` modifier so the numbered flex list / load-more
 		// button / infinite sentinel all honour the setting with a single class.
-		$alignment = isset( $attributes['alignment'] ) && in_array( $attributes['alignment'], array( 'center', 'right' ), true )
+		$alignment   = isset( $attributes['alignment'] ) && in_array( $attributes['alignment'], array( 'center', 'right' ), true )
 			? $attributes['alignment']
 			: 'left';
 		$align_class = 'is-align-' . $alignment;
@@ -80,9 +80,9 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 
 		// Infinite scroll: emit the sentinel + hidden fallback button.
 		if ( 'infinite' === $pagination_kind ) {
-			$auto_pause    = isset( $attributes['autoPauseAfter'] ) ? (int) $attributes['autoPauseAfter'] : 3;
+			$auto_pause      = isset( $attributes['autoPauseAfter'] ) ? (int) $attributes['autoPauseAfter'] : 3;
 			$sentinel_offset = isset( $attributes['sentinelOffsetPx'] ) ? (int) $attributes['sentinelOffsetPx'] : 200;
-			$btn_label     = ! empty( $attributes['buttonLabelWhenPaused'] )
+			$btn_label       = ! empty( $attributes['buttonLabelWhenPaused'] )
 				? (string) $attributes['buttonLabelWhenPaused']
 				: __( 'Load more', 'designsetgo' );
 
@@ -100,10 +100,10 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 
 			$wrapper = get_block_wrapper_attributes(
 				array(
-					'class'                    => 'dsgo-query-pagination dsgo-query-pagination--infinite ' . $align_class,
-					'data-wp-interactive'      => 'designsetgo/query',
-					'data-dsgo-query-id'       => $query_id,
-					'data-dsgo-pagination'     => 'infinite',
+					'class'                      => 'dsgo-query-pagination dsgo-query-pagination--infinite ' . $align_class,
+					'data-wp-interactive'        => 'designsetgo/query',
+					'data-dsgo-query-id'         => $query_id,
+					'data-dsgo-pagination'       => 'infinite',
 					'data-dsgo-auto-pause-after' => (string) $auto_pause,
 					'data-dsgo-sentinel-offset'  => (string) $sentinel_offset,
 				)
@@ -158,7 +158,7 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 				),
 				JSON_HEX_APOS
 			);
-			$wrapper = get_block_wrapper_attributes(
+			$wrapper    = get_block_wrapper_attributes(
 				array(
 					'class'                => 'dsgo-query-pagination dsgo-query-pagination--loadmore ' . $align_class,
 					'data-wp-interactive'  => 'designsetgo/query',

@@ -26,6 +26,8 @@ if ( ! function_exists( 'designsetgo_render_query_group_header' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_query_group_header( $attributes, $content, $block ) {
+		unset( $block );
+
 		$allowed_tags = array( 'header', 'div', 'section' );
 		$tag          = isset( $attributes['tagName'] ) && in_array( $attributes['tagName'], $allowed_tags, true )
 			? $attributes['tagName']

@@ -62,7 +62,7 @@ class Custom_CSS_Support {
 			}
 			if ( $code_point > 0xFFFF ) {
 				$code_point -= 0x10000;
-				$utf16     .= pack( 'v2', 0xD800 | ( $code_point >> 10 ), 0xDC00 | ( $code_point & 0x3FF ) );
+				$utf16      .= pack( 'v2', 0xD800 | ( $code_point >> 10 ), 0xDC00 | ( $code_point & 0x3FF ) );
 			} else {
 				$utf16 .= pack( 'v', $code_point );
 			}

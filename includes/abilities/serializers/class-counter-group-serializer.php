@@ -54,7 +54,7 @@ class Counter_Group_Serializer {
 		// save.js reads `alignContent`. This read `alignment`, which no
 		// version of the block has ever declared, so the fallback fired
 		// every time and every group serialized as --align-center.
-		$align        = isset( $attributes['alignContent'] ) && is_string( $attributes['alignContent'] ) && '' !== $attributes['alignContent']
+		$align = isset( $attributes['alignContent'] ) && is_string( $attributes['alignContent'] ) && '' !== $attributes['alignContent']
 			? $attributes['alignContent']
 			: 'center';
 

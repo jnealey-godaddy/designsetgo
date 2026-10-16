@@ -68,14 +68,14 @@ if ( ! function_exists( 'designsetgo_star_rating_icon_row' ) ) {
 	 * Track and fill render identical rows — the fill row is clipped by width,
 	 * which is what produces a partial icon.
 	 *
-	 * @param string $class      Row class name.
+	 * @param string $row_class  Row class name.
 	 * @param int    $count      Number of icons.
 	 * @param string $icon       Icon name from the shared library.
 	 * @param string $icon_style 'filled' or 'outlined'.
 	 * @return string Row markup. SVG comes from the hardcoded library, so it is
 	 *                trusted output.
 	 */
-	function designsetgo_star_rating_icon_row( $class, $count, $icon, $icon_style ) {
+	function designsetgo_star_rating_icon_row( $row_class, $count, $icon, $icon_style ) {
 		$svg = designsetgo_render_icon_svg( $icon, $icon_style );
 
 		$stars = str_repeat(
@@ -83,7 +83,7 @@ if ( ! function_exists( 'designsetgo_star_rating_icon_row' ) ) {
 			max( 0, (int) $count )
 		);
 
-		return '<span class="' . esc_attr( $class ) . '">' . $stars . '</span>';
+		return '<span class="' . esc_attr( $row_class ) . '">' . $stars . '</span>';
 	}
 }
 

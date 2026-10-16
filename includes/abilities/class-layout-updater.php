@@ -75,7 +75,7 @@ class Layout_Updater {
 		if ( empty( $fields ) ) {
 			return null;
 		}
-		$type   = \WP_Block_Type_Registry::get_instance()->get_registered( $name );
+		$type = \WP_Block_Type_Registry::get_instance()->get_registered( $name );
 		foreach ( $fields as $key => $value ) {
 			if ( ! $type || ! isset( $type->attributes[ $key ] ) ) {
 				return self::invalid();
@@ -199,12 +199,12 @@ class Layout_Updater {
 	 * @return string Updated inline CSS.
 	 */
 	private static function set_declaration( string $style, string $property, string $value ): string {
-		$parts = array();
-		$start = 0;
-		$depth = 0;
-		$quote = '';
+		$parts   = array();
+		$start   = 0;
+		$depth   = 0;
+		$quote   = '';
 		$comment = false;
-		$length = strlen( $style );
+		$length  = strlen( $style );
 		for ( $i = 0; $i <= $length; ++$i ) {
 			$char = $i < $length ? $style[ $i ] : ';';
 			if ( $comment ) {
@@ -232,7 +232,7 @@ class Layout_Updater {
 			} elseif ( ')' === $char ) {
 				--$depth;
 			} elseif ( ';' === $char && 0 === $depth ) {
-				$part = substr( $style, $start, $i - $start );
+				$part   = substr( $style, $start, $i - $start );
 				$trivia = '(?:\s|/\*.*?\*/)*';
 				$flags  = 0 === strpos( $property, '--' ) ? 's' : 'is';
 				if ( preg_match( '~^(' . $trivia . ')' . preg_quote( $property, '~' ) . '(' . $trivia . '):~' . $flags, $part, $owned ) ) {

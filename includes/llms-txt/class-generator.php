@@ -58,7 +58,7 @@ class Generator {
 	 * @return string Generated content.
 	 */
 	public function generate_content(): string {
-		$exports_safe = Public_Export_Repair::run( $this->file_manager );
+		$exports_safe  = Public_Export_Repair::run( $this->file_manager );
 		$settings      = \DesignSetGo\Admin\Settings::get_settings();
 		$llms_settings = wp_parse_args(
 			$settings['llms_txt'] ?? array(),
@@ -157,7 +157,7 @@ class Generator {
 	 * @return string Generated full content.
 	 */
 	public function generate_full_content(): string {
-		$exports_safe = Public_Export_Repair::run( $this->file_manager );
+		$exports_safe  = Public_Export_Repair::run( $this->file_manager );
 		$settings      = \DesignSetGo\Admin\Settings::get_settings();
 		$llms_settings = wp_parse_args(
 			$settings['llms_txt'] ?? array(),
@@ -269,9 +269,9 @@ class Generator {
 
 		if ( empty( $excerpt ) ) {
 			$converter = new \DesignSetGo\Markdown\Converter();
-			$blocks = $converter->convert( $post );
+			$blocks    = $converter->convert( $post );
 			// Drop the generated title before deriving the description.
-			$body = substr( $blocks, strpos( $blocks, "\n" ) + 1 );
+			$body    = substr( $blocks, strpos( $blocks, "\n" ) + 1 );
 			$excerpt = wp_trim_words( wp_strip_all_tags( $body ), 25, '...' );
 		}
 

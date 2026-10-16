@@ -80,13 +80,6 @@ class Form_Builder_Serializer {
 		$submit_button_height             = $attributes['submitButtonHeight'] ?? '44px';
 		$enable_honeypot                  = $attributes['enableHoneypot'] ?? true;
 		$enable_turnstile                 = $attributes['enableTurnstile'] ?? false;
-		$enable_email                     = $attributes['enableEmail'] ?? false;
-		$email_to                         = $attributes['emailTo'] ?? '';
-		$email_subject                    = $attributes['emailSubject'] ?? 'New Form Submission';
-		$email_from_name                  = $attributes['emailFromName'] ?? '';
-		$email_from_email                 = $attributes['emailFromEmail'] ?? '';
-		$email_reply_to                   = $attributes['emailReplyTo'] ?? '';
-		$email_body                       = $attributes['emailBody'] ?? '';
 
 		// Submit-button style variation class - must match save.js. Validated
 		// against the block.json enum so an AI-supplied value can't inject markup.

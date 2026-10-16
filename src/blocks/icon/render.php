@@ -152,7 +152,7 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 		// block.json default fills in when the key is missing), so it cannot
 		// be used to detect that. `align: wide|full` is unrelated (still a
 		// live, current feature) and is left alone.
-		$legacy_align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+		$legacy_align  = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
 		$justification = in_array( $legacy_align, array( 'left', 'center', 'right' ), true )
 			? $legacy_align
 			: ( isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center' );

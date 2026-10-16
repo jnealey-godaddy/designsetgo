@@ -47,9 +47,9 @@ class Accordion_Serializer {
 		// openBackgroundColor left the mirror writing an empty hover
 		// declaration, which the style cleaner then dropped, while
 		// save() wrote the inherited colour.
-		$hover_bg       = ! empty( $attributes['hoverBackgroundColor'] ) ? $attributes['hoverBackgroundColor'] : $open_bg;
-		$hover_text     = ! empty( $attributes['hoverTextColor'] ) ? $attributes['hoverTextColor'] : $open_text;
-		$border_color   = isset( $attributes['borderBetweenColor'] ) ? $attributes['borderBetweenColor'] : '';
+		$hover_bg     = ! empty( $attributes['hoverBackgroundColor'] ) ? $attributes['hoverBackgroundColor'] : $open_bg;
+		$hover_text   = ! empty( $attributes['hoverTextColor'] ) ? $attributes['hoverTextColor'] : $open_text;
+		$border_color = isset( $attributes['borderBetweenColor'] ) ? $attributes['borderBetweenColor'] : '';
 
 		// Build modifier classes (must match save.js).
 		$accordion_classes = array( 'dsgo-accordion' );

@@ -548,7 +548,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( ! function_exists( 'designsetgo_query_apply_woo_args' ) ) {
 			$woo_helpers = __DIR__ . '/render-woo.php';
 			if ( file_exists( $woo_helpers ) ) {
-				require_once $woo_helpers;
+				require_once $woo_helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- sibling build file; path resolved from __DIR__
 			}
 		}
 		if ( function_exists( 'designsetgo_query_apply_woo_args' ) ) {

@@ -32,14 +32,14 @@ class Public_Export_Repair {
 		delete_transient( Controller::FULL_CACHE_KEY );
 		self::clear_legacy_post_caches();
 
-		$success = true;
+		$success   = true;
 		$directory = $files->get_directory();
 		if ( file_exists( $directory ) ) {
 			$filesystem = File_Manager::filesystem();
-			$success = $filesystem && $filesystem->delete( $directory, true );
+			$success    = $filesystem && $filesystem->delete( $directory, true );
 		}
 		foreach ( array(
-			'llms.txt' => Controller::PHYSICAL_FILE_OPTION,
+			'llms.txt'      => Controller::PHYSICAL_FILE_OPTION,
 			'llms-full.txt' => Controller::PHYSICAL_FULL_FILE_OPTION,
 		) as $filename => $option ) {
 			if ( ! get_option( $option ) ) {

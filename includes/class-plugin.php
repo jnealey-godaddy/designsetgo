@@ -871,7 +871,7 @@ class Plugin {
 		$this->gdpr_compliance     = new Admin\GDPR_Compliance();
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		new Layout_Renderer();
-		$this->section_styles      = new Section_Styles();
+		$this->section_styles = new Section_Styles();
 		$this->section_styles->init();
 		$this->icon_button_styles = new Icon_Button_Styles();
 		$this->icon_button_styles->init();

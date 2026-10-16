@@ -295,7 +295,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			'itemTagName'          => 'li',
 			'emitSchema'           => true,
 			'relationshipField'    => '',
-			'relationshipFallback' => 'empty', // empty, all, or parent.
+			'relationshipFallback' => 'empty', // One of 'empty', 'all' or 'parent'.
 			'groupBy'              => null,
 		);
 		return wp_parse_args( $attributes, $defaults );
@@ -400,13 +400,13 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// query-results/style.scss.
 		$columns        = isset( $atts['columns'] ) ? max( 1, (int) $atts['columns'] ) : 1;
 		$columns_tablet = isset( $atts['columnsTablet'] ) ? (int) $atts['columnsTablet'] : 0;
-		$columns_mobile   = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
-		$first_col_span   = isset( $atts['firstItemColumnSpan'] ) ? max( 1, (int) $atts['firstItemColumnSpan'] ) : 1;
-		$first_row_span   = isset( $atts['firstItemRowSpan'] ) ? max( 1, (int) $atts['firstItemRowSpan'] ) : 1;
+		$columns_mobile = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
+		$first_col_span = isset( $atts['firstItemColumnSpan'] ) ? max( 1, (int) $atts['firstItemColumnSpan'] ) : 1;
+		$first_row_span = isset( $atts['firstItemRowSpan'] ) ? max( 1, (int) $atts['firstItemRowSpan'] ) : 1;
 		// Clamp the column span to the desktop column count so we never ask the
 		// grid to span more tracks than exist.
-		$first_col_span   = min( $first_col_span, $columns );
-		$grid_style       = sprintf( '--dsgo-query-columns:%d;', $columns );
+		$first_col_span = min( $first_col_span, $columns );
+		$grid_style     = sprintf( '--dsgo-query-columns:%d;', $columns );
 		if ( $columns_tablet > 0 ) {
 			$grid_style .= sprintf( '--dsgo-query-columns-tablet:%d;', $columns_tablet );
 		}
@@ -458,7 +458,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			? sanitize_html_class( (string) $atts['layoutVariant'] )
 			: '';
 		$variant_class  = '' !== $layout_variant ? ' is-layout-' . $layout_variant : '';
-		$attrs_string = sprintf(
+		$attrs_string   = sprintf(
 			'class="%1$s" style="%3$s" data-dsgo-query-results-role="container" data-dsgo-query-id="%2$s"',
 			esc_attr( 'dsgo-query-results dsgo-query-results--source-' . $source . $variant_class ),
 			esc_attr( $query_id ),
@@ -757,8 +757,8 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// opt in). Only the first match is used; multiple hosts aren't supported.
 		// Its attrs govern presentation (columns, tagName, groupBy...) and its
 		// innerBlocks form the per-item template.
-		$host_block_names   = designsetgo_query_item_host_block_names();
-		$results_child      = null;
+		$host_block_names    = designsetgo_query_item_host_block_names();
+		$results_child       = null;
 		$results_child_index = null;
 		foreach ( $parsed_children as $child_index => $child ) {
 			if ( in_array( ( $child['blockName'] ?? '' ), $host_block_names, true ) ) {
@@ -787,20 +787,20 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			$effective_attrs = array_merge(
 				$attributes,
 				array(
-					'tagName'       => $results_attrs['tagName'] ?? ( $attributes['tagName'] ?? 'ul' ),
+					'tagName'             => $results_attrs['tagName'] ?? ( $attributes['tagName'] ?? 'ul' ),
 					// Non-grid hosts (slider, scroll-slides) wrap items with
 					// their own outer element (slide, scroll-slide). Suppress
 					// render_item()'s <li> wrapper so we don't double-wrap.
-					'itemTagName'   => $is_grid_host
+					'itemTagName'         => $is_grid_host
 						? ( $results_attrs['itemTagName'] ?? ( $attributes['itemTagName'] ?? 'li' ) )
 						: 'none',
-					'columns'       => $results_attrs['columns'] ?? ( $attributes['columns'] ?? 1 ),
-					'columnsTablet' => $results_attrs['columnsTablet'] ?? ( $attributes['columnsTablet'] ?? 0 ),
+					'columns'             => $results_attrs['columns'] ?? ( $attributes['columns'] ?? 1 ),
+					'columnsTablet'       => $results_attrs['columnsTablet'] ?? ( $attributes['columnsTablet'] ?? 0 ),
 					'columnsMobile'       => $results_attrs['columnsMobile'] ?? ( $attributes['columnsMobile'] ?? 0 ),
 					'firstItemColumnSpan' => $results_attrs['firstItemColumnSpan'] ?? ( $attributes['firstItemColumnSpan'] ?? 1 ),
 					'firstItemRowSpan'    => $results_attrs['firstItemRowSpan'] ?? ( $attributes['firstItemRowSpan'] ?? 1 ),
 					'groupBy'             => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
-					'layoutVariant' => $results_attrs['layoutVariant'] ?? ( $attributes['layoutVariant'] ?? '' ),
+					'layoutVariant'       => $results_attrs['layoutVariant'] ?? ( $attributes['layoutVariant'] ?? '' ),
 					// Carry the child's `style` attribute forward so
 					// designsetgo_query_wrap() can translate
 					// `style.spacing.blockGap` into `--wp--style--block-gap`
@@ -808,7 +808,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					// editor respects block-gap (via useBlockProps) but the
 					// frontend falls back to the 1.5rem default because the
 					// grid is constructed without get_block_wrapper_attributes.
-					'style'         => $results_attrs['style'] ?? ( $attributes['style'] ?? null ),
+					'style'               => $results_attrs['style'] ?? ( $attributes['style'] ?? null ),
 				)
 			);
 			$inner_children  = (array) ( $results_child['innerBlocks'] ?? array() );

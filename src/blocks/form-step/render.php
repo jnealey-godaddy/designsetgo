@@ -26,6 +26,8 @@ if ( ! function_exists( 'designsetgo_render_form_step' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_form_step( $attributes, $content, $block ) {
+		unset( $block );
+
 		$number = class_exists( '\DesignSetGo\Blocks\Form_Step_Counter' ) ? \DesignSetGo\Blocks\Form_Step_Counter::next() : 1;
 
 		// The editor's RichText stores HTML. Tags are stripped here; the
@@ -40,8 +42,8 @@ if ( ! function_exists( 'designsetgo_render_form_step' ) ) {
 		// later over REST (Query load more / refresh) would repeat ids already
 		// on the page. A per-request salt keeps them apart.
 		static $salt = null;
-		$salt       = $salt ?? substr( wp_hash( uniqid( '', true ) ), 0, 6 );
-		$heading_id = wp_unique_id( 'dsgo-form-step-' . $salt . '-' );
+		$salt        = $salt ?? substr( wp_hash( uniqid( '', true ) ), 0, 6 );
+		$heading_id  = wp_unique_id( 'dsgo-form-step-' . $salt . '-' );
 
 		$wrapper = get_block_wrapper_attributes(
 			array(

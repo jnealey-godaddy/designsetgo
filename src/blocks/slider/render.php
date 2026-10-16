@@ -59,7 +59,7 @@ if ( ! function_exists( 'designsetgo_render_slider' ) ) {
 			echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-rendered save.js output.
 			return;
 		}
-		require_once $helpers;
+		require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		$items_html = '';
 		if ( isset( $GLOBALS['designsetgo_query_items_html'][ $query_id ] ) ) {
@@ -181,7 +181,7 @@ if ( ! function_exists( 'designsetgo_render_slider' ) ) {
 				'role'                 => 'region',
 				// Literal fallback mirrors save.js (which does not translate it).
 				// If save.js ever translates the default, match that change here too.
-					'aria-label'           => '' !== $atts['ariaLabel'] ? $atts['ariaLabel'] : 'Image slider',
+					'aria-label'       => '' !== $atts['ariaLabel'] ? $atts['ariaLabel'] : 'Image slider',
 				'aria-roledescription' => 'slider',
 			)
 		);
