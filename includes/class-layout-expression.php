@@ -156,9 +156,9 @@ class Layout_Expression {
 	 * @return array<string> Trimmed parts, retaining empty comma arguments.
 	 */
 	private static function split( string $value, string $delimiter ): array {
-		$parts = array();
-		$start = 0;
-		$depth = 0;
+		$parts  = array();
+		$start  = 0;
+		$depth  = 0;
 		$length = strlen( $value );
 		for ( $i = 0; $i < $length; ++$i ) {
 			$char   = $value[ $i ];

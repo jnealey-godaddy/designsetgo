@@ -31,6 +31,8 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_form_phone_field( $attributes, $content, $block ) {
+		unset( $content, $block );
+
 		$field_name        = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
 		$label             = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 		$placeholder       = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
@@ -72,7 +74,7 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 			}
 		}
 
-		$phone_wrapper  = '<div class="dsgo-form-field__phone-wrapper" style="display: flex; gap: 0.5rem;" data-auto-format="' . esc_attr( $auto_format ? 'true' : 'false' ) . '">';
+		$phone_wrapper = '<div class="dsgo-form-field__phone-wrapper" style="display: flex; gap: 0.5rem;" data-auto-format="' . esc_attr( $auto_format ? 'true' : 'false' ) . '">';
 
 		if ( $show_country_code ) {
 			// Options are intentionally empty here — view.js hydrates this <select> at

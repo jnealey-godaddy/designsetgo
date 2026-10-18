@@ -38,7 +38,7 @@ if ( ! function_exists( 'designsetgo_render_query_no_results' ) ) {
 		if ( ! file_exists( $helpers ) ) {
 			return;
 		}
-		require_once $helpers;
+		require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		$state = designsetgo_query_get_last_state( $query_id );
 

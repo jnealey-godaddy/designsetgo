@@ -181,7 +181,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_sort' ) ) :
 	 * @param string $query_id   Sanitized queryId this filter belongs to.
 	 */
 	function designsetgo_query_filter_render_sort( $wrapper, $param_name, $label, array $options, $query_id = '' ) {
-		$raw     = designsetgo_query_filter_current_value( $param_name, $query_id );
+		$raw = designsetgo_query_filter_current_value( $param_name, $query_id );
 		// Coerce array GET (?sort[]=value) to a scalar so `selected()` compares
 		// a string, not the literal "Array".
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
@@ -257,7 +257,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 			return;
 		}
 
-		$raw     = designsetgo_query_filter_current_value( $param_name, $query_id );
+		$raw = designsetgo_query_filter_current_value( $param_name, $query_id );
 		// Coerce array GET to scalar for the single-select variation.
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_title( (string) $raw );
@@ -271,7 +271,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 				},
 				$terms
 			);
-			$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			$counts   = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 				$filter_taxonomy,
 				$term_ids,
 				$active_filters,
@@ -371,7 +371,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 				},
 				$terms
 			);
-			$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			$counts   = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 				$filter_taxonomy,
 				$term_ids,
 				$active_filters,
@@ -398,8 +398,8 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 		}
 
 		// Fix 4: noscript submit so no-JS users can apply checkbox filters.
-		$designsetgo_nojs_btn      = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
-		$list_class_parts   = array( 'dsgo-query-filter__checkbox-list' );
+		$designsetgo_nojs_btn = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
+		$list_class_parts     = array( 'dsgo-query-filter__checkbox-list' );
 		if ( 'horizontal' === $orientation ) {
 			$list_class_parts[] = 'is-horizontal';
 		}
@@ -462,7 +462,7 @@ $designsetgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'hori
 // look of pre-existing saved blocks that have no `filterStyle` attribute.
 // New inserts through the inserter variation opt into `underline` explicitly
 // — see the variation attributes in src/blocks/query-filter/variations.js.
-$designsetgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'pill', 'underline' ), true )
+$designsetgo_filter_style = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'pill', 'underline' ), true )
 	? $attributes['filterStyle']
 	: 'default';
 
@@ -521,6 +521,7 @@ foreach ( $designsetgo_active_filters as $designsetgo_param_key => $designsetgo_
 	$designsetgo_filter_key = 'filter_' === substr( $designsetgo_param_key, 0, 7 )
 		? substr( $designsetgo_param_key, 7 )
 		: $designsetgo_param_key;
+
 	$designsetgo_active_filters_by_key[ $designsetgo_filter_key ] = $designsetgo_param_values;
 }
 

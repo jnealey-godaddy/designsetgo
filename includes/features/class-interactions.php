@@ -97,12 +97,12 @@ class Interactions {
 	 *
 	 * @param array  $interaction Raw interaction.
 	 * @param string $key         Field name.
-	 * @param string $default     Value to use when absent or non-scalar.
+	 * @param string $fallback    Value to use when absent or non-scalar.
 	 * @return string The field value.
 	 */
-	private static function string_field( array $interaction, $key, $default = '' ) {
+	private static function string_field( array $interaction, $key, $fallback = '' ) {
 		if ( ! isset( $interaction[ $key ] ) || ! is_scalar( $interaction[ $key ] ) ) {
-			return $default;
+			return $fallback;
 		}
 
 		return (string) $interaction[ $key ];

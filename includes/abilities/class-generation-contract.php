@@ -51,14 +51,14 @@ class Generation_Contract {
 		}
 		$generation = array_merge( array( 'serialization' => $serialization ), $metadata[ $block_type->name ] ?? array() );
 		if ( isset( $block_type->attributes['dsgoLayout'] ) ) {
-			$contract = \DesignSetGo\Layout_Support::contract();
-			$role     = $contract['blocks'][ $block_type->name ]['role'];
+			$contract                      = \DesignSetGo\Layout_Support::contract();
+			$role                          = $contract['blocks'][ $block_type->name ]['role'];
 			$generation['layoutOverrides'] = array(
-				'version'    => 1,
-				'attribute'  => 'dsgoLayout',
-				'devices'    => $contract['devices'],
+				'version'     => 1,
+				'attribute'   => 'dsgoLayout',
+				'devices'     => $contract['devices'],
 				'inheritance' => 'desktop -> tablet -> mobile; omitted properties inherit',
-				'properties' => array_filter( $contract['properties'], static fn( $property ) => \DesignSetGo\Layout_Support::applies( $role, $property['scope'] ) ),
+				'properties'  => array_filter( $contract['properties'], static fn( $property ) => \DesignSetGo\Layout_Support::applies( $role, $property['scope'] ) ),
 			);
 		}
 		return $generation;

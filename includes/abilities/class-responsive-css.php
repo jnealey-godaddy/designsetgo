@@ -34,8 +34,8 @@ class Responsive_CSS {
 		);
 		$base  = preg_replace_callback(
 			'~/\* dsgo-css:(tablet|mobile):start \*/.*?/\* dsgo-css:\1:end \*/~s',
-			static function ( $match ) use ( &$parts ) {
-				$parts[ $match[1] ] = $match[0];
+			static function ( $matches ) use ( &$parts ) {
+				$parts[ $matches[1] ] = $matches[0];
 				return '';
 			},
 			$existing

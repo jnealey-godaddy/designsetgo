@@ -42,9 +42,9 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 		$separator = designsetgo_get_breadcrumb_separator( $attributes );
 
 		// Build wrapper classes.
-		$classes   = array( 'dsgo-breadcrumbs' );
-		$allowed   = array( 'center', 'right' );
-		$justify   = isset( $attributes['contentJustification'] ) ? $attributes['contentJustification'] : 'left';
+		$classes = array( 'dsgo-breadcrumbs' );
+		$allowed = array( 'center', 'right' );
+		$justify = isset( $attributes['contentJustification'] ) ? $attributes['contentJustification'] : 'left';
 		if ( in_array( $justify, $allowed, true ) ) {
 			$classes[] = 'is-content-justification-' . $justify;
 		}

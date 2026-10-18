@@ -28,6 +28,8 @@ if ( ! function_exists( 'designsetgo_render_form_checkbox_field' ) ) {
 	 * @return void
 	 */
 	function designsetgo_render_form_checkbox_field( $attributes, $content, $block ) {
+		unset( $content, $block );
+
 		$field_name         = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
 		$label              = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 		$help_text          = isset( $attributes['helpText'] ) ? (string) $attributes['helpText'] : '';

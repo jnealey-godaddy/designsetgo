@@ -32,16 +32,11 @@ class Image_Accordion_Serializer {
 	 * @return array<string, string>|null Opening and closing markup, or null.
 	 */
 	public static function wrapper( string $block_name, array $attributes ): ?array {
-		$height                   = isset( $attributes['height'] ) ? $attributes['height'] : '500px';
-		$gap                      = isset( $attributes['gap'] ) ? $attributes['gap'] : '4px';
-		$expanded_ratio           = isset( $attributes['expandedRatio'] ) ? floatval( $attributes['expandedRatio'] ) : 3;
-		$transition_duration      = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
-		$enable_overlay           = isset( $attributes['enableOverlay'] ) ? $attributes['enableOverlay'] : true;
-		$overlay_color            = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '#000000';
-		$overlay_opacity          = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 40;
-		$overlay_opacity_expanded = isset( $attributes['overlayOpacityExpanded'] ) ? floatval( $attributes['overlayOpacityExpanded'] ) : 20;
-		$trigger_type             = isset( $attributes['triggerType'] ) ? $attributes['triggerType'] : 'hover';
-		$default_expanded         = isset( $attributes['defaultExpanded'] ) ? Serializer_Support::numeric_attribute( $attributes['defaultExpanded'] ) : 0;
+		$expanded_ratio      = isset( $attributes['expandedRatio'] ) ? floatval( $attributes['expandedRatio'] ) : 3;
+		$transition_duration = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
+		$enable_overlay      = isset( $attributes['enableOverlay'] ) ? $attributes['enableOverlay'] : true;
+		$trigger_type        = isset( $attributes['triggerType'] ) ? $attributes['triggerType'] : 'hover';
+		$default_expanded    = isset( $attributes['defaultExpanded'] ) ? Serializer_Support::numeric_attribute( $attributes['defaultExpanded'] ) : 0;
 
 		// Build classes.
 		$class_parts   = array( 'wp-block-designsetgo-image-accordion', 'dsgo-image-accordion' );

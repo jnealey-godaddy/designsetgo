@@ -29,6 +29,8 @@ if ( ! function_exists( 'designsetgo_render_product_categories_grid' ) ) {
 	 * @return string|void Rendered category grid markup or no output.
 	 */
 	function designsetgo_render_product_categories_grid( $attributes, $content, $block ) {
+		unset( $content, $block );
+
 		// Bail if WooCommerce is not active.
 		if ( ! function_exists( 'wc_get_product' ) ) {
 			return '';
@@ -135,10 +137,10 @@ if ( ! function_exists( 'designsetgo_render_product_categories_grid' ) ) {
 
 		$wrapper_attributes = get_block_wrapper_attributes(
 			array(
-				'class'       => 'dsgo-product-categories-grid dsgo-product-categories-grid--cols-' . $columns,
-				'role'        => 'navigation',
-				'aria-label'  => __( 'Product categories', 'designsetgo' ),
-				'style'       => '--dsgo-pcg-aspect-ratio: ' . esc_attr( $image_aspect_ratio ) . ';',
+				'class'      => 'dsgo-product-categories-grid dsgo-product-categories-grid--cols-' . $columns,
+				'role'       => 'navigation',
+				'aria-label' => __( 'Product categories', 'designsetgo' ),
+				'style'      => '--dsgo-pcg-aspect-ratio: ' . esc_attr( $image_aspect_ratio ) . ';',
 			)
 		);
 

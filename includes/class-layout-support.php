@@ -51,8 +51,8 @@ class Layout_Support {
 		foreach ( $contract['devices'] as $device => $width ) {
 			foreach ( $contract['properties'] as $key => $property ) {
 				if ( isset( $layout[ $device ][ $key ] ) ) {
-					$value                           = $layout[ $device ][ $key ];
-					$normalized[ $device ][ $key ] = is_string( $value ) ? trim( $value ) : ( 0 == $value ? 0 : round( $value, 4 ) );
+					$value                         = $layout[ $device ][ $key ];
+					$normalized[ $device ][ $key ] = is_string( $value ) ? trim( $value ) : ( 0.0 === (float) $value ? 0 : round( $value, 4 ) );
 				}
 			}
 		}
@@ -85,14 +85,14 @@ class Layout_Support {
 			}
 		}
 		$device = array(
-			'type' => 'object',
+			'type'                 => 'object',
 			'additionalProperties' => false,
-			'properties' => $properties,
+			'properties'           => $properties,
 		);
 		return array(
-			'type' => 'object',
+			'type'                 => 'object',
 			'additionalProperties' => false,
-			'properties' => array_fill_keys( array_keys( self::contract()['devices'] ), $device ),
+			'properties'           => array_fill_keys( array_keys( self::contract()['devices'] ), $device ),
 		);
 	}
 
