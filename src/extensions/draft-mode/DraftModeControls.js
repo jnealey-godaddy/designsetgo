@@ -11,8 +11,6 @@
  * @since 1.4.0
  */
 
-/* global navigator */
-
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import {
@@ -92,7 +90,7 @@ export default function DraftModeControls() {
 		try {
 			const result = await getDraftStatus(postId);
 			setStatus(result);
-		} catch (err) {
+		} catch {
 			// Silently fail.
 		} finally {
 			setIsLoading(false);
@@ -185,7 +183,7 @@ export default function DraftModeControls() {
 				err.message !== 'Failed to create draft.'
 			) {
 				messageText = err.message;
-			} else if (!navigator.onLine) {
+			} else if (!window.navigator.onLine) {
 				messageText = __(
 					'Network error. Please check your connection and try again.',
 					'designsetgo'

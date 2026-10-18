@@ -46,7 +46,7 @@ function prepare(container) {
 		let length;
 		try {
 			length = shape.getTotalLength();
-		} catch (e) {
+		} catch {
 			return;
 		}
 

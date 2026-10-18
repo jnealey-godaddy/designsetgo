@@ -20,7 +20,7 @@ export function clearDirtyState() {
 		wp.data.dispatch('core/editor').resetEditorBlocks(currentBlocks, {
 			__unstableShouldCreateUndoLevel: false,
 		});
-	} catch (e) {
+	} catch {
 		// Silent fail - navigation will proceed anyway.
 	}
 }

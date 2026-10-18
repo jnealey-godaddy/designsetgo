@@ -203,7 +203,7 @@ function dsgoGetContextFromDom(el) {
 	}
 	try {
 		return JSON.parse(form.getAttribute('data-wp-context') || '');
-	} catch (err) {
+	} catch {
 		return null;
 	}
 }

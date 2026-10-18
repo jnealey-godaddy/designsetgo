@@ -10,7 +10,7 @@ import { __ } from '@wordpress/i18n';
 import { initFormConditions } from './conditions-dom';
 import { initFormSteps } from './steps-dom';
 
-/* global designsetgoForm, dsgoIntegrations, sessionStorage */
+/* global designsetgoForm, dsgoIntegrations */
 
 // Track Turnstile script loading state
 let turnstileScriptLoaded = false;
@@ -298,7 +298,7 @@ function initFormBuilder() {
 
 		function getStoredConfirmation() {
 			try {
-				return sessionStorage.getItem(storageKey);
+				return window.sessionStorage.getItem(storageKey);
 			} catch {
 				return null;
 			}
@@ -306,7 +306,7 @@ function initFormBuilder() {
 
 		function storeConfirmation(message) {
 			try {
-				sessionStorage.setItem(storageKey, message);
+				window.sessionStorage.setItem(storageKey, message);
 			} catch {
 				// sessionStorage unavailable
 			}
@@ -314,7 +314,7 @@ function initFormBuilder() {
 
 		function clearConfirmation() {
 			try {
-				sessionStorage.removeItem(storageKey);
+				window.sessionStorage.removeItem(storageKey);
 			} catch {
 				// sessionStorage unavailable
 			}
@@ -375,7 +375,7 @@ function initFormBuilder() {
 
 		function markTransportBlocked(key) {
 			try {
-				sessionStorage.setItem(key, '1');
+				window.sessionStorage.setItem(key, '1');
 			} catch {
 				// sessionStorage may be unavailable
 			}
@@ -383,7 +383,7 @@ function initFormBuilder() {
 
 		function isTransportBlocked(key) {
 			try {
-				return sessionStorage.getItem(key) === '1';
+				return window.sessionStorage.getItem(key) === '1';
 			} catch {
 				return false;
 			}

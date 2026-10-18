@@ -6,8 +6,6 @@
  * @package
  */
 
-/* global navigator */
-
 // Import from the leaf module, never from ./constants — that module pulls in
 // @wordpress/i18n, which is not available in this bundle.
 // See visibility-contract.js.
@@ -350,7 +348,7 @@ export const actionRegistry = {
 		const text = value || (targets || [])[0]?.textContent || '';
 		// A denied clipboard permission rejects; unhandled, that surfaces in
 		// the visitor's console as an error from our script.
-		navigator.clipboard?.writeText(text)?.catch(() => {});
+		window.navigator.clipboard?.writeText(text)?.catch(() => {});
 	},
 };
 

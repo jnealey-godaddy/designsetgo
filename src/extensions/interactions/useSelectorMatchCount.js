@@ -39,7 +39,7 @@ export function useSelectorMatchCount(selector, enabled = true) {
 
 			try {
 				setCount(canvas.querySelectorAll(selector).length);
-			} catch (e) {
+			} catch {
 				// Invalid selector — report it as such rather than crashing.
 				setCount(-1);
 			}

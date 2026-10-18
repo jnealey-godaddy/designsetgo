@@ -107,7 +107,7 @@ export function isVisualReviewCapture() {
 		return new URLSearchParams(window.location.search).has(
 			'sd-visual-review'
 		);
-	} catch (error) {
+	} catch {
 		return false;
 	}
 }

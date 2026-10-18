@@ -120,7 +120,7 @@ function localizeNumber(value, decimals) {
 			minimumFractionDigits: decimals,
 			maximumFractionDigits: decimals,
 		}).format(value);
-	} catch (e) {
+	} catch {
 		return decimals > 0 ? value.toFixed(decimals) : String(value);
 	}
 }

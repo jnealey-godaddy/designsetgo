@@ -82,11 +82,11 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 	function safeQueryAll(sel) {
 		try {
 			return document.querySelectorAll(sel);
-		} catch (e) {
+		} catch {
 			if (sel !== defaultSelector) {
 				try {
 					return document.querySelectorAll(defaultSelector);
-				} catch (_) {
+				} catch {
 					// fall through to empty NodeList
 				}
 			}
@@ -206,7 +206,7 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 				OVERLAY_HEIGHT_CACHE_KEY,
 				JSON.stringify(map)
 			);
-		} catch (e) {
+		} catch {
 			// Storage unavailable or quota exceeded — the served estimate still
 			// applies and the measured values are still set on the elements, so
 			// the only thing lost is the head start on the next load.
