@@ -83,7 +83,7 @@ export function initFormSteps(container, form) {
 			return NOOP;
 		}
 		controller = setUp(container, form, steps);
-	} catch (error) {
+	} catch {
 		// Fail open: one long form that still submits.
 		steps.forEach((step) => {
 			step.hidden = false;

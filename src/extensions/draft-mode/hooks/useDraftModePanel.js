@@ -9,8 +9,6 @@
  * @since 1.4.0
  */
 
-/* global navigator */
-
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useEffect, useCallback } from '@wordpress/element';
@@ -151,7 +149,7 @@ export function useDraftModePanel() {
 				err.message !== 'Failed to create draft.'
 			) {
 				errorMessage = err.message;
-			} else if (!navigator.onLine) {
+			} else if (!window.navigator.onLine) {
 				errorMessage = __(
 					'Network error. Please check your connection and try again.',
 					'designsetgo'
@@ -214,7 +212,7 @@ export function useDraftModePanel() {
 				err.message !== 'Failed to publish changes.'
 			) {
 				errorMessage = err.message;
-			} else if (!navigator.onLine) {
+			} else if (!window.navigator.onLine) {
 				errorMessage = __(
 					'Network error. Please check your connection and try again.',
 					'designsetgo'
@@ -269,7 +267,7 @@ export function useDraftModePanel() {
 				err.message !== 'Failed to discard draft.'
 			) {
 				errorMessage = err.message;
-			} else if (!navigator.onLine) {
+			} else if (!window.navigator.onLine) {
 				errorMessage = __(
 					'Network error. Please check your connection and try again.',
 					'designsetgo'

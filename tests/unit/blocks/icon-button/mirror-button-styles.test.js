@@ -50,7 +50,7 @@ describe('Icon Button style mirroring survives registration-order races', () => 
 		['designsetgo/icon-button', 'core/button'].forEach((name) => {
 			try {
 				unregisterBlockType(name);
-			} catch (e) {
+			} catch {
 				// not registered — ignore
 			}
 		});

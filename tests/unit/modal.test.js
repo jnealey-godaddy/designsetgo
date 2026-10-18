@@ -6,7 +6,7 @@
  * @package
  */
 
-/* global sessionStorage, localStorage, Document, Storage */
+/* global Document */
 
 // Import modal functionality
 import '../../src/blocks/modal/view.js';
@@ -359,8 +359,8 @@ describe('DSGModal - Core Functionality', () => {
 	describe('Auto-Trigger Frequency', () => {
 		beforeEach(() => {
 			// Clear storage
-			sessionStorage.clear();
-			localStorage.clear();
+			window.sessionStorage.clear();
+			window.localStorage.clear();
 		});
 
 		test('should trigger "always" frequency every time', () => {
@@ -407,12 +407,12 @@ describe('DSGModal - Core Functionality', () => {
 
 		test('"session" frequency tolerates sessionStorage throwing and uses memory fallback', () => {
 			const getSpy = jest
-				.spyOn(Storage.prototype, 'getItem')
+				.spyOn(window.Storage.prototype, 'getItem')
 				.mockImplementation(() => {
 					throw new Error('SecurityError: storage blocked');
 				});
 			const setSpy = jest
-				.spyOn(Storage.prototype, 'setItem')
+				.spyOn(window.Storage.prototype, 'setItem')
 				.mockImplementation(() => {
 					throw new Error('SecurityError: storage blocked');
 				});
@@ -437,12 +437,12 @@ describe('DSGModal - Core Functionality', () => {
 
 		test('"once" frequency tolerates localStorage and document.cookie throwing', () => {
 			const getSpy = jest
-				.spyOn(Storage.prototype, 'getItem')
+				.spyOn(window.Storage.prototype, 'getItem')
 				.mockImplementation(() => {
 					throw new Error('SecurityError: storage blocked');
 				});
 			const setSpy = jest
-				.spyOn(Storage.prototype, 'setItem')
+				.spyOn(window.Storage.prototype, 'setItem')
 				.mockImplementation(() => {
 					throw new Error('SecurityError: storage blocked');
 				});

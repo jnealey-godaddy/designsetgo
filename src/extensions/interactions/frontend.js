@@ -36,7 +36,7 @@ function readInteractions(el) {
 	try {
 		const parsed = JSON.parse(raw);
 		return Array.isArray(parsed) ? parsed : [];
-	} catch (e) {
+	} catch {
 		return [];
 	}
 }
@@ -105,7 +105,7 @@ function fire(el, trigger, event) {
 				interaction,
 				el
 			);
-		} catch (e) {
+		} catch {
 			return;
 		}
 

@@ -129,7 +129,7 @@ export function getTimezoneOffset(timezone) {
 		const parts = formatter.formatToParts(date);
 		const timeZonePart = parts.find((part) => part.type === 'timeZoneName');
 		return timeZonePart ? timeZonePart.value : '';
-	} catch (error) {
+	} catch {
 		return '';
 	}
 }

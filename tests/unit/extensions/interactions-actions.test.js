@@ -1,5 +1,3 @@
-/* global navigator */
-
 import {
 	runAction,
 	registerAction,
@@ -387,7 +385,9 @@ describe('interaction actions', () => {
 	describe('clipboard', () => {
 		it('swallows a denied clipboard permission', async () => {
 			const rejection = Promise.reject(new Error('denied'));
-			navigator.clipboard = { writeText: jest.fn(() => rejection) };
+			window.navigator.clipboard = {
+				writeText: jest.fn(() => rejection),
+			};
 
 			expect(() =>
 				runAction('copyToClipboard', [target], { value: 'x' })

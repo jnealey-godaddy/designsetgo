@@ -213,7 +213,7 @@ function openFromHash(animate) {
 	try {
 		const id = decodeURIComponent(window.location.hash.slice(1));
 		target = id ? document.getElementById(id) : null;
-	} catch (error) {
+	} catch {
 		return;
 	}
 

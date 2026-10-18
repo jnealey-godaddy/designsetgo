@@ -48,7 +48,7 @@ function getCanvasDocuments() {
 				if (iframe.contentDocument) {
 					docs.push(iframe.contentDocument);
 				}
-			} catch (e) {
+			} catch {
 				// Cross-origin (never happens for the local canvas) — ignore.
 			}
 		});

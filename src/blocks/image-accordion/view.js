@@ -13,14 +13,12 @@
 
 import { __, sprintf } from '@wordpress/i18n';
 
-/* global navigator */
-
 function initImageAccordions() {
 	const accordions = document.querySelectorAll('.dsgo-image-accordion');
 
 	// Detect touch devices
 	const isTouchDevice =
-		'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		'ontouchstart' in window || window.navigator.maxTouchPoints > 0;
 
 	accordions.forEach((accordion) => {
 		// Prevent duplicate initialization
@@ -78,7 +76,7 @@ function initImageAccordions() {
 			try {
 				const id = decodeURIComponent(window.location.hash.slice(1));
 				target = id ? document.getElementById(id) : null;
-			} catch (error) {
+			} catch {
 				return null;
 			}
 			const item = target?.closest('.dsgo-image-accordion-item');

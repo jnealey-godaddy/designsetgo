@@ -111,7 +111,7 @@ function isValidIanaZone(zone) {
 		// eslint-disable-next-line no-new
 		new Intl.DateTimeFormat('en-US', { timeZone: zone });
 		return true;
-	} catch (error) {
+	} catch {
 		return false;
 	}
 }

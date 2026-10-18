@@ -46,7 +46,7 @@ export default function useAddressSearch(setAttributes) {
 						)
 					);
 				}
-			} catch (error) {
+			} catch {
 				setSearchError(
 					__(
 						'Failed to search address. Please try again.',

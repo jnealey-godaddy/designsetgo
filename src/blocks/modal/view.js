@@ -7,7 +7,7 @@
  * @package
  */
 
-/* global MutationObserver, sessionStorage, localStorage, navigator, history, requestAnimationFrame */
+/* global MutationObserver, history, requestAnimationFrame */
 /* eslint-disable @wordpress/no-global-active-element, no-lonely-if, jsdoc/require-param-type, jsdoc/no-undefined-types */
 
 import { __ } from '@wordpress/i18n';
@@ -40,7 +40,10 @@ import { __ } from '@wordpress/i18n';
 	 */
 	function safeStorageGet(type, key) {
 		try {
-			const storage = type === 'session' ? sessionStorage : localStorage;
+			const storage =
+				type === 'session'
+					? window.sessionStorage
+					: window.localStorage;
 			return storage.getItem(key);
 		} catch (e) {
 			// Storage access blocked — use memory fallback.
@@ -69,7 +72,10 @@ import { __ } from '@wordpress/i18n';
 	 */
 	function safeStorageSet(type, key, value) {
 		try {
-			const storage = type === 'session' ? sessionStorage : localStorage;
+			const storage =
+				type === 'session'
+					? window.sessionStorage
+					: window.localStorage;
 			storage.setItem(key, value);
 			return;
 		} catch (e) {
@@ -600,7 +606,7 @@ import { __ } from '@wordpress/i18n';
 				const value = parts.pop().split(';').shift();
 				try {
 					return decodeURIComponent(value);
-				} catch (e) {
+				} catch {
 					// If decoding fails, return raw value
 					return value;
 				}
@@ -773,7 +779,7 @@ import { __ } from '@wordpress/i18n';
 		 */
 		isMobileDevice() {
 			return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-				navigator.userAgent
+				window.navigator.userAgent
 			);
 		}
 

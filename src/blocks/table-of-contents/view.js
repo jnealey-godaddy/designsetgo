@@ -94,7 +94,7 @@ class DSGTableOfContents {
 
 			// Handle URL hash on page load
 			this.handleInitialHash();
-		} catch (error) {
+		} catch {
 			// Silently fail - show empty message to user
 			this.showEmptyMessage();
 		}
@@ -271,12 +271,12 @@ class DSGTableOfContents {
 							target.setAttribute('tabindex', '-1');
 							target.focus();
 						}
-					} catch (error) {
+					} catch {
 						// Silently fail on scroll errors
 					}
 				});
 			});
-		} catch (error) {
+		} catch {
 			// Silently fail on link handler setup errors
 		}
 	}
@@ -458,7 +458,7 @@ class DSGTableOfContents {
 					this.isInitialHashNavigation = false;
 				}, 1000);
 			}, 300);
-		} catch (error) {
+		} catch {
 			// Ensure flag is reset even if there's an error
 			this.isInitialHashNavigation = false;
 		}

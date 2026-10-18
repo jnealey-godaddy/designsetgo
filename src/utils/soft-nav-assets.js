@@ -145,7 +145,7 @@ function matches(trigger, getHtml, root) {
 	if (trigger.selector) {
 		try {
 			return root.querySelector(trigger.selector) !== null;
-		} catch (e) {
+		} catch {
 			return false;
 		}
 	}

@@ -35,7 +35,7 @@ export function resolveTarget(interaction, sourceEl) {
 		}
 
 		return Array.from(document.querySelectorAll(targetSelector));
-	} catch (e) {
+	} catch {
 		// Author-supplied selector; a syntax error must not break the page.
 		return [];
 	}
