@@ -361,7 +361,7 @@
 		.dsgo-timeline-item {
 			opacity: 1 !important;
 			transform: none !important;
-			page-break-inside: avoid;
+			break-inside: avoid;
 		}
 	}
 }
