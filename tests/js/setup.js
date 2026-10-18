@@ -6,7 +6,6 @@
  * @package
  */
 
-/* global sessionStorage, localStorage */
 /* eslint-disable @wordpress/no-global-active-element */
 
 // Mock matchMedia
@@ -92,7 +91,7 @@ global.DSGModal = class MockDSGModal {
 			const value = parts.pop().split(';').shift();
 			try {
 				return decodeURIComponent(value);
-			} catch (e) {
+			} catch {
 				return value;
 			}
 		}
@@ -118,13 +117,13 @@ global.DSGModal = class MockDSGModal {
 		const storageKey = `dsgo_modal_${this.modalId}_shown`;
 
 		if (frequency === 'session') {
-			if (sessionStorage.getItem(storageKey)) {
+			if (window.sessionStorage.getItem(storageKey)) {
 				return false;
 			}
 		}
 
 		if (frequency === 'once') {
-			if (localStorage.getItem(storageKey)) {
+			if (window.localStorage.getItem(storageKey)) {
 				return false;
 			}
 			if (this.getCookie(storageKey)) {
@@ -144,11 +143,11 @@ global.DSGModal = class MockDSGModal {
 		const storageKey = `dsgo_modal_${this.modalId}_shown`;
 
 		if (frequency === 'session') {
-			sessionStorage.setItem(storageKey, 'true');
+			window.sessionStorage.setItem(storageKey, 'true');
 		}
 
 		if (frequency === 'once') {
-			localStorage.setItem(storageKey, 'true');
+			window.localStorage.setItem(storageKey, 'true');
 			this.setCookie(
 				storageKey,
 				'true',

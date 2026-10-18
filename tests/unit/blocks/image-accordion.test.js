@@ -8,7 +8,7 @@
  * @package
  */
 
-/* global navigator, MouseEvent, KeyboardEvent */
+/* global MouseEvent, KeyboardEvent */
 
 /**
  * Create an image accordion container with child items.
@@ -66,7 +66,7 @@ function setTouchDevice(isTouch) {
 	} else {
 		delete window.ontouchstart;
 	}
-	Object.defineProperty(navigator, 'maxTouchPoints', {
+	Object.defineProperty(window.navigator, 'maxTouchPoints', {
 		writable: true,
 		configurable: true,
 		value: isTouch ? 1 : 0,
