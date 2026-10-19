@@ -6,10 +6,10 @@ import {
 	BlockControls,
 	MediaReplaceFlow,
 } from '@wordpress/block-editor';
-import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { SelectControl, ToolbarGroup } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { useUniqueBlockId } from '../../hooks';
 import classnames from 'classnames';
 
 export default function ImageAccordionItemEdit({
@@ -79,14 +79,13 @@ export default function ImageAccordionItemEdit({
 			? context['designsetgo/imageAccordion/enableOverlay']
 			: true;
 
-	// Generate unique ID for accessibility
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({
-				uniqueId: `image-accordion-item-${Math.random().toString(36).substr(2, 9)}`,
-			});
-		}
-	}, [uniqueId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'uniqueId',
+		value: uniqueId,
+		setAttributes,
+		prefix: 'image-accordion-item-',
+	});
 
 	// Declaratively calculate classes
 	const itemClasses = classnames('dsgo-image-accordion-item', {

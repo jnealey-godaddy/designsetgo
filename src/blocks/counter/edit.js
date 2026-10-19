@@ -20,11 +20,10 @@ import {
 	// WordPress 6.5+ - useSettings (plural) replaces useSetting (singular)
 	useSettings,
 } from '@wordpress/block-editor';
-import { useEffect } from '@wordpress/element';
 
 // Extracted Inspector Panel Components
 import { DsgoInspectorPanel } from '../../components/shared';
-import { useIconDefaults } from '../../hooks';
+import { useIconDefaults, useUniqueBlockId } from '../../hooks';
 import { CounterSettingsPanel } from './components/inspector/CounterSettingsPanel';
 import { LabelSettingsPanel } from './components/inspector/LabelSettingsPanel';
 import { IconSettingsPanel } from './components/inspector/IconSettingsPanel';
@@ -112,14 +111,13 @@ export default function CounterEdit({
 	const effectiveHoverColor =
 		hoverColor || parentHoverColor || defaultHoverColor;
 
-	// Generate unique ID on mount (acceptable use of useEffect for ID generation)
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({
-				uniqueId: `counter-${Math.random().toString(36).substr(2, 9)}`,
-			});
-		}
-	}, [uniqueId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'uniqueId',
+		value: uniqueId,
+		setAttributes,
+		prefix: 'counter-',
+	});
 
 	// Calculate display value using extracted utility
 	const displayValue = formatCounterValue(endValue, {
