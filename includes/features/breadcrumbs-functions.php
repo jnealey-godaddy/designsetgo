@@ -34,6 +34,20 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_trail' ) ) {
 			$post_id = $block->context['postId'];
 		}
 
+		// Outside singular views the page itself is the subject: archives,
+		// search, 404 and the posts index have no post to describe.
+		if ( designsetgo_breadcrumb_is_page_level_view( $block ) ) {
+			$home = designsetgo_get_breadcrumb_home_item( $attributes );
+			if ( $home ) {
+				$trail[] = $home;
+			}
+
+			$trail = array_merge( $trail, designsetgo_get_breadcrumb_context_items( $attributes ) );
+
+			/** This filter is documented below. */
+			return apply_filters( 'designsetgo_breadcrumbs_trail', $trail, null, $attributes );
+		}
+
 		if ( ! $post_id ) {
 			return $trail;
 		}
@@ -44,23 +58,24 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_trail' ) ) {
 		}
 
 		// Add home link if enabled.
-		if ( ! empty( $attributes['showHome'] ) ) {
-			$trail[] = array(
-				'title' => ! empty( $attributes['homeText'] ) ? sanitize_text_field( $attributes['homeText'] ) : __( 'Home', 'designsetgo' ),
-				'url'   => home_url( '/' ),
-			);
+		$home = designsetgo_get_breadcrumb_home_item( $attributes );
+		if ( $home ) {
+			$trail[] = $home;
 		}
 
 		if ( is_post_type_hierarchical( $post->post_type ) ) {
 			$parent_ids = array_reverse( get_post_ancestors( $post->ID ) );
 			foreach ( $parent_ids as $parent_id ) {
-				$parent = get_post( $parent_id );
-				if ( $parent ) {
-					$trail[] = array(
-						'title' => get_the_title( $parent->ID ),
-						'url'   => get_permalink( $parent->ID ),
-					);
+				// A published child of a draft/private parent must not
+				// leak the parent's title or URL to visitors who can't read it.
+				if ( ! designsetgo_breadcrumb_can_show_post( $parent_id ) ) {
+					continue;
 				}
+
+				$trail[] = array(
+					'title' => get_the_title( $parent_id ),
+					'url'   => get_permalink( $parent_id ),
+				);
 			}
 		} else {
 			$trail = array_merge(
@@ -82,6 +97,172 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_trail' ) ) {
 
 		// Allow filtering of breadcrumb trail.
 		return apply_filters( 'designsetgo_breadcrumbs_trail', $trail, $post, $attributes );
+	}
+}
+
+if ( ! function_exists( 'designsetgo_breadcrumb_can_show_post' ) ) {
+	/**
+	 * Whether the current visitor may see a post's title and URL in a trail.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	function designsetgo_breadcrumb_can_show_post( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return false;
+		}
+
+		if ( 'publish' === $post->post_status ) {
+			return true;
+		}
+
+		return current_user_can( 'read_post', $post->ID );
+	}
+}
+
+if ( ! function_exists( 'designsetgo_get_breadcrumb_home_item' ) ) {
+	/**
+	 * The Home crumb, or an empty array when it is turned off.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return array Breadcrumb item, or array() when hidden.
+	 */
+	function designsetgo_get_breadcrumb_home_item( $attributes ) {
+		if ( empty( $attributes['showHome'] ) ) {
+			return array();
+		}
+
+		return array(
+			'title' => ! empty( $attributes['homeText'] ) ? sanitize_text_field( $attributes['homeText'] ) : __( 'Home', 'designsetgo' ),
+			'url'   => home_url( '/' ),
+		);
+	}
+}
+
+if ( ! function_exists( 'designsetgo_breadcrumb_is_page_level_view' ) ) {
+	/**
+	 * Whether the trail should describe the requested page instead of a post.
+	 *
+	 * True on archives, search, 404 and the posts index, unless the block sits
+	 * inside a query loop (where it describes its item).
+	 *
+	 * @param object $block Block instance with context.
+	 * @return bool
+	 */
+	function designsetgo_breadcrumb_is_page_level_view( $block ) {
+		$context = isset( $block->context ) && is_array( $block->context ) ? $block->context : array();
+
+		foreach ( array( 'queryId', 'designsetgo/queryId', 'designsetgo/currentItemId' ) as $key ) {
+			if ( ! empty( $context[ $key ] ) ) {
+				return false;
+			}
+		}
+
+		if ( is_singular() ) {
+			return false;
+		}
+
+		return is_archive() || is_search() || is_404() || is_home();
+	}
+}
+
+if ( ! function_exists( 'designsetgo_get_breadcrumb_context_items' ) ) {
+	/**
+	 * Crumbs after Home for an archive, search, 404 or posts-index view.
+	 *
+	 * Ancestors of a taxonomy term link; the requested page is the current
+	 * crumb and only appears when `showCurrent` is on.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return array Breadcrumb items.
+	 */
+	function designsetgo_get_breadcrumb_context_items( $attributes ) {
+		$items   = array();
+		$current = null;
+
+		if ( is_search() ) {
+			$current = array(
+				'title' => sprintf(
+					/* translators: %s: search query. */
+					__( 'Search results for “%s”', 'designsetgo' ),
+					get_search_query( false )
+				),
+				'url'   => get_search_link(),
+			);
+		} elseif ( is_404() ) {
+			$current = array(
+				'title' => __( 'Page not found', 'designsetgo' ),
+				'url'   => '',
+			);
+		} elseif ( is_category() || is_tag() || is_tax() ) {
+			$term = get_queried_object();
+			if ( $term instanceof WP_Term ) {
+				$ancestor_ids = array_reverse( get_ancestors( $term->term_id, $term->taxonomy, 'taxonomy' ) );
+				foreach ( $ancestor_ids as $ancestor_id ) {
+					$ancestor = get_term( $ancestor_id, $term->taxonomy );
+					$link     = $ancestor instanceof WP_Term ? get_term_link( $ancestor ) : false;
+					if ( $ancestor instanceof WP_Term && is_string( $link ) ) {
+						$items[] = array(
+							'title' => $ancestor->name,
+							'url'   => $link,
+						);
+					}
+				}
+
+				$link    = get_term_link( $term );
+				$current = array(
+					'title' => $term->name,
+					'url'   => is_string( $link ) ? $link : '',
+				);
+			}
+		} elseif ( is_post_type_archive() ) {
+			$post_type = get_query_var( 'post_type' );
+			$post_type = is_array( $post_type ) ? reset( $post_type ) : $post_type;
+			$link      = $post_type ? get_post_type_archive_link( $post_type ) : false;
+			$current   = array(
+				'title' => post_type_archive_title( '', false ),
+				'url'   => $link ? $link : '',
+			);
+		} elseif ( is_author() ) {
+			$author_id = (int) get_queried_object_id();
+			$current   = array(
+				'title' => get_the_author_meta( 'display_name', $author_id ),
+				'url'   => get_author_posts_url( $author_id ),
+			);
+		} elseif ( is_date() ) {
+			if ( is_day() ) {
+				$link = get_day_link( (int) get_query_var( 'year' ), (int) get_query_var( 'monthnum' ), (int) get_query_var( 'day' ) );
+			} elseif ( is_month() ) {
+				$link = get_month_link( (int) get_query_var( 'year' ), (int) get_query_var( 'monthnum' ) );
+			} else {
+				$link = get_year_link( (int) get_query_var( 'year' ) );
+			}
+
+			// Drop the archive label prefix so only the date remains.
+			add_filter( 'get_the_archive_title_prefix', '__return_empty_string' );
+			$title = get_the_archive_title();
+			remove_filter( 'get_the_archive_title_prefix', '__return_empty_string' );
+
+			$current = array(
+				'title' => $title,
+				'url'   => $link,
+			);
+		} elseif ( is_home() && ! is_front_page() ) {
+			$page_id = (int) get_option( 'page_for_posts' );
+			$current = array(
+				'title' => single_post_title( '', false ),
+				'url'   => $page_id ? get_permalink( $page_id ) : '',
+			);
+		}
+
+		if ( $current && ! empty( $attributes['showCurrent'] ) ) {
+			$current['title']      = wp_strip_all_tags( (string) $current['title'] );
+			$current['is_current'] = true;
+			$items[]               = $current;
+		}
+
+		return $items;
 	}
 }
 
@@ -170,7 +351,7 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_taxonomy' ) ) {
 
 if ( ! function_exists( 'designsetgo_get_breadcrumb_term_items' ) ) {
 	/**
-	 * Crumbs for a post's first term in its trail taxonomy, ancestors first.
+	 * Crumbs for a post's lowest-ID term in its trail taxonomy, ancestors first.
 	 *
 	 * @param WP_Post $post Post.
 	 * @return array Breadcrumb items.
@@ -186,8 +367,13 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_term_items' ) ) {
 			return array();
 		}
 
-		$term_ids   = array_reverse( get_ancestors( $terms[0]->term_id, $taxonomy, 'taxonomy' ) );
-		$term_ids[] = $terms[0]->term_id;
+		// Deterministic choice: the lowest term ID. get_the_terms() orders by
+		// name, which would change the trail when a term is renamed. The block
+		// editor preview applies the same rule.
+		$first_id = min( wp_list_pluck( $terms, 'term_id' ) );
+
+		$term_ids   = array_reverse( get_ancestors( $first_id, $taxonomy, 'taxonomy' ) );
+		$term_ids[] = $first_id;
 		$items      = array();
 
 		foreach ( $term_ids as $term_id ) {
@@ -270,6 +456,18 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_separator' ) ) {
 			'arrow-right' => '→',
 		);
 
-		return isset( $separators[ $separator ] ) ? $separators[ $separator ] : '/';
+		$glyph = isset( $separators[ $separator ] ) ? $separators[ $separator ] : '/';
+
+		// Directional glyphs must point along the reading direction.
+		if ( is_rtl() ) {
+			$mirrored = array(
+				'›' => '‹',
+				'>' => '<',
+				'→' => '←',
+			);
+			$glyph    = isset( $mirrored[ $glyph ] ) ? $mirrored[ $glyph ] : $glyph;
+		}
+
+		return $glyph;
 	}
 }
