@@ -797,6 +797,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-dynamic-block-extension-props.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-list-context-styles.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';
@@ -885,6 +886,7 @@ class Plugin {
 		$this->animation_defaults_injector->init();
 
 		( new Dynamic_Block_Extension_Props() )->init();
+		( new Icon_List_Context_Styles() )->init();
 
 		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
