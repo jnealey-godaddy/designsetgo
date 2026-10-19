@@ -82,8 +82,13 @@
 
 	// Container with blob shape
 	position: relative;
-	width: var(--dsgo-blob-size);
-	height: var(--dsgo-blob-height, var(--dsgo-blob-size));
+	// Never wider than its container: a fixed size on a phone pushed the page
+	// sideways. Without an explicit height the box stays square at whatever
+	// width it gets (with overflow: hidden, content can't stretch it); with
+	// one, width and height are both definite and aspect-ratio is ignored.
+	width: min(var(--dsgo-blob-size), 100%);
+	height: var(--dsgo-blob-height, auto);
+	aspect-ratio: 1;
 	display: flex;
 	align-items: center;
 	justify-content: center;
