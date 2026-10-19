@@ -16,6 +16,19 @@ import { CountUp } from 'countup.js';
 const initializedGroups = new WeakSet();
 
 /**
+ * Parse a numeric data attribute, falling back only when it is missing or
+ * not a number (so a legitimate 0 is preserved).
+ *
+ * @param {string|undefined} value    Raw attribute value
+ * @param {number}           fallback Value used when `value` is not numeric
+ * @return {number} Parsed number or fallback
+ */
+export function numberOr(value, fallback) {
+	const parsed = parseFloat(value);
+	return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
  * Initialize counter animations on page load
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,13 +111,16 @@ function animateCounter(counter) {
 	}
 
 	// Get counter settings from data attributes
-	const startValue = parseFloat(counter.dataset.startValue) || 0;
-	const endValue = parseFloat(counter.dataset.endValue) || 100;
-	const decimals = parseInt(counter.dataset.decimals, 10) || 0;
+	const startValue = numberOr(counter.dataset.startValue, 0);
+	const endValue = numberOr(counter.dataset.endValue, 100);
+	const decimals = Math.max(
+		0,
+		Math.trunc(numberOr(counter.dataset.decimals, 0))
+	);
 	const prefix = counter.dataset.prefix || '';
 	const suffix = counter.dataset.suffix || '';
-	const duration = parseFloat(counter.dataset.duration) || 2;
-	const delay = parseFloat(counter.dataset.delay) || 0;
+	const duration = Math.max(0, numberOr(counter.dataset.duration, 2));
+	const delay = Math.max(0, numberOr(counter.dataset.delay, 0));
 	const easing = counter.dataset.easing || 'easeOutQuad';
 	const useGrouping = counter.dataset.useGrouping === 'true';
 	const separator = counter.dataset.separator || ',';
@@ -162,17 +178,22 @@ function escapeReplacement(str) {
  * Show final value immediately (no animation)
  * @param {HTMLElement} counter - Counter element
  */
-function showFinalValue(counter) {
+export function showFinalValue(counter) {
 	const valueElement = counter.querySelector('.dsgo-counter__value');
 	if (!valueElement) {
 		return;
 	}
 
-	const endValue = parseFloat(counter.dataset.endValue) || 100;
-	const decimals = parseInt(counter.dataset.decimals, 10) || 0;
+	const endValue = numberOr(counter.dataset.endValue, 100);
+	const decimals = Math.max(
+		0,
+		Math.trunc(numberOr(counter.dataset.decimals, 0))
+	);
 	const useGrouping = counter.dataset.useGrouping === 'true';
 	const separator = counter.dataset.separator || ',';
 	const decimal = counter.dataset.decimal || '.';
+	const prefix = counter.dataset.prefix || '';
+	const suffix = counter.dataset.suffix || '';
 
 	// Format number
 	let formatted = endValue.toFixed(decimals);
@@ -190,7 +211,7 @@ function showFinalValue(counter) {
 	formatted = parts.join(decimal);
 
 	// Update value
-	valueElement.textContent = formatted;
+	valueElement.textContent = `${prefix}${formatted}${suffix}`;
 }
 
 /**

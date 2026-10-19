@@ -169,6 +169,35 @@ describe('Counter Group - Frontend', () => {
 		cleanup();
 	});
 
+	describe('Zero and prefix/suffix handling', () => {
+		test('numberOr keeps 0 and only falls back for non-numeric input', () => {
+			let numberOr;
+			jest.isolateModules(() => {
+				({
+					numberOr,
+				} = require('../../../src/blocks/counter-group/view.js'));
+			});
+
+			expect(numberOr('0', 100)).toBe(0);
+			expect(numberOr('-5', 100)).toBe(-5);
+			expect(numberOr(undefined, 100)).toBe(100);
+			expect(numberOr('abc', 100)).toBe(100);
+		});
+
+		test('reduced motion shows an end value of 0 with prefix and suffix', () => {
+			global.setMatchMedia(true);
+
+			const group = createCounterGroupFixture([{ endValue: 0 }]);
+			const counter = group.querySelector('.dsgo-counter');
+			counter.dataset.prefix = '$';
+			counter.dataset.suffix = '%';
+
+			loadViewReducedMotion();
+
+			expect(getCounterValue(group, 0)).toBe('$0%');
+		});
+	});
+
 	describe('Reduced motion', () => {
 		test('shows final value immediately when reduced motion preferred', () => {
 			global.setMatchMedia(true);

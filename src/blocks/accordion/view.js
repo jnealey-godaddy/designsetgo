@@ -237,7 +237,33 @@ document.addEventListener('dsgo-reveal', (event) => {
 	openItemsAround(event.target, false);
 });
 
+// Pending animation work per panel (rAF id + timeout ids), so a rapid
+// open/close can cancel a stale "hide"/"clear height" from the previous run.
+const pendingAnimations = new WeakMap();
+
+function cancelPendingAnimation(panel) {
+	const pending = pendingAnimations.get(panel);
+	if (!pending) {
+		return;
+	}
+	/* eslint-disable no-undef */
+	if (pending.raf) {
+		cancelAnimationFrame(pending.raf);
+	}
+	/* eslint-enable no-undef */
+	pending.timers.forEach((id) => clearTimeout(id));
+	pendingAnimations.delete(panel);
+}
+
+function trackAnimation(panel) {
+	const pending = pendingAnimations.get(panel) || { raf: 0, timers: [] };
+	pendingAnimations.set(panel, pending);
+	return pending;
+}
+
 function openPanel(item, panel, animate = true, scrollIntoView = false) {
+	cancelPendingAnimation(panel);
+
 	// Update classes
 	item.classList.remove('dsgo-accordion-item--closed');
 	item.classList.add('dsgo-accordion-item--open');
@@ -263,25 +289,34 @@ function openPanel(item, panel, animate = true, scrollIntoView = false) {
 
 	// Animate height
 	panel.style.height = '0px';
+	const pending = trackAnimation(panel);
 	// eslint-disable-next-line no-undef
-	requestAnimationFrame(() => {
+	pending.raf = requestAnimationFrame(() => {
+		pending.raf = 0;
 		panel.style.height = `${contentHeight}px`;
 
 		// Smooth scroll into view after opening
 		if (scrollIntoView) {
-			setTimeout(() => {
-				scrollItemIntoView(item);
-			}, ANIMATION_DURATION / 2); // Scroll halfway through animation
+			pending.timers.push(
+				setTimeout(() => {
+					scrollItemIntoView(item);
+				}, ANIMATION_DURATION / 2) // Scroll halfway through animation
+			);
 		}
 
 		// Remove inline height after animation completes
-		setTimeout(() => {
-			panel.style.height = '';
-		}, ANIMATION_DURATION);
+		pending.timers.push(
+			setTimeout(() => {
+				panel.style.height = '';
+				pendingAnimations.delete(panel);
+			}, ANIMATION_DURATION)
+		);
 	});
 }
 
 function closePanel(item, panel, animate = true) {
+	cancelPendingAnimation(panel);
+
 	// Get current height for animation
 	const currentHeight = panel.scrollHeight;
 
@@ -306,15 +341,20 @@ function closePanel(item, panel, animate = true) {
 	panel.style.height = `${currentHeight}px`;
 
 	// Force reflow
+	const pending = trackAnimation(panel);
 	// eslint-disable-next-line no-undef
-	requestAnimationFrame(() => {
+	pending.raf = requestAnimationFrame(() => {
+		pending.raf = 0;
 		panel.style.height = '0px';
 
 		// Hide after animation completes
-		setTimeout(() => {
-			panel.hidden = true;
-			panel.style.height = '';
-		}, ANIMATION_DURATION);
+		pending.timers.push(
+			setTimeout(() => {
+				panel.hidden = true;
+				panel.style.height = '';
+				pendingAnimations.delete(panel);
+			}, ANIMATION_DURATION)
+		);
 	});
 }
 
