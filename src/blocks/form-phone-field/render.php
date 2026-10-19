@@ -47,14 +47,16 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 
 		$field_id = 'field-' . $field_name;
 
-		// Resolve the HTML pattern from the phone format.
+		// Resolve the HTML pattern from the phone format. Both accept what the
+		// view script's auto-formatter produces and common manual entry; keep them
+		// in step with the `tel` check in class-form-handler.php.
 		$pattern = '';
 		switch ( $phone_format ) {
 			case 'us':
-				$pattern = '[0-9]{3}-[0-9]{3}-[0-9]{4}';
+				$pattern = '(?:\+?1[\s.\-]?)?(?:\([0-9]{3}\)|[0-9]{3})[\s.\-]?[0-9]{3}[\s.\-]?[0-9]{4}';
 				break;
 			case 'international':
-				$pattern = '\+[0-9]{1,3}[0-9\s\-]{4,14}';
+				$pattern = '(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)\+[0-9\s.\-]+';
 				break;
 		}
 
@@ -67,7 +69,7 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 					$field_placeholder = '555-123-4567';
 					break;
 				case 'international':
-					$field_placeholder = '+1 555 123 4567';
+					$field_placeholder = '+1-555-123-4567';
 					break;
 				default:
 					$field_placeholder = '';

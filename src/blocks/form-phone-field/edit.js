@@ -87,9 +87,9 @@ export default function FormPhoneFieldEdit({
 	const getPattern = () => {
 		switch (phoneFormat) {
 			case 'us':
-				return '[0-9]{3}-[0-9]{3}-[0-9]{4}';
+				return '(?:\\+?1[\\s.\\-]?)?(?:\\([0-9]{3}\\)|[0-9]{3})[\\s.\\-]?[0-9]{3}[\\s.\\-]?[0-9]{4}';
 			case 'international':
-				return '\\+[0-9]{1,3}[0-9\\s\\-]{4,14}';
+				return '(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)\\+[0-9\\s.\\-]+';
 			default:
 				return undefined;
 		}
@@ -105,7 +105,7 @@ export default function FormPhoneFieldEdit({
 			case 'us':
 				return '555-123-4567';
 			case 'international':
-				return '+1 555 123 4567';
+				return '+1-555-123-4567';
 			default:
 				return '';
 		}

@@ -175,6 +175,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 			'555-123-4567',
 			'5551234567',
 			'+44 20 7946 0958',
+			'555.123.4567',
 		);
 
 		foreach ( $valid_phones as $phone ) {
@@ -243,6 +244,43 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_field_empty_values() {
 		$this->assertEquals( '', $this->call_private_method( 'sanitize_field', array( '', 'text' ) ) );
+	}
+
+	/**
+	 * A blank number stays blank instead of being stored as 0.
+	 */
+	public function test_sanitize_number_keeps_blank_empty() {
+		$this->assertSame( '', $this->call_private_method( 'sanitize_field', array( '', 'number' ) ) );
+		$this->assertSame( 0.0, $this->call_private_method( 'sanitize_field', array( '0', 'number' ) ) );
+		$this->assertTrue( $this->call_private_method( 'is_empty_field_value', array( '' ) ) );
+		$this->assertFalse( $this->call_private_method( 'is_empty_field_value', array( 0.0 ) ) );
+
+		$result = $this->call_private_method( 'validate_field', array( 'abc', 'number' ) );
+		$this->assertInstanceOf( WP_Error::class, $result );
+	}
+
+	/**
+	 * Array values for single-value types are rejected, not fatal.
+	 */
+	public function test_validate_field_rejects_array_for_single_value_types() {
+		foreach ( array( 'email', 'url', 'number', 'tel', 'country_code' ) as $type ) {
+			$result = $this->call_private_method( 'validate_field', array( array( 'x' ), $type ) );
+			$this->assertInstanceOf( WP_Error::class, $result, "Array for '$type' should be rejected" );
+		}
+	}
+
+	/**
+	 * Non-scalar field values are a 400, not a TypeError.
+	 */
+	public function test_submission_with_array_values_returns_error() {
+		$request = new WP_REST_Request( 'POST' );
+		$request->set_param( 'formId', 'any-form' );
+		$request->set_param( 'fields', array( array( 'name' => 'email', 'value' => array( array( 'x' ) ) ) ) );
+		$request->set_param( 'honeypot', array( 'x' ) );
+		$request->set_param( 'timestamp', array( 'x' ) );
+
+		$result = $this->handler->handle_form_submission( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
 	}
 
 	/**

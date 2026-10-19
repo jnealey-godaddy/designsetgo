@@ -302,6 +302,30 @@ class Form_Handler {
 		$timestamp     = $request->get_param( 'timestamp' );
 		$form_settings = $this->get_form_settings();
 
+		// These reach string-typed checks below. A client can send any JSON
+		// type, and an array would be a TypeError (HTTP 500) rather than an
+		// answer. A non-scalar honeypot is treated as filled (a real browser
+		// only ever sends a string); a non-scalar timestamp as absent.
+		if ( ! is_scalar( $form_id ) ) {
+			return $this->invalid_submission_error();
+		}
+		$form_id   = (string) $form_id;
+		$honeypot  = is_scalar( $honeypot ) ? (string) $honeypot : '1';
+		$timestamp = is_scalar( $timestamp ) ? (string) $timestamp : '';
+
+		// Reject structurally invalid values before any validator or sanitizer
+		// sees them: they expect a scalar (or, for multi-choice fields, a flat
+		// list of scalars), and anything else would be a TypeError. Entries
+		// without a usable name are skipped further down, so leave those be.
+		foreach ( (array) $fields as $field ) {
+			if ( ! is_array( $field ) || ! isset( $field['name'], $field['value'] ) || ! is_scalar( $field['name'] ) ) {
+				continue;
+			}
+			if ( ! $this->is_valid_field_value_shape( $field['value'] ) ) {
+				return $this->invalid_submission_error();
+			}
+		}
+
 		// Resolve the complete published form definition before running checks that
 		// can consume resources. A form ID is an untrusted client value: accepting
 		// an unknown one would let callers bypass its field schema and per-form
@@ -523,6 +547,40 @@ class Form_Handler {
 				'submissionId' => $submission_id,
 			),
 			200
+		);
+	}
+
+	/**
+	 * Whether a submitted value is a scalar or a flat list of scalars.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @return bool
+	 */
+	private function is_valid_field_value_shape( $value ) {
+		if ( is_scalar( $value ) ) {
+			return true;
+		}
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+		foreach ( $value as $item ) {
+			if ( ! is_scalar( $item ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Error for a request whose structure is not a valid form submission.
+	 *
+	 * @return WP_Error
+	 */
+	private function invalid_submission_error() {
+		return new WP_Error(
+			'invalid_submission',
+			__( 'Invalid form submission.', 'designsetgo' ),
+			array( 'status' => 400 )
 		);
 	}
 
@@ -781,6 +839,14 @@ class Form_Handler {
 	 * @return true|WP_Error True if valid, WP_Error if invalid.
 	 */
 	private function validate_field( $value, $type, $allowed = null ) {
+		// Single-value types are checked by functions that need a string.
+		if ( is_array( $value ) && in_array( $type, array( 'email', 'url', 'number', 'tel', 'country_code' ), true ) ) {
+			return new WP_Error(
+				'invalid_value',
+				__( 'Invalid value.', 'designsetgo' )
+			);
+		}
+
 		// Skip validation for empty values (optional fields).
 		// Required fields are validated by HTML5 on the frontend.
 		if ( empty( $value ) && '0' !== $value ) {
@@ -832,8 +898,8 @@ class Form_Handler {
 				break;
 
 			case 'tel':
-				// Basic phone validation - numbers, spaces, dashes, parentheses, plus.
-				if ( ! preg_match( '/^[0-9\s\-\(\)\+]+$/', $value ) ) {
+				// Basic phone validation - numbers, spaces, dashes, dots, parentheses, plus.
+				if ( ! preg_match( '/^[0-9\s\-\.\(\)\+]+$/', $value ) ) {
 					return new WP_Error(
 						'invalid_phone',
 						__( 'Invalid phone number.', 'designsetgo' )
@@ -871,10 +937,14 @@ class Form_Handler {
 				return esc_url_raw( $value );
 
 			case 'number':
-				return is_numeric( $value ) ? floatval( $value ) : 0;
+				// A blank stays blank so an optional number is stored empty and a
+				// required one still fails the empty check. validate_field() has
+				// already rejected non-numeric input, so '' here is never a
+				// silent coercion of bad data.
+				return ( is_scalar( $value ) && is_numeric( $value ) ) ? floatval( $value ) : '';
 
 			case 'tel':
-				return preg_replace( '/[^0-9\s\-\(\)\+]/', '', $value );
+				return preg_replace( '/[^0-9\s\-\.\(\)\+]/', '', $value );
 
 			case 'textarea':
 				return sanitize_textarea_field( $value );
@@ -1154,12 +1224,9 @@ class Form_Handler {
 		}
 
 		// Prepare merge tags.
-		$current_url = '';
-		if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-			$current_url = esc_url_raw(
-				home_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) )
-			);
-		}
+		// The page the form was on, not the submit endpoint this request hit
+		// (REST, admin-ajax and admin-post all carry the page as the referer).
+		$current_url = esc_url_raw( $this->get_submission_source_url() );
 
 		/*
 		 * Merge tags land in TWO places with different rules, so they need two
