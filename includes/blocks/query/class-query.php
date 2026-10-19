@@ -527,7 +527,8 @@ class Controller {
 			$source['queryId'],
 			$source['innerBlocks'],
 			$request,
-			$source['sourcePostId']
+			$source['sourcePostId'],
+			isset( $source['pageContext'] ) && is_array( $source['pageContext'] ) ? $source['pageContext'] : array()
 		);
 	}
 
@@ -638,9 +639,13 @@ class Controller {
 	 * @param int|null         $source_post_id Post holding the query (0 outside
 	 *                                         post content), or null to emit
 	 *                                         no refresh source.
+	 * @param array|null       $page_context Page facts recorded in the signed
+	 *                                         definition at first paint (current
+	 *                                         post, inherited archive vars), or
+	 *                                         null for an editor preview.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $source_post_id ) {
+	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $source_post_id, $page_context = null ) {
 		$page        = max( 1, (int) $request->get_param( 'page' ) );
 		$params      = (array) $request->get_param( 'params' );
 		$current_url = (string) $request->get_param( 'currentUrl' );
@@ -663,7 +668,10 @@ class Controller {
 		}
 		require_once $scoping; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
-		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		// Same list first paint reads: WooCommerce's filter blocks write
+		// min_price / max_price / rating_filter and query_type_<attr> (which
+		// pairs with filter_<attr>). They are bare keys, never query-scoped.
+		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort', 'min_price', 'max_price', 'rating_filter' ) );
 		$own_id       = sanitize_key( (string) $query_id );
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
@@ -672,8 +680,9 @@ class Controller {
 			// Other Queries' filter_* keys pass through so this render's
 			// controls and chips see the whole URL, as on first paint.
 			list( $bare, $scope ) = designsetgo_query_split_param_key( sanitize_key( $key ), $own_id );
-			$allowed              = in_array( $bare, $allowed_keys, true ) || 0 === strpos( $bare, 'filter_' );
-			if ( $allowed && ( '' === $scope || $scope === $own_id || 0 === strpos( $bare, 'filter_' ) ) ) {
+			$is_wildcard          = 0 === strpos( $bare, 'filter_' ) || 0 === strpos( $bare, 'query_type_' );
+			$allowed              = in_array( $bare, $allowed_keys, true ) || $is_wildcard;
+			if ( $allowed && ( '' === $scope || $scope === $own_id || $is_wildcard ) ) {
 				// REST-supplied values are sanitized downstream before use in
 				// WP_Query / SQL / HTML, but nested block renders may pass
 				// through filter hooks or third-party code that reads $_GET
@@ -688,6 +697,11 @@ class Controller {
 		// The browser can see the whole page; this render sees one Query.
 		$original_multi                           = $GLOBALS['designsetgo_query_force_multi'] ?? null;
 		$GLOBALS['designsetgo_query_force_multi'] = (bool) $request->get_param( 'multiQuery' );
+		// This request has no page of its own: replay the facts first paint saw.
+		$original_page_context = $GLOBALS['designsetgo_query_request_context'] ?? null;
+		if ( is_array( $page_context ) ) {
+			$GLOBALS['designsetgo_query_request_context'] = $page_context;
+		}
 		if ( '' !== $current_url ) {
 			$parsed = wp_parse_url( $current_url );
 			if ( is_array( $parsed ) && isset( $parsed['path'] ) ) {
@@ -722,6 +736,11 @@ class Controller {
 				unset( $GLOBALS['designsetgo_query_force_multi'] );
 			} else {
 				$GLOBALS['designsetgo_query_force_multi'] = $original_multi;
+			}
+			if ( null === $original_page_context ) {
+				unset( $GLOBALS['designsetgo_query_request_context'] );
+			} else {
+				$GLOBALS['designsetgo_query_request_context'] = $original_page_context;
 			}
 		}
 

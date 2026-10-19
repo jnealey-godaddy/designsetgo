@@ -18,6 +18,7 @@ import {
 	disconnectSentinelObservers as dsgoDisconnectSentinelObservers,
 	stampFeedPositions as dsgoStampFeedPositions,
 	announceResultCount as dsgoAnnounceResultCount,
+	swapRegionContent as dsgoSwapRegionContent,
 	collectParams as dsgoCollectParamsShared,
 	itemContainerSelector as dsgoItemContainerSelector,
 	extractRenderedItems as dsgoExtractRenderedItems,
@@ -763,7 +764,7 @@ function* dsgoQueryRefresh(ctx, url) {
 			dsgoDisconnectSentinelObservers(region);
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
-			region.innerHTML = newRegion.innerHTML;
+			dsgoSwapRegionContent(region, newRegion, queryId);
 			dsgoInitInfiniteObservers(region);
 			// The swap replaced every element inside the region, including any
 			// block with a frontend runtime (a slider host, counters, maps).
@@ -880,7 +881,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			dsgoDisconnectSentinelObservers(region);
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
-			region.innerHTML = newRegion.innerHTML;
+			dsgoSwapRegionContent(region, newRegion, queryId);
 			dsgoInitInfiniteObservers(region);
 			// The swap replaced every element inside the region, including any
 			// block with a frontend runtime (a slider host, counters, maps).

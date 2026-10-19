@@ -98,7 +98,7 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 					'page'          => $rendered_page,
 					'busy'          => false,
 					'restUrl'       => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'nonce'         => function_exists( 'designsetgo_query_rest_nonce' ) ? designsetgo_query_rest_nonce() : ( is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '' ), // Visitors get none: a stale one on a cached page is rejected by core.
 				),
 				JSON_HEX_APOS
 			);
@@ -159,7 +159,7 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 					'page'    => $rendered_page,
 					'busy'    => false,
 					'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-					'nonce'   => wp_create_nonce( 'wp_rest' ),
+					'nonce'   => function_exists( 'designsetgo_query_rest_nonce' ) ? designsetgo_query_rest_nonce() : ( is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '' ), // Visitors get none: a stale one on a cached page is rejected by core.
 				),
 				JSON_HEX_APOS
 			);

@@ -896,7 +896,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					JSON_HEX_APOS
 				);
 				$iapi_attrs_legacy    = sprintf(
-					'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
+					'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\'',
 					esc_attr( $query_id ),
 					esc_attr( 'designsetgo/query' ),
 					$wp_context_legacy // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON_HEX_APOS output is safe in single-quoted attr.
@@ -980,8 +980,11 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			JSON_HEX_APOS
 		);
 
+		// No aria-live on the region: a live region that wraps the list, filters
+		// and pagination makes screen readers read all of it on every swap. The
+		// one polite status element below announces the result count instead.
 		$iapi_attrs = sprintf(
-			'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
+			'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\'',
 			esc_attr( $query_id ),
 			esc_attr( 'designsetgo/query' ),
 			$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON_HEX_APOS output is safe in single-quoted attr.
@@ -1036,11 +1039,144 @@ if ( ! function_exists( 'designsetgo_query_render_blobs' ) ) :
 			}
 		}
 
-		$signed = \DesignSetGo\Blocks\Query\RefreshSource::sign( $query_id, $attributes, $inner_blocks, (int) $source_post_id );
+		// Record only the facts this query reads. A fact that varies per page
+		// (the current post, an archive's term) would otherwise give every page
+		// its own stored definition for queries that never look at it.
+		$page_context = designsetgo_query_request_context();
+		if ( empty( $attributes['excludeCurrent'] ) ) {
+			$page_context['currentPostId'] = 0;
+		}
+		if ( 'current' !== ( $attributes['source'] ?? 'posts' ) ) {
+			$page_context['inheritedVars'] = array();
+		}
+
+		$signed = \DesignSetGo\Blocks\Query\RefreshSource::sign( $query_id, $attributes, $inner_blocks, (int) $source_post_id, $page_context );
 
 		return '<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="' . esc_attr( $query_id ) . '"'
 			. ' data-dsgo-refresh-source="' . esc_attr( $signed['source'] ) . '"'
 			. ' data-dsgo-signature="' . esc_attr( $signed['signature'] ) . '"></div>';
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_paginate_totals' ) ) :
+
+	/**
+	 * Item and page totals once the block's fixed offset is taken out.
+	 *
+	 * WP_Query / WP_User_Query / get_terms report every match, including the
+	 * rows the offset skips, so their totals overcount: pagination offered
+	 * empty last pages, and an offset at or past the total never reached "no
+	 * results". Pages are walked at offset + (page - 1) * perPage, so the
+	 * skipped rows are never reachable and must not be counted.
+	 *
+	 * @param int $found    Matches reported by the query, offset ignored.
+	 * @param int $offset   The block's offset attribute.
+	 * @param int $per_page Items per page; 0 or less means one unpaged page.
+	 * @return array{totalItems: int, totalPages: int}
+	 */
+	function designsetgo_query_paginate_totals( $found, $offset, $per_page ) {
+		$total = max( 0, (int) $found - max( 0, (int) $offset ) );
+		if ( $per_page < 1 ) {
+			$pages = $total > 0 ? 1 : 0;
+		} else {
+			$pages = (int) ceil( $total / $per_page );
+		}
+
+		return array(
+			'totalItems' => $total,
+			'totalPages' => $pages,
+		);
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_inheritable_vars' ) ) :
+
+	/**
+	 * The query vars the Current source may inherit from an archive.
+	 *
+	 * @return string[]
+	 */
+	function designsetgo_query_inheritable_vars() {
+		$vars = array( 'post_type', 'category_name', 'cat', 'tag', 'tag_id', 'author_name', 'author', 'year', 'monthnum', 'day', 's', 'taxonomy', 'term' );
+		foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $taxonomy ) {
+			if ( is_string( $taxonomy->query_var ) && '' !== $taxonomy->query_var ) {
+				$vars[] = $taxonomy->query_var;
+			}
+		}
+
+		return array_values( array_unique( $vars ) );
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_sanitize_request_context' ) ) :
+
+	/**
+	 * Reduce a request context to the allowlisted, non-empty scalar facts.
+	 *
+	 * Empty values are dropped: WP_Query fills every query var with '' / 0 /
+	 * array(), and inheriting those would blank out the block's own settings.
+	 *
+	 * @param array $context Raw context.
+	 * @return array{currentPostId: int, inheritedVars: array<string, string|int|array>}
+	 */
+	function designsetgo_query_sanitize_request_context( array $context ) {
+		$raw       = isset( $context['inheritedVars'] ) && is_array( $context['inheritedVars'] ) ? $context['inheritedVars'] : array();
+		$inherited = array();
+		foreach ( designsetgo_query_inheritable_vars() as $name ) {
+			if ( ! isset( $raw[ $name ] ) ) {
+				continue;
+			}
+			$value = $raw[ $name ];
+			if ( is_array( $value ) ) {
+				$value = array_values( array_filter( $value, 'is_scalar' ) );
+				if ( array() === $value ) {
+					continue;
+				}
+			} elseif ( ! is_scalar( $value ) || '' === (string) $value || '0' === (string) $value ) {
+				continue;
+			}
+			$inherited[ $name ] = $value;
+		}
+
+		return array(
+			'currentPostId' => isset( $context['currentPostId'] ) ? absint( $context['currentPostId'] ) : 0,
+			'inheritedVars' => $inherited,
+		);
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_request_context' ) ) :
+
+	/**
+	 * Page facts a query reads from the request, as a plain array.
+	 *
+	 * "Exclude current post" and the Current source (archive inheritance) read
+	 * the page's main query. A REST refresh has no such page, so first paint
+	 * records these facts in the signed definition and the refresh route
+	 * replays them through $GLOBALS['designsetgo_query_request_context'].
+	 *
+	 * @return array{currentPostId: int, inheritedVars: array<string, string|int|array>}
+	 */
+	function designsetgo_query_request_context() {
+		if ( isset( $GLOBALS['designsetgo_query_request_context'] ) && is_array( $GLOBALS['designsetgo_query_request_context'] ) ) {
+			return designsetgo_query_sanitize_request_context( $GLOBALS['designsetgo_query_request_context'] );
+		}
+
+		$vars = array();
+		if ( isset( $GLOBALS['wp_query'] ) && $GLOBALS['wp_query'] instanceof WP_Query && is_array( $GLOBALS['wp_query']->query_vars ) ) {
+			$vars = $GLOBALS['wp_query']->query_vars;
+		}
+
+		return designsetgo_query_sanitize_request_context(
+			array(
+				'currentPostId' => is_singular() ? (int) get_queried_object_id() : 0,
+				'inheritedVars' => $vars,
+			)
+		);
 	}
 
 endif;

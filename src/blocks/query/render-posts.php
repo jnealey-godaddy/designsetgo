@@ -291,9 +291,14 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
-		$state = array(
-			'totalItems' => (int) $query->found_posts,
-			'totalPages' => (int) $query->max_num_pages,
+		$totals = designsetgo_query_paginate_totals(
+			$query->found_posts,
+			(int) $atts['offset'],
+			(int) ( $args['posts_per_page'] ?? 0 )
+		);
+		$state  = array(
+			'totalItems' => $totals['totalItems'],
+			'totalPages' => $totals['totalPages'],
 			'page'       => max( 1, (int) $context['page'] ),
 		);
 		designsetgo_query_set_last_state( $query_id, $state );
@@ -375,12 +380,13 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args['author__in'] = array_map( 'absint', $atts['author'] );
 		}
 
-		if ( ! empty( $atts['excludeCurrent'] ) && is_singular() ) {
-			$current_id = get_queried_object_id();
-			if ( $current_id ) {
-				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
-				$args['post__not_in'] = array( $current_id );
-			}
+		// The page's facts come from the request on first paint and from the
+		// signed definition on a REST refresh — see designsetgo_query_request_context().
+		$page_context = designsetgo_query_request_context();
+
+		if ( ! empty( $atts['excludeCurrent'] ) && $page_context['currentPostId'] ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
+			$args['post__not_in'] = array( $page_context['currentPostId'] );
 		}
 
 		// Tax query (supports nested AND/OR groups).
@@ -475,12 +481,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		}
 
 		// Current source: inherit a narrow subset of query vars from the outer archive.
-		if ( 'current' === $atts['source'] && isset( $GLOBALS['wp_query'] ) && $GLOBALS['wp_query']->query_vars ) {
-			$inherited = array_intersect_key(
-				$GLOBALS['wp_query']->query_vars,
-				array_flip( array( 'post_type', 'category_name', 'tag', 'author_name', 'year', 'monthnum', 's' ) )
-			);
-			$args      = array_merge( $args, $inherited );
+		if ( 'current' === $atts['source'] && ! empty( $page_context['inheritedVars'] ) ) {
+			$args = array_merge( $args, $page_context['inheritedVars'] );
 		}
 
 		// URL-param-driven filters (Task 14).
@@ -520,8 +522,16 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {
 				continue;
 			}
-			$terms = is_array( $value ) ? $value : array( $value );
-			$terms = array_filter( array_map( 'sanitize_title', $terms ) );
+			// `filter_x=a,b` is the documented slug[,slug] form (the filter
+			// control ticks both); split it like the control does, or the pair
+			// collapses into one slug "ab".
+			$terms = array();
+			foreach ( is_array( $value ) ? $value : array( $value ) as $raw_term ) {
+				if ( is_scalar( $raw_term ) ) {
+					$terms = array_merge( $terms, explode( ',', (string) $raw_term ) );
+				}
+			}
+			$terms = array_unique( array_filter( array_map( 'sanitize_title', $terms ) ) );
 			if ( empty( $terms ) ) {
 				continue;
 			}

@@ -114,9 +114,13 @@ class RefreshSource {
 	 * @param array  $attributes     Query block attributes.
 	 * @param string $inner_blocks   Serialized inner blocks.
 	 * @param int    $source_post_id Post whose content holds the query, or 0.
+	 * @param array  $page_context   Page facts the query reads from its first-paint
+	 *                               request (current post, inherited archive vars).
+	 *                               Stored with the definition, so a refresh
+	 *                               replays them and a caller can't supply them.
 	 * @return array{source: string, signature: string}
 	 */
-	public static function sign( $query_id, array $attributes, $inner_blocks, $source_post_id ) {
+	public static function sign( $query_id, array $attributes, $inner_blocks, $source_post_id, array $page_context = array() ) {
 		$definition = array(
 			'queryId'      => (string) $query_id,
 			'sourcePostId' => absint( $source_post_id ),
@@ -124,11 +128,14 @@ class RefreshSource {
 			'attributes'   => $attributes,
 			'innerBlocks'  => (string) $inner_blocks,
 		);
-		$reference  = self::reference( $definition );
-		$key        = 'dsgo_query_source_' . $reference;
-		// Reuse one record and renew its TTL for every freshly rendered page.
-		// WordPress skips unchanged option values; only expiry needs updating.
-		set_transient( $key, $definition, self::LIFETIME );
+		// Only added when present, so definitions without page facts keep the
+		// references (and stored records) they had before this field existed.
+		if ( ! empty( $page_context['currentPostId'] ) || ! empty( $page_context['inheritedVars'] ) ) {
+			$definition['pageContext'] = $page_context;
+		}
+		$reference = self::reference( $definition );
+		$key       = 'dsgo_query_source_' . $reference;
+		self::store( $key, $definition );
 		$source = base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
 			(string) wp_json_encode(
 				array(
@@ -147,12 +154,35 @@ class RefreshSource {
 	}
 
 	/**
+	 * Persist a definition, avoiding a database write on every page view.
+	 *
+	 * Without a persistent object cache a transient lives in wp_options, so an
+	 * unconditional set_transient() is two option writes per Query per view.
+	 * An unchanged record is only rewritten once half its lifetime has elapsed,
+	 * which keeps it comfortably ahead of any page cache that holds the key.
+	 *
+	 * @param string $key        Transient key.
+	 * @param array  $definition Definition to store.
+	 * @return void
+	 */
+	private static function store( $key, array $definition ) {
+		if ( ! wp_using_ext_object_cache() && get_transient( $key ) === $definition ) {
+			$expires = (int) get_option( '_transient_timeout_' . $key, 0 );
+			if ( $expires - time() > self::LIFETIME / 2 ) {
+				return;
+			}
+		}
+
+		set_transient( $key, $definition, self::LIFETIME );
+	}
+
+	/**
 	 * Verify and decode a signed source.
 	 *
 	 * @param mixed  $source    Encoded source from the request.
 	 * @param mixed  $signature Signature from the request.
 	 * @param string $query_id  Query ID the request names.
-	 * @return array{queryId: string, sourcePostId: int, attributes: array, innerBlocks: string}|null Definition, or null when it doesn't verify.
+	 * @return array{queryId: string, sourcePostId: int, attributes: array, innerBlocks: string, pageContext?: array}|null Definition, or null when it doesn't verify.
 	 */
 	public static function verify( $source, $signature, $query_id ) {
 		if ( ! is_string( $source ) || '' === $source || ! is_string( $signature ) ) {
@@ -184,6 +214,7 @@ class RefreshSource {
 			( $definition['viewerId'] ?? null ) !== get_current_user_id() ||
 			! is_array( $definition['attributes'] ?? null ) ||
 			! is_string( $definition['innerBlocks'] ?? null ) ||
+			! is_array( $definition['pageContext'] ?? array() ) ||
 			! hash_equals( self::reference( $definition ), $data['ref'] )
 		) {
 			return null;

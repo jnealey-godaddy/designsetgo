@@ -76,9 +76,10 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 			++$item_index;
 		}
 
-		$state = array(
-			'totalItems' => $total_users,
-			'totalPages' => $per_page > 0 ? (int) ceil( $total_users / $per_page ) : 0,
+		$totals = designsetgo_query_paginate_totals( $total_users, (int) $atts['offset'], $per_page );
+		$state  = array(
+			'totalItems' => $totals['totalItems'],
+			'totalPages' => $totals['totalPages'],
 			'page'       => $page,
 		);
 		designsetgo_query_set_last_state( $query_id, $state );

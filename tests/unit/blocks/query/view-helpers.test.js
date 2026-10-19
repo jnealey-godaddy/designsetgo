@@ -6,7 +6,7 @@
  * accessibility helpers (feed position stamping + result-count announcements).
  */
 
-/* global MouseEvent */
+/* global MouseEvent, DOMParser */
 import '@testing-library/jest-dom';
 
 import {
@@ -24,6 +24,7 @@ import {
 	resetHandledEvents,
 	readRefreshSource,
 	buildRefreshRequest,
+	swapRegionContent,
 } from '../../../../src/blocks/query/view-helpers.js';
 
 /**
@@ -576,5 +577,117 @@ describe('buildRefreshRequest', () => {
 		);
 
 		expect(init.headers['X-WP-Nonce']).toBe('abc123');
+	});
+});
+
+describe('collectParams WooCommerce filter-block params', () => {
+	it('forwards price, rating and query_type params, bare', () => {
+		const url = new URL(
+			'https://example.com/shop?min_price=10&max_price=50&rating_filter=4&filter_color=red&query_type_color=or&utm=x'
+		);
+		expect(collectParams(url)).toEqual({
+			min_price: '10',
+			max_price: '50',
+			rating_filter: '4',
+			filter_color: 'red',
+			query_type_color: 'or',
+		});
+	});
+});
+
+describe('swapRegionContent', () => {
+	const parse = (html) =>
+		new DOMParser()
+			.parseFromString(html, 'text/html')
+			.querySelector('[data-dsgo-query-region="q1"]');
+
+	afterEach(resetBody);
+
+	it('restores focus to the same checkbox after the swap', () => {
+		mountHTML(
+			'<div data-dsgo-query-region="q1">' +
+				'<input type="checkbox" name="filter_category[]" value="news">' +
+				'<input type="checkbox" name="filter_category[]" value="events">' +
+				'</div>'
+		);
+		const region = document.querySelector('[data-dsgo-query-region]');
+		region.querySelector('[value="events"]').focus();
+		expect(document.activeElement.value).toBe('events');
+
+		swapRegionContent(
+			region,
+			parse(
+				'<div data-dsgo-query-region="q1">' +
+					'<input type="checkbox" name="filter_category[]" value="news">' +
+					'<input type="checkbox" name="filter_category[]" value="events" checked>' +
+					'</div>'
+			),
+			'q1'
+		);
+
+		expect(document.activeElement.value).toBe('events');
+		expect(document.activeElement.checked).toBe(true);
+	});
+
+	it('restores focus and caret in a search input', () => {
+		mountHTML(
+			'<div data-dsgo-query-region="q1"><input type="search" name="q" value="abc"></div>'
+		);
+		const region = document.querySelector('[data-dsgo-query-region]');
+		const input = region.querySelector('input');
+		input.focus();
+		input.setSelectionRange(1, 2);
+
+		swapRegionContent(
+			region,
+			parse(
+				'<div data-dsgo-query-region="q1"><input type="search" name="q" value="abc"></div>'
+			),
+			'q1'
+		);
+
+		expect(document.activeElement).toBe(region.querySelector('input'));
+		expect(document.activeElement).not.toBe(input);
+		expect(document.activeElement.selectionStart).toBe(1);
+		expect(document.activeElement.selectionEnd).toBe(2);
+	});
+
+	it('leaves focus alone when it was outside the region', () => {
+		mountHTML(
+			'<button id="outside">x</button><div data-dsgo-query-region="q1"><input name="q"></div>'
+		);
+		document.getElementById('outside').focus();
+		const region = document.querySelector('[data-dsgo-query-region]');
+
+		swapRegionContent(
+			region,
+			parse('<div data-dsgo-query-region="q1"><input name="q"></div>'),
+			'q1'
+		);
+
+		expect(document.activeElement.id).toBe('outside');
+	});
+
+	it('keeps the same status node so the announcement is read', () => {
+		mountHTML(
+			'<div data-dsgo-query-region="q1"><div role="status" data-dsgo-query-status="q1">3 results found</div><ul><li>old</li></ul></div>'
+		);
+		const region = document.querySelector('[data-dsgo-query-region]');
+		const status = region.querySelector('[data-dsgo-query-status]');
+
+		swapRegionContent(
+			region,
+			parse(
+				'<div data-dsgo-query-region="q1"><div role="status" data-dsgo-query-status="q1"></div><ul><li>new</li></ul></div>'
+			),
+			'q1'
+		);
+
+		expect(region.querySelector('[data-dsgo-query-status]')).toBe(status);
+		expect(status.isConnected).toBe(true);
+		expect(region.querySelector('li').textContent).toBe('new');
+
+		announceResultCount('q1', 1);
+		expect(status.textContent).toBe('1 result found');
 	});
 });
