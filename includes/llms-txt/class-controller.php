@@ -309,9 +309,41 @@ class Controller {
 			return;
 		}
 
+		// Only content types that feed llms.txt matter. Anything else (form
+		// submissions from anonymous visitors, nav menu items, attachments)
+		// must not regenerate and rewrite the site-root files.
+		if ( ! $this->is_tracked_post( $post_id, $_post ) ) {
+			return;
+		}
+
 		$this->invalidate_cache( $post_id );
 		$this->file_manager->generate_file( $post_id );
 		$this->refresh_physical_file();
+	}
+
+	/**
+	 * Whether a post belongs to a type that is listed in llms.txt, or already
+	 * has an exported markdown file that has to be cleaned up.
+	 *
+	 * @param int           $post_id Post ID.
+	 * @param \WP_Post|null $post    Post object, looked up when omitted.
+	 * @return bool
+	 */
+	private function is_tracked_post( int $post_id, $post = null ): bool {
+		if ( ! $post instanceof \WP_Post ) {
+			$post = get_post( $post_id );
+		}
+		if ( ! $post instanceof \WP_Post || 'revision' === $post->post_type ) {
+			return false;
+		}
+
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		$types    = $settings['llms_txt']['post_types'] ?? array( 'page', 'post' );
+		if ( is_array( $types ) && in_array( $post->post_type, $types, true ) ) {
+			return true;
+		}
+
+		return $this->file_manager->file_exists( $post_id );
 	}
 
 	/**
@@ -320,6 +352,10 @@ class Controller {
 	 * @param int $post_id Post ID.
 	 */
 	public function handle_post_delete( int $post_id ): void {
+		if ( ! $this->is_tracked_post( $post_id ) ) {
+			return;
+		}
+
 		$this->invalidate_cache( $post_id );
 		$this->file_manager->delete_file( $post_id );
 		$this->refresh_physical_file();
@@ -387,15 +423,37 @@ class Controller {
 			}
 		}
 
-		// Handle llms-full.txt toggle independently.
-		if ( $is_enabled ) {
-			$was_full = ! empty( $old_value['llms_txt']['generate_full_txt'] );
-			$is_full  = ! empty( $new_value['llms_txt']['generate_full_txt'] );
+		if ( ! $is_enabled ) {
+			return;
+		}
 
-			if ( $is_full && ! $was_full ) {
-				$this->write_physical_full_file();
-			} elseif ( ! $is_full && $was_full ) {
-				$this->delete_physical_full_file();
+		// Handle llms-full.txt toggle independently.
+		$was_full = ! empty( $old_value['llms_txt']['generate_full_txt'] );
+		$is_full  = ! empty( $new_value['llms_txt']['generate_full_txt'] );
+
+		if ( $is_full && ! $was_full ) {
+			$this->write_physical_full_file();
+		} elseif ( ! $is_full && $was_full ) {
+			$this->delete_physical_full_file();
+		}
+
+		// Any other output-affecting change (description, post types) leaves the
+		// physical files, which the web server serves directly, stale.
+		if ( $was_enabled ) {
+			$old_llms = $old_value['llms_txt'] ?? array();
+			$new_llms = $new_value['llms_txt'] ?? array();
+			$old_desc = (string) ( $old_llms['description'] ?? '' );
+			$new_desc = (string) ( $new_llms['description'] ?? '' );
+			$old_pt   = (array) ( $old_llms['post_types'] ?? array( 'page', 'post' ) );
+			$new_pt   = (array) ( $new_llms['post_types'] ?? array( 'page', 'post' ) );
+			sort( $old_pt );
+			sort( $new_pt );
+
+			if ( $old_pt !== $new_pt ) {
+				$this->file_manager->generate_all_files( $this->generator );
+			}
+			if ( $old_desc !== $new_desc || $old_pt !== $new_pt || ( $is_full && $was_full ) ) {
+				$this->refresh_physical_file();
 			}
 		}
 	}
