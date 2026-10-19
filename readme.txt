@@ -110,6 +110,26 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
+= Unreleased =
+
+* **Fix:** Keyboard users can use modals again: focus moves into the modal, and Tab no longer closes it.
+* **Fix:** Opening a page in the editor no longer removes padding from Sections inside other Sections.
+* **Fix:** Icon List colour, background, size and icon position now show on your site, not only in the editor. Existing lists update without re-saving.
+* **Fix:** Hide on desktop, tablet or mobile and Max Width now work on blocks WordPress builds on the server, such as Latest Posts and Search.
+* **Fix:** Dynamic Query: Load more no longer repeats posts after a filter change. "Exclude current post", archive results and shop price and rating filters stay applied when results update. Offsets no longer leave empty pages, category counts include subcategories, and focus stays on the filter you used.
+* **Fix:** A malformed filter link no longer shows an error page in place of your page.
+* **Fix:** Forms: US and international phone numbers pass validation (international numbers use dashes). A blank number field is no longer saved as 0, and {page_url} in emails is the form's page. "Too many submissions" shows on the form instead of reloading it, and the security check resets after a failed submission.
+* **Fix:** Closing and quickly reopening an Accordion item no longer leaves it empty. A Counter ending at 0 shows 0, and its prefix and suffix show when reduced motion is on.
+* **Fix:** A duplicated accordion item, tab, hotspot or counter gets its own ID, so screen readers announce the right panel.
+* **Fix:** Breadcrumbs show a visible focus outline, hide draft and private parent pages, point the right way on right-to-left sites, and appear on archive, search and 404 pages.
+* **Fix:** Six logo and trust-bar patterns, large Blobs and bordered accordions no longer make pages scroll sideways on phones.
+* **Fix:** Convert & Deactivate converts every page and keeps quotes and special characters intact.
+* **Fix:** Privacy exports and erasures include all of a person's form submissions, not only recent ones.
+* **Fix:** llms.txt is no longer rewritten on every save, updates when its settings change, and pages no longer answer some apps and bots with "Not Acceptable".
+* **Fix:** Settings saved in part (for example through the API) keep their other defaults.
+* **Fix:** Uninstalling DesignSetGo removes all of its data, on every site of a multisite network.
+* **Fix:** The Dynamic Image block's editor styling loads again.
+
 = 2.11.0 - 2026-10-14 =
 
 * **Security:** Form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) are blocked, and the way to allow one depends on your WordPress version. Current WordPress releases (7.1, and 6.7.6, 6.8.7, 6.9.6 and 7.0.3 or later) block these addresses themselves, and WordPress's `http_request_host_is_external` filter allows them. On older versions DesignSetGo blocks them instead, and only the `designsetgo_form_webhook_allow_reserved_host` filter allows them.
