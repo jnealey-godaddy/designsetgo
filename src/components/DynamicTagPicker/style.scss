@@ -147,7 +147,7 @@
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: 13px;
 		white-space: pre-wrap;
-		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 
 	&__preview-meta {

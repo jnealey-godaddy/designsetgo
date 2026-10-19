@@ -42,8 +42,7 @@
 		// (specificity 0,0,2,0) which would otherwise force tile copy onto a
 		// single line and overflow the tile. !important per CLAUDE.md.
 		white-space: normal !important;
-		word-break: break-word !important;
-		overflow-wrap: break-word !important;
+		overflow-wrap: anywhere !important;
 		border: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
 		border-radius: 4px;
 		background: var(--wp-components-color-background, #fff);

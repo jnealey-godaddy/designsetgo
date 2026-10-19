@@ -328,7 +328,7 @@
 @media print {
 
 	.dsgo-timeline-item {
-		page-break-inside: avoid;
+		break-inside: avoid;
 
 		.dsgo-timeline-item__marker {
 			-webkit-print-color-adjust: exact;
