@@ -52,8 +52,8 @@ return array(
 <p class="has-text-align-center has-small-font-size" style="letter-spacing:2px;text-transform:uppercase">Trusted by Leading Brands</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/row {"layout":{"type":"flex","orientation":"horizontal","justifyContent":"center","flexWrap":"nowrap"}} -->
-<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"spacing":{"padding":{"left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}},"textColor":"contrast-2","fontSize":"x-large"} -->
+<!-- wp:designsetgo/row {"layout":{"type":"flex","orientation":"horizontal","justifyContent":"center","flexWrap":"wrap"}} -->
+<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--30)"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"spacing":{"padding":{"left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}},"textColor":"contrast-2","fontSize":"x-large"} -->
 <p class="has-contrast-2-color has-text-color has-x-large-font-size" style="padding-right:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40);font-style:normal;font-weight:700;letter-spacing:2px">HALCYON</p>
 <!-- /wp:paragraph -->
 
