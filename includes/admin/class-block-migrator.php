@@ -129,9 +129,14 @@ class Block_Migrator {
 		$batch_size = max( 10, min( $batch_size, 100 ) ); // Clamp between 10 and 100.
 
 		$total_matching = $this->count_matching_posts();
-		$results        = $this->scan_for_dsgo_blocks( $batch_size, $offset );
+		$results        = $this->scan_for_dsgo_blocks( $batch_size, $offset, true );
 		$converted      = 0;
 		$failed         = 0;
+
+		// Rows of this batch that the LIKE query will still return afterwards.
+		// Converted posts drop out of the result set, so the next page must start
+		// after only the rows that remain, not after the full batch size.
+		$still_matching = 0;
 
 		foreach ( $results as $result ) {
 			$post = get_post( $result['post_id'] );
@@ -141,20 +146,32 @@ class Block_Migrator {
 				continue;
 			}
 
+			// Matches the LIKE query but has nothing convertible (for example only
+			// designsetgo/section-divider). Leave it alone; it stays in the set.
+			if ( $result['count'] < 1 ) {
+				++$still_matching;
+				continue;
+			}
+
 			$blocks           = parse_blocks( $post->post_content );
 			$converted_blocks = $this->convert_blocks_recursive( $blocks );
 			$new_content      = serialize_blocks( $converted_blocks );
 
+			// wp_update_post() unslashes its input, so the serialized block
+			// comments (JSON with quotes and backslashes) must be slashed first.
 			$update_result = wp_update_post(
-				array(
-					'ID'           => $post->ID,
-					'post_content' => $new_content,
+				wp_slash(
+					array(
+						'ID'           => $post->ID,
+						'post_content' => $new_content,
+					)
 				),
 				true
 			);
 
 			if ( is_wp_error( $update_result ) ) {
 				++$failed;
+				++$still_matching;
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging.
 						sprintf(
@@ -166,11 +183,16 @@ class Block_Migrator {
 				}
 			} else {
 				++$converted;
+				if ( $this->content_matches_convertible( $new_content ) ) {
+					++$still_matching;
+				}
 			}
 		}
 
-		$next_offset = $offset + $batch_size;
-		$has_more    = $next_offset < $total_matching;
+		// Advance only past rows that still match; converted ones left the set.
+		// If every row still matches this equals the full batch, so it terminates.
+		$next_offset = $offset + $still_matching;
+		$has_more    = $next_offset < $this->count_matching_posts();
 
 		wp_send_json_success(
 			array(
@@ -181,6 +203,26 @@ class Block_Migrator {
 				'total'      => $total_matching,
 			)
 		);
+	}
+
+	/**
+	 * Whether content would still be returned by the LIKE query used to find posts.
+	 *
+	 * Mirrors the SQL semantics: case-insensitive substring match on
+	 * 'wp:<block name>', so 'wp:designsetgo/section' also matches
+	 * 'wp:designsetgo/section-divider'.
+	 *
+	 * @param string $content Post content.
+	 * @return bool
+	 */
+	private function content_matches_convertible( $content ) {
+		foreach ( self::CONVERTIBLE_BLOCKS as $block_name ) {
+			if ( false !== stripos( $content, 'wp:' . $block_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -691,11 +733,13 @@ JS;
 	 * convertible block names, then parses each post to get an accurate count.
 	 * Supports LIMIT/OFFSET for batched processing to avoid memory issues.
 	 *
-	 * @param int $limit  Maximum number of posts to return. 0 for no limit.
-	 * @param int $offset Number of posts to skip.
+	 * @param int  $limit               Maximum number of posts to return. 0 for no limit.
+	 * @param int  $offset              Number of posts to skip.
+	 * @param bool $include_unconvertible Also return rows matched by the LIKE query that
+	 *                                  contain no convertible block (count 0).
 	 * @return array Array of associative arrays with 'post_id' and 'count' keys.
 	 */
-	private function scan_for_dsgo_blocks( $limit = 0, $offset = 0 ) {
+	private function scan_for_dsgo_blocks( $limit = 0, $offset = 0, $include_unconvertible = false ) {
 		global $wpdb;
 
 		// Build LIKE conditions for each convertible block.
@@ -750,7 +794,7 @@ JS;
 			$blocks = parse_blocks( $post->post_content );
 			$count  = $this->count_dsgo_blocks( $blocks );
 
-			if ( $count > 0 ) {
+			if ( $count > 0 || $include_unconvertible ) {
 				$results[] = array(
 					'post_id' => (int) $post->ID,
 					'count'   => $count,
