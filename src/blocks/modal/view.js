@@ -340,29 +340,37 @@ import { __ } from '@wordpress/i18n';
 					return;
 				}
 
-				// If no focusable elements, allow Tab to close modal for accessibility
+				// Recompute when the cache was invalidated (or is empty) so the
+				// list always reflects what is visible right now.
+				this.updateFocusableElements();
+
+				// No focusable elements: keep focus on the dialog instead of
+				// closing it or letting focus escape behind the modal.
 				if (this.focusableElements.length === 0) {
 					e.preventDefault();
-					this.close();
+					if (this.content) {
+						this.content.setAttribute('tabindex', '-1');
+						this.content.focus();
+					}
 					return;
 				}
 
 				const firstElement = this.focusableElements[0];
 				const lastElement =
 					this.focusableElements[this.focusableElements.length - 1];
+				const active = document.activeElement;
+				const activeInList = this.focusableElements.includes(active);
 
 				if (e.shiftKey) {
 					// Shift + Tab
-					if (document.activeElement === firstElement) {
+					if (active === firstElement || !activeInList) {
 						e.preventDefault();
 						lastElement.focus();
 					}
-				} else {
+				} else if (active === lastElement || !activeInList) {
 					// Tab
-					if (document.activeElement === lastElement) {
-						e.preventDefault();
-						firstElement.focus();
-					}
+					e.preventDefault();
+					firstElement.focus();
 				}
 			};
 		}
@@ -436,8 +444,11 @@ import { __ } from '@wordpress/i18n';
 			this.focusableElements = Array.from(
 				this.modal.querySelectorAll(focusableSelectors.join(','))
 			).filter((el) => {
+				// getClientRects() is empty for display:none, but unlike
+				// offsetParent it also works for position:fixed elements.
 				return (
-					el.offsetParent !== null && !el.hasAttribute('aria-hidden')
+					el.getClientRects().length > 0 &&
+					!el.hasAttribute('aria-hidden')
 				);
 			});
 
@@ -1235,9 +1246,6 @@ import { __ } from '@wordpress/i18n';
 				document.body.appendChild(this.modal);
 			}
 
-			// Update focusable elements
-			this.updateFocusableElements();
-
 			// Attach keyboard listeners (ESC and Tab)
 			this.attachKeyboardListeners();
 
@@ -1321,6 +1329,10 @@ import { __ } from '@wordpress/i18n';
 			if (this.settings.galleryGroupId) {
 				this.renderNavigationButtons();
 			}
+
+			// The modal is displayed now, so visibility checks are meaningful.
+			this.focusableElementsCached = false;
+			this.updateFocusableElements();
 
 			// Focus the first focusable element or the content
 			if (this.focusableElements.length > 0) {
