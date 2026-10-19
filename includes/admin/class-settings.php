@@ -353,9 +353,36 @@ class Settings {
 
 		$saved_settings        = self::get_saved_settings();
 		$defaults              = self::get_defaults();
-		self::$cached_settings = wp_parse_args( $saved_settings, $defaults );
+		self::$cached_settings = self::merge_with_defaults( $defaults, $saved_settings );
 
 		return self::$cached_settings;
+	}
+
+	/**
+	 * Deep-merge stored settings over defaults.
+	 *
+	 * Associative groups are merged key by key so a partial save such as
+	 * `{ sticky_header: { enable: false } }` keeps the group's other defaults.
+	 * Lists (numeric-keyed arrays such as `post_types`) and scalars are taken
+	 * from the stored value as is, so an empty list stays empty.
+	 *
+	 * @param array $defaults Default values.
+	 * @param array $saved    Stored values.
+	 * @return array Merged settings.
+	 */
+	private static function merge_with_defaults( array $defaults, array $saved ): array {
+		$merged = $defaults;
+		foreach ( $saved as $key => $value ) {
+			$is_assoc_default = isset( $defaults[ $key ] ) && is_array( $defaults[ $key ] )
+				&& array() !== $defaults[ $key ]
+				&& array_keys( $defaults[ $key ] ) !== range( 0, count( $defaults[ $key ] ) - 1 );
+			if ( $is_assoc_default && is_array( $value ) ) {
+				$merged[ $key ] = self::merge_with_defaults( $defaults[ $key ], $value );
+			} else {
+				$merged[ $key ] = $value;
+			}
+		}
+		return $merged;
 	}
 
 	/**

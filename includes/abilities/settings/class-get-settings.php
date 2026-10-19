@@ -55,7 +55,7 @@ class Get_Settings extends Abstract_Ability {
 				'readonly'     => true,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Call this before update-settings to see current values. Results include secrets (API keys) since the caller has already been authorized via manage_options.',
+				'instructions' => 'Call this before update-settings to see current values. Secret values (API keys) are redacted in the results; send a new value to change one.',
 			),
 		);
 	}
