@@ -47,7 +47,8 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 		// Search (term name LIKE).
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			$args['name__like'] = $search;

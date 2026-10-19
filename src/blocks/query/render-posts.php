@@ -364,7 +364,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		// Search — attribute-bound OR URL-bound via bindSearchTo.
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			$args['s'] = $search;
@@ -502,7 +503,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 		// Direct ?q= support: override search when bindSearchTo is not set or empty.
 		if ( isset( $params['q'] ) && '' === (string) $atts['bindSearchTo'] ) {
-			$q_val = is_array( $params['q'] ) ? implode( ' ', $params['q'] ) : (string) $params['q'];
+			$q_raw = designsetgo_query_scalar_param( $params['q'] );
+			$q_val = is_array( $q_raw ) ? implode( ' ', $q_raw ) : $q_raw;
 			$q_val = sanitize_text_field( $q_val );
 			if ( '' !== $q_val ) {
 				$args['s'] = $q_val;

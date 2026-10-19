@@ -191,7 +191,20 @@ function dsgoDelegatedRefresh(ctx, url) {
 }
 
 /**
+ * Parsed contexts for markup whose Interactivity directives are dead (a
+ * region swapped in by a refresh). Keyed by the `data-wp-context` element so
+ * mutable state (`page`, `busy`, `autoLoadCount`) survives between clicks
+ * instead of being re-parsed from the attribute, and lost, every time.
+ *
+ * @type {WeakMap<Element, {raw: string, ctx: Object}>}
+ */
+const dsgoDomContexts = new WeakMap();
+
+/**
  * Read the IAPI context encoded in a filter form's data-wp-context attribute.
+ *
+ * The same object is returned for the same element until its attribute
+ * changes, so callers may mutate it to carry state across events.
  *
  * @param {HTMLElement} el Descendant of the interactive form.
  * @return {Object|null}   Parsed context object, or null if missing/malformed.
@@ -201,8 +214,17 @@ function dsgoGetContextFromDom(el) {
 	if (!form) {
 		return null;
 	}
+	const raw = form.getAttribute('data-wp-context') || '';
+	const cached = dsgoDomContexts.get(form);
+	if (cached && cached.raw === raw) {
+		return cached.ctx;
+	}
 	try {
-		return JSON.parse(form.getAttribute('data-wp-context') || '');
+		const ctx = JSON.parse(raw);
+		if (ctx && typeof ctx === 'object') {
+			dsgoDomContexts.set(form, { raw, ctx });
+		}
+		return ctx;
 	} catch {
 		return null;
 	}

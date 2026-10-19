@@ -205,6 +205,31 @@ if ( ! function_exists( 'designsetgo_query_scoped_param_name' ) ) :
 
 endif;
 
+if ( ! function_exists( 'designsetgo_query_scalar_param' ) ) :
+
+	/**
+	 * Reduce a raw request value to a scalar string or a flat list of scalar
+	 * strings. Nested arrays, objects and other non-scalars (`?x[a][]=1`) are
+	 * dropped so callers can safely run string functions over the result.
+	 *
+	 * @param mixed $value Raw (possibly array) request value.
+	 * @return string|string[] A scalar string, or a flat list of strings.
+	 */
+	function designsetgo_query_scalar_param( $value ) {
+		if ( is_array( $value ) ) {
+			$out = array();
+			foreach ( $value as $item ) {
+				if ( is_scalar( $item ) ) {
+					$out[] = (string) $item;
+				}
+			}
+			return $out;
+		}
+		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+endif;
+
 if ( ! function_exists( 'designsetgo_query_owned_request_params' ) ) :
 
 	/**

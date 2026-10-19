@@ -31,7 +31,8 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 		// Search — attribute-bound OR URL-bound via bindSearchTo.
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			// Wildcard search like WP_User_Query default.

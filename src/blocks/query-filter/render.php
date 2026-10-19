@@ -88,11 +88,11 @@ if ( ! function_exists( 'designsetgo_query_filter_current_value' ) ) :
 	 *
 	 * @param string $param_name Bare URL parameter name.
 	 * @param string $query_id   Sanitized queryId this filter belongs to.
-	 * @return string|array Unslashed, unsanitized value; '' when absent.
+	 * @return string|string[] Unslashed, unsanitized scalar or flat list of scalars; '' when absent.
 	 */
 	function designsetgo_query_filter_current_value( $param_name, $query_id ) {
 		$owned = designsetgo_query_owned_request_params( $query_id );
-		return isset( $owned[ $param_name ] ) ? wp_unslash( $owned[ $param_name ]['value'] ) : '';
+		return isset( $owned[ $param_name ] ) ? designsetgo_query_scalar_param( wp_unslash( $owned[ $param_name ]['value'] ) ) : '';
 	}
 
 endif;
@@ -508,7 +508,7 @@ foreach ( designsetgo_query_owned_request_params( $designsetgo_query_id ) as $de
 	if ( 0 !== strpos( (string) $designsetgo_k, 'filter_' ) ) {
 		continue;
 	}
-	$designsetgo_vals = array_filter( array_map( 'sanitize_text_field', (array) wp_unslash( $designsetgo_entry['value'] ) ), 'strlen' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized by the array_map().
+	$designsetgo_vals = array_filter( array_map( 'sanitize_text_field', (array) designsetgo_query_scalar_param( wp_unslash( $designsetgo_entry['value'] ) ) ), 'strlen' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized by the array_map().
 	if ( $designsetgo_vals ) {
 		$designsetgo_active_filters[ $designsetgo_k ] = array_values( $designsetgo_vals );
 	}
