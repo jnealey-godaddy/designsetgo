@@ -202,24 +202,34 @@ class GDPR_Compliance {
 		$items_retained = false;
 		$messages       = array();
 
-		// Deleting shifts later rows into earlier pages, so paging would skip
-		// submissions. Fetch every candidate (rows mentioning the address, a small
-		// set) in one pass instead and finish in a single call. Retained rows are
-		// simply not deleted, so there is nothing to loop on.
-		$candidates = new WP_Query(
-			array(
-				'post_type'      => 'dsgo_form_submission',
-				'posts_per_page' => -1,
-				'post_status'    => 'private',
-				'orderby'        => 'ID',
-				'order'          => 'ASC',
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
-				'meta_query'     => $this->get_email_meta_query( $email_address ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Narrows an admin-only privacy erasure to candidate rows.
-			)
-		);
+		// Deleting shifts later rows into earlier pages, so paging while deleting
+		// would skip submissions. Collect every candidate ID first (rows that
+		// mention the address, a small set), page by page, then delete, and
+		// finish in a single call. Retained rows are simply not deleted, so there
+		// is nothing to loop on.
+		$candidate_ids = array();
+		$per_page      = 100;
+		for ( $batch = 1; ; $batch++ ) {
+			$candidates = new WP_Query(
+				array(
+					'post_type'      => 'dsgo_form_submission',
+					'posts_per_page' => $per_page,
+					'paged'          => $batch,
+					'post_status'    => 'private',
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					'meta_query'     => $this->get_email_meta_query( $email_address ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Narrows an admin-only privacy erasure to candidate rows.
+				)
+			);
+			$candidate_ids = array_merge( $candidate_ids, $candidates->posts );
+			if ( count( $candidates->posts ) < $per_page ) {
+				break;
+			}
+		}
 
-		foreach ( $candidates->posts as $post_id ) {
+		foreach ( $candidate_ids as $post_id ) {
 			$post_id = (int) $post_id;
 			$fields  = get_post_meta( $post_id, '_dsg_form_fields', true );
 
