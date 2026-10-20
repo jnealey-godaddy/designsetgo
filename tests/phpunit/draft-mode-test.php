@@ -687,6 +687,34 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 		$this->assertSame( $this->page_id, (int) $this->draft_mode->publish_draft( $draft_id ) );
 	}
 
+	public function test_deleting_a_trashed_page_also_deletes_its_trashed_draft() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+
+		wp_trash_post( $this->page_id );
+		$this->assertSame( 'trash', get_post_status( $draft_id ) );
+
+		wp_delete_post( $this->page_id, true );
+
+		$this->assertNull( get_post( $draft_id ) );
+	}
+
+	public function test_a_copy_whose_page_is_gone_can_be_published() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		// Simulate an orphan left behind before cleanup existed.
+		delete_post_meta( $this->page_id, Draft_Mode::META_HAS_DRAFT );
+		wp_delete_post( $this->page_id, true );
+
+		wp_update_post(
+			array(
+				'ID'          => $draft_id,
+				'post_status' => 'publish',
+			)
+		);
+
+		$this->assertSame( 'publish', get_post_status( $draft_id ) );
+		$this->assertSame( '', get_post_meta( $draft_id, Draft_Mode::META_DRAFT_OF, true ) );
+	}
+
 	public function test_an_edit_before_trashing_still_conflicts_after_restore() {
 		$draft_id = $this->draft_mode->create_draft( $this->page_id );
 		// The draft's baseline is older than the page: the page was edited.

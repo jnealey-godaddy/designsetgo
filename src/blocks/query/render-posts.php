@@ -271,7 +271,9 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 						}
 						// Core blocks in the item template read the global post, so it
 						// must be this item, not the page the loop sits on.
-						setup_postdata( $post_obj );
+						// setup_postdata() fills the other globals but not $post.
+						$post = $post_obj; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+						setup_postdata( $post );
 						$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
 						$group_items_html .= designsetgo_query_render_item(
 							$item_template_html,

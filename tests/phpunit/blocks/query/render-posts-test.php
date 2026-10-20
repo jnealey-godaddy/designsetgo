@@ -10,6 +10,46 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		require_once $path;
 	}
 
+	public function test_grouped_items_render_with_their_own_global_post() {
+		$this->load_helpers();
+		$term  = self::factory()->category->create( array( 'name' => 'Grouped' ) );
+		$posts = self::factory()->post->create_many( 2, array( 'post_status' => 'publish', 'post_category' => array( $term ) ) );
+		$page  = self::factory()->post->create( array( 'post_type' => 'page' ) );
+
+		global $post;
+		$post = get_post( $page ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+		$seen   = array();
+		$record = static function ( $content ) use ( &$seen ) {
+			$seen[] = get_the_ID();
+			return $content;
+		};
+		add_filter( 'render_block_core/paragraph', $record );
+		designsetgo_query_render(
+			array(
+				'source'   => 'posts',
+				'postType' => 'post',
+				'perPage'  => 10,
+				'groupBy'  => array(
+					'field' => 'taxonomy',
+					'key'   => 'category',
+				),
+			),
+			array(
+				'query_id'   => 'qgroup',
+				'page'       => 1,
+				// A group header block is what switches on grouped rendering.
+				'inner_html' => '<!-- wp:designsetgo/query-group-header /--><!-- wp:paragraph --><p>Item</p><!-- /wp:paragraph -->',
+			)
+		);
+		remove_filter( 'render_block_core/paragraph', $record );
+
+		$this->assertNotEmpty( $seen );
+		$this->assertNotContains( $page, $seen );
+		$this->assertEqualsCanonicalizing( $posts, array_values( array_intersect( $seen, $posts ) ) );
+		$this->assertSame( $page, $post->ID, 'The page is the global post again afterwards.' );
+	}
+
 	public function test_renders_a_list_item_per_post() {
 		self::factory()->post->create_many( 4, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();

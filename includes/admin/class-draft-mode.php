@@ -627,7 +627,15 @@ class Draft_Mode {
 			return $data;
 		}
 
-		if ( ! get_post_meta( (int) $postarr['ID'], self::META_DRAFT_OF, true ) ) {
+		$original_id = (int) get_post_meta( (int) $postarr['ID'], self::META_DRAFT_OF, true );
+		if ( ! $original_id ) {
+			return $data;
+		}
+
+		// A copy whose page is gone can't be merged anywhere: let it publish
+		// as an ordinary page rather than trapping its content.
+		if ( ! get_post( $original_id ) ) {
+			delete_post_meta( (int) $postarr['ID'], self::META_DRAFT_OF );
 			return $data;
 		}
 
@@ -712,9 +720,9 @@ class Draft_Mode {
 
 			// Only delete if:
 			// 1. The draft post exists.
-			// 2. The draft post is actually a draft status.
+			// 2. The draft post is a draft, or was trashed along with this post.
 			// 3. The draft's META_DRAFT_OF meta points back to this post.
-			if ( $draft_post && 'draft' === $draft_post->post_status ) {
+			if ( $draft_post && in_array( $draft_post->post_status, array( 'draft', 'trash' ), true ) ) {
 				$draft_original_id = get_post_meta( $draft_id, self::META_DRAFT_OF, true );
 
 				if ( (int) $draft_original_id === (int) $post_id ) {

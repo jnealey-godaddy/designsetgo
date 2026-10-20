@@ -545,4 +545,50 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'HIDDEN-BY-ID', $response->get_data()['html'] );
 		$this->assertStringContainsString( 'VISIBLE-BY-ID', $response->get_data()['html'] );
 	}
+
+	/**
+	 * Preview a terms Query as a contributor.
+	 *
+	 * @param array $tax_query taxQuery attribute.
+	 * @return WP_REST_Response
+	 */
+	private function preview_terms_as_contributor( array $tax_query ) {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'contributor' ) ) );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'queryId', 'qterms' );
+		$request->set_param(
+			'attributes',
+			array(
+				'source'   => 'terms',
+				'perPage'  => 10,
+				'taxQuery' => $tax_query,
+			)
+		);
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'innerBlocks', '' );
+		return rest_get_server()->dispatch( $request );
+	}
+
+	public function test_terms_preview_rejects_an_internal_taxonomy_named_in_tax_query() {
+		register_taxonomy( 'dsgo_internal_tax', 'post', array( 'public' => false, 'show_ui' => false ) );
+		wp_insert_term( 'SECRET-TERM', 'dsgo_internal_tax' );
+
+		$top    = $this->preview_terms_as_contributor( array( 'clauses' => array( array( 'taxonomy' => 'dsgo_internal_tax' ) ) ) );
+		$nested = $this->preview_terms_as_contributor(
+			array( 'clauses' => array( array( 'relation' => 'OR', 'clauses' => array( array( 'taxonomy' => 'dsgo_internal_tax' ) ) ) ) )
+		);
+		unregister_taxonomy( 'dsgo_internal_tax' );
+
+		$this->assertSame( 403, $top->get_status() );
+		$this->assertSame( 403, $nested->get_status() );
+	}
+
+	public function test_terms_preview_still_works_for_a_public_taxonomy() {
+		wp_insert_term( 'Visible Category', 'category' );
+
+		$response = $this->preview_terms_as_contributor( array( 'clauses' => array( array( 'taxonomy' => 'category' ) ) ) );
+
+		$this->assertSame( 200, $response->get_status() );
+	}
 }

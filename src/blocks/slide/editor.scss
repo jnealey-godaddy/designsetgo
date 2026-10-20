@@ -8,8 +8,10 @@
 
 // Editor-specific adjustments
 .dsgo-slide {
-	// Editor: Show background image placeholder
-	&:not(&--has-background) {
+	// Editor: placeholder pattern for a slide with no background at all. Not
+	// on a colour or gradient (.has-background): a background-image paints
+	// over the colour and would hide it.
+	&:not(&--has-background):not(.has-background) {
 		background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
 			linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
 			linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
@@ -38,12 +40,6 @@
 		&:empty {
 			min-height: 80px;
 		}
-	}
-
-	// Editor: Overlay visibility control
-	&__overlay {
-		// Make overlay slightly more visible in editor
-		opacity: calc(var(--dsgo-slide-overlay-opacity) * 0.8);
 	}
 }
 

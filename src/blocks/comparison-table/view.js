@@ -92,7 +92,11 @@ function initTooltips(table) {
 		tooltip.id = tooltipId;
 		tooltip.setAttribute('role', 'tooltip');
 		tooltip.textContent = tooltipText;
-		trigger.parentNode.appendChild(tooltip);
+		// On <body>: position: fixed is measured from the nearest transformed
+		// ancestor, and animated sections and slider tracks keep a transform,
+		// which would throw the tooltip off its trigger. aria-describedby
+		// links by id, so it still describes the trigger from here.
+		document.body.appendChild(tooltip);
 
 		// A tap (or a click) pins the tooltip open: touch has no hover or
 		// focus-on-hover, and a pinned one needs an outside tap to close.

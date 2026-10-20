@@ -579,12 +579,19 @@ class Controller {
 		$query_id   = (string) $request->get_param( 'queryId' );
 		$source     = sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) );
 
-		if ( 'terms' === $source && ! self::can_preview_taxonomy( sanitize_key( (string) ( $attributes['taxonomy'] ?? 'category' ) ) ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'You cannot preview this taxonomy.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
+		// The terms renderer reads its taxonomies from taxQuery clauses
+		// (defaulting to category), so those are what must be previewable.
+		if ( 'terms' === $source ) {
+			$taxonomies = self::clause_taxonomies( (array) ( $attributes['taxQuery']['clauses'] ?? array() ) );
+			foreach ( $taxonomies ? $taxonomies : array( 'category' ) as $taxonomy ) {
+				if ( taxonomy_exists( $taxonomy ) && ! self::can_preview_taxonomy( $taxonomy ) ) {
+					return new \WP_Error(
+						'rest_forbidden',
+						__( 'You cannot preview this taxonomy.', 'designsetgo' ),
+						array( 'status' => 403 )
+					);
+				}
+			}
 		}
 
 		// Anyone who can edit posts can preview, so a query is limited to post
@@ -606,11 +613,15 @@ class Controller {
 		// from the caller's queryId.
 		$restrict = array( __CLASS__, 'restrict_preview_post_types' );
 		$users    = array( __CLASS__, 'restrict_preview_users' );
+		$terms    = array( __CLASS__, 'restrict_preview_terms' );
 		$hooks    = array( 'designsetgo_query_args', 'designsetgo/query/' . $query_id . '/args' );
 		foreach ( $hooks as $hook ) {
 			add_filter( $hook, $restrict, PHP_INT_MAX );
 			if ( 'users' === $source ) {
 				add_filter( $hook, $users, PHP_INT_MAX );
+			}
+			if ( 'terms' === $source ) {
+				add_filter( $hook, $terms, PHP_INT_MAX );
 			}
 		}
 
@@ -626,8 +637,53 @@ class Controller {
 			foreach ( $hooks as $hook ) {
 				remove_filter( $hook, $restrict, PHP_INT_MAX );
 				remove_filter( $hook, $users, PHP_INT_MAX );
+				remove_filter( $hook, $terms, PHP_INT_MAX );
 			}
 		}
+	}
+
+	/**
+	 * Taxonomies named by taxQuery clauses, including those in nested groups.
+	 *
+	 * @param array $clauses taxQuery clauses.
+	 * @return string[] Taxonomy slugs.
+	 */
+	private static function clause_taxonomies( array $clauses ): array {
+		$taxonomies = array();
+		foreach ( $clauses as $clause ) {
+			if ( ! is_array( $clause ) ) {
+				continue;
+			}
+			if ( isset( $clause['clauses'] ) && is_array( $clause['clauses'] ) ) {
+				$taxonomies = array_merge( $taxonomies, self::clause_taxonomies( $clause['clauses'] ) );
+			} elseif ( ! empty( $clause['taxonomy'] ) ) {
+				$taxonomies[] = sanitize_key( (string) $clause['taxonomy'] );
+			}
+		}
+		return array_values( array_unique( array_filter( $taxonomies ) ) );
+	}
+
+	/**
+	 * Narrow an editor preview's term query to taxonomies the user may preview.
+	 *
+	 * A backstop for the request check: it applies to the final get_terms()
+	 * args, however a renderer or filter chose the taxonomies.
+	 *
+	 * @param mixed $args get_terms() args (other sources carry no taxonomy).
+	 * @return mixed Args limited to previewable taxonomies.
+	 */
+	public static function restrict_preview_terms( $args ) {
+		if ( ! is_array( $args ) || ! isset( $args['taxonomy'] ) ) {
+			return $args;
+		}
+		$allowed = array_values( array_filter( (array) $args['taxonomy'], array( __CLASS__, 'can_preview_taxonomy' ) ) );
+		if ( empty( $allowed ) ) {
+			// An empty taxonomy list means "every taxonomy" to get_terms().
+			$args['include'] = array( 0 );
+			return $args;
+		}
+		$args['taxonomy'] = $allowed;
+		return $args;
 	}
 
 	/**

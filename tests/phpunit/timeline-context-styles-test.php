@@ -103,4 +103,37 @@ class Timeline_Context_Styles_Test extends WP_UnitTestCase {
 		$out  = $this->render( array( 'markerStyle' => 'square' ), array(), $html );
 		$this->assertStringContainsString( 'border-radius:4px', $out );
 	}
+
+	/**
+	 * A round image in the item's content keeps its radius under a square or
+	 * diamond style; only the marker image's corners change.
+	 */
+	public function test_content_images_keep_their_radius() {
+		$html = '<div class="wp-block-designsetgo-timeline-item dsgo-timeline-item"><div class="dsgo-timeline-item__marker" aria-hidden="true"><img src="m.jpg" alt="" class="dsgo-timeline-item__marker-image" style="border-radius:50%;object-fit:cover"/></div><div class="dsgo-timeline-item__wrapper"><figure class="wp-block-image"><img src="a.jpg" alt="" style="border-radius:50%"/></figure></div></div>';
+
+		$out = $this->render( array( 'markerStyle' => 'diamond' ), array(), $html );
+
+		$this->assertStringContainsString( 'class="dsgo-timeline-item__marker-image" style="border-radius:4px', $out );
+		$this->assertStringContainsString( '<img src="a.jpg" alt="" style="border-radius:50%"/>', $out );
+	}
+
+	/**
+	 * An item with a marker image has no marker SVG, so an SVG in its content
+	 * must not be taken for one.
+	 */
+	public function test_content_svgs_are_never_redrawn() {
+		$icon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle></svg>';
+		$html = '<div class="wp-block-designsetgo-timeline-item dsgo-timeline-item"><div class="dsgo-timeline-item__marker" aria-hidden="true"><img src="m.jpg" alt="" class="dsgo-timeline-item__marker-image" style="border-radius:50%;object-fit:cover"/></div><div class="dsgo-timeline-item__wrapper"><div class="wp-block-designsetgo-icon">' . $icon . '</div></div></div>';
+
+		$out = $this->render(
+			array(
+				'markerStyle' => 'circle',
+				'markerColor' => '#ff0000',
+			),
+			array(),
+			$html
+		);
+
+		$this->assertSame( $html, $out );
+	}
 }

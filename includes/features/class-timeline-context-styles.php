@@ -74,24 +74,43 @@ class Timeline_Context_Styles {
 		$fill   = '' !== $custom ? $custom : ( '' !== $parent ? $parent : self::DEFAULT_COLOR );
 		$stroke = '' !== $border ? $border : $fill;
 
-		// Marker image: the corner radius follows the style.
-		if ( 'circle' !== $style && false !== strpos( $block_content, 'dsgo-timeline-item__marker-image' ) ) {
-			return str_replace( 'border-radius:50%', 'border-radius:4px', $block_content );
+		// Only the marker is rewritten, never the item's content (which can
+		// hold its own SVGs and round images). The marker div holds no nested
+		// divs, so it ends at the first closing </div> after its opener. The
+		// lookahead keeps "__marker" from matching "__marker-image".
+		if ( ! preg_match( '#<div\b[^>]*\bclass="[^"]*dsgo-timeline-item__marker(?=[\s"])[^>]*>#', $block_content, $open, PREG_OFFSET_CAPTURE ) ) {
+			return $block_content;
+		}
+		$start = $open[0][1];
+		$close = strpos( $block_content, '</div>', $start );
+		if ( false === $close ) {
+			return $block_content;
+		}
+		$end    = $close + strlen( '</div>' );
+		$marker = substr( $block_content, $start, $end - $start );
+
+		if ( false !== strpos( $marker, 'dsgo-timeline-item__marker-image' ) ) {
+			// Marker image: only the corner radius follows the style.
+			if ( 'circle' === $style ) {
+				return $block_content;
+			}
+			$updated = str_replace( 'border-radius:50%', 'border-radius:4px', $marker );
+		} else {
+			$shape   = $this->shape( $style, $fill, $stroke );
+			$updated = preg_replace_callback(
+				'#(<svg\b[^>]*>)\s*<(circle|rect)\b[^>]*?(?:/>|>\s*</\2>)\s*(</svg>)#',
+				static function ( $m ) use ( $shape ) {
+					return $m[1] . $shape . $m[3];
+				},
+				$marker,
+				1
+			);
+			if ( ! is_string( $updated ) ) {
+				return $block_content;
+			}
 		}
 
-		$shape = $this->shape( $style, $fill, $stroke );
-
-		$pattern = '#(<svg\b[^>]*>)\s*<(circle|rect)\b[^>]*?(?:/>|>\s*</\2>)\s*(</svg>)#';
-		$updated = preg_replace_callback(
-			$pattern,
-			static function ( $m ) use ( $shape ) {
-				return $m[1] . $shape . $m[3];
-			},
-			$block_content,
-			1
-		);
-
-		return is_string( $updated ) ? $updated : $block_content;
+		return substr( $block_content, 0, $start ) . $updated . substr( $block_content, $end );
 	}
 
 	/**
