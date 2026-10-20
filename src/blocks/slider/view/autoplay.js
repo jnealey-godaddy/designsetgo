@@ -24,6 +24,9 @@ export default class AutoplayController {
 		this.timer = null;
 		this.suspended = new Set(['offscreen']);
 		this.teardowns = [];
+		this.stopped = false;
+		/** Called whenever the user-facing paused state may have changed. */
+		this.onStateChange = null;
 
 		this.observer = new IntersectionObserver(
 			(entries) => {
@@ -119,10 +122,36 @@ export default class AutoplayController {
 	stop() {
 		this.stopped = true;
 		this.clearTimer();
+		this.onStateChange?.();
+	}
+
+	/**
+	 * Whether autoplay is held off by the reader (pause button, interaction or
+	 * running out of slides), as opposed to a transient hover/focus/offscreen
+	 * suspension.
+	 *
+	 * @return {boolean} True when autoplay will not run until resumed.
+	 */
+	isPausedByUser() {
+		return this.stopped || this.suspended.has('user');
+	}
+
+	/** Pause autoplay until `resume()` is called. */
+	pause() {
+		this.setSuspended('user', true);
+		this.onStateChange?.();
+	}
+
+	/** Resume autoplay after a pause or a stop. */
+	resume() {
+		this.stopped = false;
+		this.setSuspended('user', false);
+		this.onStateChange?.();
 	}
 
 	/** Tear down the timer, the observer, and every listener. */
 	destroy() {
+		this.onStateChange = null;
 		this.stop();
 		this.observer?.disconnect();
 		this.teardowns.forEach((teardown) => teardown());

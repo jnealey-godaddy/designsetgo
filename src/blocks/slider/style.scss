@@ -124,17 +124,74 @@
 		}
 
 		&--prev {
-			left: 16px;
+			inset-inline-start: 16px;
 		}
 
 		&--next {
-			right: 16px;
+			inset-inline-end: 16px;
 		}
 
 		&:focus-visible {
 
 			@include focus-ring;
 		}
+	}
+
+	// Autoplay pause / play (WCAG 2.2.2). Pinned to the inline-end corner so
+	// it mirrors in RTL; arrows sit at the vertical centre, so the only clash
+	// is the "top" arrow position, which moves the button to the bottom.
+	&__autoplay-toggle {
+		position: absolute;
+		inset-block-start: 12px;
+		inset-inline-end: 12px;
+		z-index: 11;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		padding: 0;
+		background: var(--dsgo-slider-arrow-bg-color, rgba(255, 255, 255, 0.9));
+		border: none;
+		border-radius: 50%;
+		color: var(--dsgo-slider-arrow-color, var(--wp--preset--color--primary, #2563eb));
+		font-size: 18px;
+		line-height: 1;
+		cursor: pointer;
+
+		&:hover {
+			opacity: 0.9;
+		}
+
+		&:focus-visible {
+
+			@include focus-ring;
+		}
+	}
+
+	&[data-arrow-vertical-position="top"] &__autoplay-toggle {
+		inset-block-start: auto;
+		inset-block-end: 12px;
+	}
+
+	// With arrows, the inline-end edge belongs to the Next arrow, and on a
+	// short slider its vertical centre reaches the corner. Sit just inside it.
+	// Flat custom properties: postcss-calc can't parse var() fallbacks nested
+	// in calc().
+	&--has-arrows &__autoplay-toggle {
+		--dsgo-slider-toggle-arrow-size: var(--dsgo-slider-arrow-size, 24px);
+		--dsgo-slider-toggle-arrow-padding: var(--dsgo-slider-arrow-padding, 12px);
+		--dsgo-slider-toggle-arrow-edge: 16px;
+		inset-inline-end: calc(var(--dsgo-slider-toggle-arrow-edge) + var(--dsgo-slider-toggle-arrow-size) + var(--dsgo-slider-toggle-arrow-padding) * 2 + 8px);
+	}
+
+	&--has-arrows[data-arrow-position="inside"] &__autoplay-toggle {
+		--dsgo-slider-toggle-arrow-edge: 32px;
+	}
+
+	&--has-arrows[data-arrow-position="outside"] &__autoplay-toggle {
+		// A unitless 0 is invalid in calc() addition, so the unit stays.
+		--dsgo-slider-toggle-arrow-edge: 0px; /* stylelint-disable-line length-zero-no-unit */
 	}
 
 	// Arrow styles
@@ -161,11 +218,11 @@
 	&[data-arrow-position="inside"] &__arrow {
 
 		&--prev {
-			left: 32px;
+			inset-inline-start: 32px;
 		}
 
 		&--next {
-			right: 32px;
+			inset-inline-end: 32px;
 		}
 	}
 
@@ -175,11 +232,11 @@
 		.dsgo-slider__arrow {
 
 			&--prev {
-				left: 0;
+				inset-inline-start: 0;
 			}
 
 			&--next {
-				right: 0;
+				inset-inline-end: 0;
 			}
 		}
 	}
@@ -441,22 +498,22 @@
 		padding: 8px;
 
 		&--prev {
-			left: 8px;
+			inset-inline-start: 8px;
 		}
 
 		&--next {
-			right: 8px;
+			inset-inline-end: 8px;
 		}
 	}
 
 	.dsgo-slider[data-arrow-position="inside"] .dsgo-slider__arrow {
 
 		&--prev {
-			left: 16px;
+			inset-inline-start: 16px;
 		}
 
 		&--next {
-			right: 16px;
+			inset-inline-end: 16px;
 		}
 	}
 

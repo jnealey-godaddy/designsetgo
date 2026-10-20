@@ -30,9 +30,13 @@ function removeEditorPlaceholder(slider, selector) {
  * @param {Object}      handlers        Callbacks.
  * @param {Function}    handlers.onPrev Invoked when the previous arrow is clicked.
  * @param {Function}    handlers.onNext Invoked when the next arrow is clicked.
+ * @param {boolean}     isRtl           Whether the slider reads right to left, in
+ *                                      which case the chevrons are mirrored: the
+ *                                      previous arrow sits at the inline start
+ *                                      (the right) and must point right.
  * @return {{container: HTMLElement, prev: HTMLElement, next: HTMLElement}} The built arrows.
  */
-export function buildArrows(slider, { onPrev, onNext }) {
+export function buildArrows(slider, { onPrev, onNext }, isRtl = false) {
 	removeEditorPlaceholder(slider, '.dsgo-slider__arrows--editor-only');
 
 	const container = document.createElement('div');
@@ -43,7 +47,9 @@ export function buildArrows(slider, { onPrev, onNext }) {
 		button.type = 'button';
 		button.className = `dsgo-slider__arrow dsgo-slider__arrow--${direction}`;
 		button.setAttribute('aria-label', label);
-		button.appendChild(createArrowIcon(direction));
+		const mirrored = direction === 'prev' ? 'next' : 'prev';
+		const iconDirection = isRtl ? mirrored : direction;
+		button.appendChild(createArrowIcon(iconDirection));
 		button.addEventListener('click', onClick);
 		container.appendChild(button);
 		return button;
@@ -145,14 +151,70 @@ export function buildAnnouncer(slider) {
 	announcer.setAttribute('role', 'status');
 	announcer.setAttribute('aria-live', 'polite');
 	announcer.setAttribute('aria-atomic', 'true');
+	// Clipped in place rather than pushed off to the left: on a right-to-left
+	// page, content past the left edge widens the scrollable area.
 	Object.assign(announcer.style, {
 		position: 'absolute',
-		left: '-9999px',
 		width: '1px',
 		height: '1px',
+		margin: '-1px',
+		padding: '0',
 		overflow: 'hidden',
+		clipPath: 'inset(50%)',
+		whiteSpace: 'nowrap',
+		border: '0',
 	});
 
 	slider.appendChild(announcer);
 	return announcer;
+}
+
+/**
+ * Build the pause / play button for autoplay (WCAG 2.2.2).
+ *
+ * The accessible name swaps between the two actions rather than also toggling
+ * `aria-pressed`: a "Pause autoplay" button that reports itself pressed says
+ * the opposite of what a screen reader user needs to hear.
+ *
+ * @param {HTMLElement} slider            Slider root.
+ * @param {Object}      handlers          Callbacks.
+ * @param {Function}    handlers.onToggle Invoked when the button is activated.
+ * @return {{button: HTMLElement, setPaused: Function}} The button and a state setter.
+ */
+export function buildAutoplayToggle(slider, { onToggle }) {
+	const ns = 'http://www.w3.org/2000/svg';
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'dsgo-slider__autoplay-toggle';
+
+	const svg = document.createElementNS(ns, 'svg');
+	svg.setAttribute('viewBox', '0 0 24 24');
+	svg.setAttribute('fill', 'currentColor');
+	svg.setAttribute('width', '1em');
+	svg.setAttribute('height', '1em');
+	svg.setAttribute('aria-hidden', 'true');
+	svg.setAttribute('focusable', 'false');
+	const path = document.createElementNS(ns, 'path');
+	svg.appendChild(path);
+	button.appendChild(svg);
+
+	const PAUSE_PATH = 'M7 5h3.5v14H7zM13.5 5H17v14h-3.5z';
+	const PLAY_PATH = 'M8 5l11 7-11 7z';
+
+	const setPaused = (paused) => {
+		button.classList.toggle('dsgo-slider__autoplay-toggle--paused', paused);
+		button.setAttribute(
+			'aria-label',
+			paused
+				? __('Start autoplay', 'designsetgo')
+				: __('Pause autoplay', 'designsetgo')
+		);
+		path.setAttribute('d', paused ? PLAY_PATH : PAUSE_PATH);
+	};
+	setPaused(false);
+
+	button.addEventListener('click', onToggle);
+	slider.appendChild(button);
+
+	return { button, setPaused };
 }
