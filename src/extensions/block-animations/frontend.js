@@ -277,8 +277,44 @@ function animateOnScroll(element) {
 		animationTimeout: null,
 	});
 
+	// The observer's root is the viewport shrunk by `offset` on every side. An
+	// element that sits entirely inside that dead band at the very top or
+	// bottom of the page can never intersect it, however far the visitor
+	// scrolls, and would stay invisible forever. Reveal those immediately.
+	if (isUnreachableByObserver(element, offset)) {
+		animateOnLoad(element);
+		return;
+	}
+
 	const observer = getScrollObserver(offset);
 	observer.observe(element);
+}
+
+/**
+ * Whether an element lies wholly within the dead band the scroll observer's
+ * negative root margin leaves at the top or bottom of the document.
+ *
+ * @param {HTMLElement} element Element to test
+ * @param {number}      offset  Root margin in pixels
+ * @return {boolean} True when the observer could never report it intersecting
+ */
+export function isUnreachableByObserver(element, offset) {
+	if (!offset || offset <= 0) {
+		return false;
+	}
+
+	const rect = element.getBoundingClientRect();
+	const top = rect.top + window.scrollY;
+	const bottom = top + rect.height;
+	const docHeight = document.documentElement.scrollHeight;
+
+	// Top: above the first position the shrunk root can ever cover.
+	if (bottom <= offset) {
+		return true;
+	}
+
+	// Bottom: below the last position the shrunk root can ever cover.
+	return top >= docHeight - offset;
 }
 
 /**

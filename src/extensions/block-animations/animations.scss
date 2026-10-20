@@ -71,7 +71,10 @@ body:not(.block-editor-page):not(.wp-admin) {
 	.has-dsgo-animation {
 		// Will be animated by JavaScript
 		// Hide elements until entrance animation is triggered
-		&:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
+		// Hover and click triggers play the animation on interaction, so the
+		// block is visible at rest; hiding it would make it unreachable on touch
+		// and invisible until the first hover.
+		&:not(.dsgo-entrance-active):not(.dsgo-exit-active):not([data-dsgo-animation-trigger="hover"]):not([data-dsgo-animation-trigger="click"]) {
 			opacity: 0;
 		}
 
@@ -177,6 +180,9 @@ body:not(.block-editor-page):not(.wp-admin) {
 		// doing nothing for it. The items hide instead.
 		&:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
 			opacity: 1;
+		}
+
+		&:not(.dsgo-entrance-active):not(.dsgo-exit-active):not([data-dsgo-animation-trigger="hover"]):not([data-dsgo-animation-trigger="click"]) {
 
 			@include dsgo-stagger-items {
 				opacity: 0;
@@ -228,6 +234,32 @@ body:not(.block-editor-page):not(.wp-admin) {
 				animation-delay: 0s !important; // Accessibility override.
 				opacity: 1 !important; // Accessibility override.
 			}
+		}
+	}
+
+	// The hidden resting state exists only so JavaScript can reveal it. Where
+	// scripts can't run (no JS) or the page is printed, show everything.
+	@media print, (scripting: none) {
+
+		.has-dsgo-animation,
+		.has-dsgo-animation[data-dsgo-stagger="true"] {
+
+			&:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
+				opacity: 1 !important; // Accessibility override.
+			}
+
+			@include dsgo-stagger-items {
+				opacity: 1 !important; // Accessibility override.
+			}
+		}
+	}
+
+	@media print {
+
+		.has-dsgo-animation,
+		.has-dsgo-animation > * {
+			animation: none !important; // Print override.
+			transform: none !important; // Print override.
 		}
 	}
 }

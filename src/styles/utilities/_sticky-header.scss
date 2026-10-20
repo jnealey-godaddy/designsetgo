@@ -42,6 +42,17 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		top: 46px; /* WordPress admin bar height on mobile */
 	}
 }
+
+/* Core makes the admin bar absolute at 600px and below: it scrolls away, so
+   there is nothing to clear and a 46px offset would leave a gap. */
+@media screen and (max-width: 600px) {
+
+	body:not(.block-editor-page).admin-bar.dsgo-sticky-header-enabled .wp-block-template-part:not(footer):first-of-type,
+	body:not(.block-editor-page).admin-bar.dsgo-sticky-header-enabled header.wp-block-template-part,
+	body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-header-enabled {
+		top: 0;
+	}
+}
 /* stylelint-enable selector-class-pattern */
 
 /* Remove sticky from inner block to avoid conflicts */

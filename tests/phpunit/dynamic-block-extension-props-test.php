@@ -188,4 +188,28 @@ class DesignSetGo_Dynamic_Block_Extension_Props_Test extends WP_UnitTestCase {
 		$this->assertFalse( $single::has_single_root( 'just text' ) );
 		$this->assertFalse( $single::has_single_root( '' ) );
 	}
+
+	/**
+	 * Markup the HTML API can't model still gets a single-root verdict.
+	 */
+	public function test_has_single_root_fallback() {
+		$method = new ReflectionMethod( \DesignSetGo\Dynamic_Block_Extension_Props::class, 'has_single_root_fallback' );
+		$method->setAccessible( true );
+
+		$this->assertTrue( $method->invoke( null, '<form role="search"><input type="search"><button>Go</button></form>' ) );
+		$this->assertTrue( $method->invoke( null, '<style>.x{}</style><table><tr><td>a</td></tr></table>' ) );
+		$this->assertFalse( $method->invoke( null, '<table><tr><td>a</td></tr></table><p>b</p>' ) );
+		$this->assertFalse( $method->invoke( null, '<div>a</div><div>b</div>' ) );
+		$this->assertFalse( $method->invoke( null, 'text <div>a</div>' ) );
+		$this->assertFalse( $method->invoke( null, '' ) );
+	}
+
+	/**
+	 * Reveal on Hover reaches dynamic children.
+	 */
+	public function test_reveal_on_hover_classes() {
+		$out = $this->run_filter( 'dsgotest/ext-dynamic', array( 'dsgoRevealOnHover' => true ) );
+		$this->assertStringContainsString( 'dsgo-reveal-item', $out );
+
+	}
 }

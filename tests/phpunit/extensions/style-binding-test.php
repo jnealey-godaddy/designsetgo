@@ -249,6 +249,10 @@ class StyleBindingTest extends WP_UnitTestCase {
 			'data:image/svg+xml;base64,PHN2Zy8+',
 			'red; display:none',
 			'{color:red}',
+			'image-set("//evil.test/a.png" 1x)',
+			'-webkit-image-set(url_x 1x)',
+			'cross-fade(red, blue)',
+			'paint(evil)',
 		);
 		foreach ( $dangerous as $value ) {
 			add_filter( 'designsetgo_style_binding_resolve', fn() => $value, 10, 3 );

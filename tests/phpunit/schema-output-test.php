@@ -89,6 +89,34 @@ class Schema_Output_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A block hidden by a server-evaluated visibility rule is left out.
+	 */
+	public function test_block_hidden_by_visibility_rule_is_omitted() {
+		$hidden = str_replace(
+			'{"dsgoSchema":"faq"}',
+			'{"dsgoSchema":"faq","dsgoVisibility":{"operator":"AND","rules":[{"type":"auth","value":true}]}}',
+			$this->accordion_markup()
+		);
+
+		$head = $this->head_for( $hidden );
+
+		$this->assertStringNotContainsString( 'FAQPage', $head );
+	}
+
+	/**
+	 * A device-hidden block stays in the DOM, so it stays in the schema.
+	 */
+	public function test_device_hidden_block_is_kept() {
+		$markup = str_replace(
+			'{"dsgoSchema":"faq"}',
+			'{"dsgoSchema":"faq","dsgoHideOnMobile":true}',
+			$this->accordion_markup()
+		);
+
+		$this->assertStringContainsString( 'FAQPage', $this->head_for( $markup ) );
+	}
+
+	/**
 	 * Two opted-in blocks still produce one script.
 	 */
 	public function test_emits_exactly_one_script_for_two_opted_in_blocks() {

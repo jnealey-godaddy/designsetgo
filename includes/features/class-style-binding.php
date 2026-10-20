@@ -91,8 +91,10 @@ class StyleBinding {
 			}
 
 			// Reject values that could execute code or break out of the
-			// declaration: url(), expression(), javascript:/data: schemes,
-			// CSS curly braces, and embedded semicolons.
+			// declaration: url() and every other function that fetches a
+			// resource (image-set(), image(), cross-fade(), element(), paint(),
+			// src(), attr()), expression(), javascript:/data: schemes, CSS
+			// curly braces, and embedded semicolons.
 			//
 			// Test the ESCAPE-DECODED value, never the raw one. CSS escapes are
 			// resolved by the browser before the declaration applies, so a raw
@@ -101,7 +103,7 @@ class StyleBinding {
 			// below as written. See designsetgo_normalize_css_escapes().
 			$probe = designsetgo_normalize_css_escapes( (string) $value );
 
-			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:|data:/i', $probe ) ) {
+			if ( preg_match( '/(?:url|image-set|image|cross-fade|element|paint|src|attr|expression)\s*\(|javascript:|data:/i', $probe ) ) {
 				continue;
 			}
 			if ( false !== strpbrk( $probe, ';{}' ) ) {
@@ -125,8 +127,8 @@ class StyleBinding {
 			return $html;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $html );
-		if ( ! $processor->next_tag() ) {
+		$processor = Dynamic_Block_Extension_Props::root_processor( $html );
+		if ( null === $processor ) {
 			return $html;
 		}
 

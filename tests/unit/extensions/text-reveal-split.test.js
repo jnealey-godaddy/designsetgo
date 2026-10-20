@@ -40,17 +40,35 @@ describe('wrapTextNodes', () => {
 		expect(units(chars)).toHaveLength(4);
 	});
 
-	it('preserves the original text for assistive tech', () => {
+	it('keeps the original text for assistive tech in a visually hidden copy', () => {
 		wrapTextNodes(el, 'word');
-		expect(el.getAttribute('aria-label')).toBe('Hello brave world');
+		const copy = el.querySelector('.dsgo-text-reveal-sr');
+		expect(copy.textContent).toBe('Hello brave world');
 		expect(units(el)[0].getAttribute('aria-hidden')).toBe('true');
+		// An aria-label on a <p>/<span> is not honoured, so none is added.
+		expect(el.hasAttribute('aria-label')).toBe(false);
 	});
 
 	it('leaves the visible text unchanged', () => {
 		wrapTextNodes(el, 'word');
-		expect(el.textContent.replace(/\s+/g, ' ').trim()).toBe(
-			'Hello brave world'
+		const visible = Array.from(units(el))
+			.map((u) => u.textContent)
+			.join(' ');
+		expect(visible).toBe('Hello brave world');
+	});
+
+	it('does not hide text inside a link, so the link keeps its name', () => {
+		document.body.innerHTML = '<p id="t">Go <a href="#">read more</a></p>';
+		const p = document.getElementById('t');
+		wrapTextNodes(p, 'word');
+		const linkUnits = p.querySelectorAll('a .dsgo-text-reveal-unit');
+		expect(linkUnits).toHaveLength(2);
+		linkUnits.forEach((u) =>
+			expect(u.hasAttribute('aria-hidden')).toBe(false)
 		);
+		expect(p.querySelector('a .dsgo-text-reveal-sr')).toBeNull();
+		// Plain text outside the link is still hidden and mirrored.
+		expect(p.querySelector(':scope > .dsgo-text-reveal-sr')).not.toBeNull();
 	});
 
 	it('is idempotent - splitting twice does not nest units', () => {
@@ -68,7 +86,9 @@ describe('wrapTextNodes', () => {
 		wrapTextNodes(animated, 'character');
 
 		expect(units(animated)).toHaveLength(8);
-		expect(animated).toHaveAttribute('aria-label', 'Animated');
+		expect(animated.querySelectorAll('.dsgo-text-reveal-sr')).toHaveLength(
+			1
+		);
 		expect(animated).toHaveAttribute('aria-live', 'polite');
 	});
 

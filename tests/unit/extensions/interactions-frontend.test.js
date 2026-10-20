@@ -146,6 +146,48 @@ describe('interactions frontend runtime', () => {
 		expect(src.getAttribute('role')).toBe('button');
 	});
 
+	it('activates on Space/Enter only when the container itself has focus', () => {
+		document.body.innerHTML = `
+			<div id="src" data-dsgo-interactions='${JSON.stringify([
+				{
+					id: 'a',
+					trigger: 'click',
+					targetMode: 'self',
+					action: 'addClass',
+					value: 'hit',
+				},
+			])}'><input id="field" type="text"><a id="lnk" href="#x">go</a></div>
+		`;
+		initInteractions();
+		const src = document.getElementById('src');
+
+		const typed = new KeyboardEvent('keydown', {
+			key: ' ',
+			bubbles: true,
+			cancelable: true,
+		});
+		document.getElementById('field').dispatchEvent(typed);
+		expect(typed.defaultPrevented).toBe(false);
+		expect(src.classList.contains('hit')).toBe(false);
+
+		const enter = new KeyboardEvent('keydown', {
+			key: 'Enter',
+			bubbles: true,
+			cancelable: true,
+		});
+		document.getElementById('lnk').dispatchEvent(enter);
+		expect(enter.defaultPrevented).toBe(false);
+
+		const own = new KeyboardEvent('keydown', {
+			key: 'Enter',
+			bubbles: true,
+			cancelable: true,
+		});
+		src.dispatchEvent(own);
+		expect(own.defaultPrevented).toBe(true);
+		expect(src.classList.contains('hit')).toBe(true);
+	});
+
 	it('does not make an existing button keyboard-redundant', () => {
 		document.body.innerHTML = `
 			<button id="b" data-dsgo-interactions='${JSON.stringify([

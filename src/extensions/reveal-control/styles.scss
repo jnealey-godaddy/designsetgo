@@ -1,6 +1,10 @@
 /**
  * Frontend styles for Reveal Control Extension
  * Works with Stack, Flex, Grid, and Reveal blocks
+ *
+ * Items reveal on hover AND on keyboard focus inside the container, and are
+ * simply visible on devices that cannot hover (touch), where hidden content
+ * would otherwise be unreachable.
  */
 
 .dsgo-has-reveal {
@@ -12,7 +16,8 @@
 		transition: opacity 300ms ease-in-out;
 	}
 
-	&[data-reveal-animation="fade"]:hover .dsgo-reveal-item {
+	&[data-reveal-animation="fade"]:hover .dsgo-reveal-item,
+	&[data-reveal-animation="fade"]:focus-within .dsgo-reveal-item {
 		opacity: 1;
 	}
 
@@ -27,9 +32,40 @@
 			transform 300ms ease-in-out;
 	}
 
-	&[data-reveal-animation="collapse"]:hover .dsgo-reveal-item {
+	&[data-reveal-animation="collapse"]:hover .dsgo-reveal-item,
+	&[data-reveal-animation="collapse"]:focus-within .dsgo-reveal-item {
 		opacity: 1;
-		max-height: 1000px; // Large enough for most content
+		max-height: 1000px; // Fallback where height: auto can't be animated.
 		transform: scaleY(1);
+	}
+
+	// Browsers that can animate to intrinsic sizes reveal at the content's real
+	// height instead of clipping anything taller than the 1000px fallback.
+	@supports (interpolate-size: allow-keywords) {
+		interpolate-size: allow-keywords;
+
+		&[data-reveal-animation="collapse"] .dsgo-reveal-item {
+			height: 0;
+			max-height: none;
+			transition: opacity 300ms ease-in-out, height 300ms ease-in-out,
+				transform 300ms ease-in-out;
+		}
+
+		&[data-reveal-animation="collapse"]:hover .dsgo-reveal-item,
+		&[data-reveal-animation="collapse"]:focus-within .dsgo-reveal-item {
+			height: auto;
+			max-height: none;
+		}
+	}
+
+	// No hover on touch screens: show the items rather than hide them for good.
+	@media (hover: none) {
+
+		.dsgo-reveal-item {
+			opacity: 1 !important; // Accessibility override.
+			max-height: none !important; // Accessibility override.
+			height: auto !important; // Accessibility override.
+			transform: none !important; // Accessibility override.
+		}
 	}
 }

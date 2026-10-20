@@ -15,7 +15,21 @@ import { useEffect } from '@wordpress/element';
  * Dangerous CSS patterns that could be used for injection
  */
 const DANGEROUS_CSS_PATTERNS =
-	/javascript\s*:|expression\s*\(|behavior\s*:|@import|url\s*\(\s*['"]?\s*data:/i;
+	/javascript\s*:|expression\s*\(|behavior\s*:|url\s*\(\s*['"]?\s*data:/i;
+
+/**
+ * Whole `@import` statements, removed outright to match the front end (the
+ * server strips every import: the footer stylesheet concatenates all blocks'
+ * CSS, so an import is only valid for whichever block comes first).
+ */
+const IMPORT_STATEMENT = /@import\b[^;{}]*(?:;|$)/gim;
+
+/**
+ * Strings, comments and attribute selectors (returned untouched) or a
+ * standalone `selector` word. Mirrors Custom_CSS_Renderer::replace_selector().
+ */
+const SELECTOR_TOKENS =
+	/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*[\s\S]*?\*\/|\[[^\]]*\])|(?<![\w.#\\-])selector(?![\w-])/g;
 
 /**
  * Sanitize CSS by removing dangerous patterns
@@ -27,7 +41,10 @@ function sanitizeCSS(css) {
 	if (!css) {
 		return '';
 	}
-	return css.replace(DANGEROUS_CSS_PATTERNS, '/* removed */');
+	return css
+		.replace(IMPORT_STATEMENT, '')
+		.replace(/@import\b/gi, '')
+		.replace(DANGEROUS_CSS_PATTERNS, '/* removed */');
 }
 
 /**
@@ -41,7 +58,9 @@ export function replaceSelector(css, className) {
 	if (!css) {
 		return '';
 	}
-	return sanitizeCSS(css).replace(/\bselector\b/g, `.${className}`);
+	return sanitizeCSS(css).replace(SELECTOR_TOKENS, (match, protectedToken) =>
+		protectedToken ? protectedToken : `.${className}`
+	);
 }
 
 /**

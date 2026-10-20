@@ -41,6 +41,14 @@ class Dynamic_Block_Extension_Props {
 	);
 
 	/**
+	 * Container blocks that can enable Reveal on Hover
+	 * (src/extensions/reveal-control/index.js).
+	 *
+	 * @var string[]
+	 */
+	const REVEAL_CONTAINERS = array( 'designsetgo/section', 'designsetgo/row', 'designsetgo/grid' );
+
+	/**
 	 * Valid hover effect presets.
 	 *
 	 * @var string[]
@@ -100,6 +108,17 @@ class Dynamic_Block_Extension_Props {
 			$classes[] = 'dsgo-hover-effect--' . $hover;
 		}
 
+		$reveal_attrs = array();
+		if ( ! Extension_Attributes::is_block_excluded( $name, Extension_Attributes::get_extension_exclusions( 'reveal-control' ) ) ) {
+			if ( in_array( $name, self::REVEAL_CONTAINERS, true ) && ! empty( $attrs['enableRevealOnHover'] ) ) {
+				$classes[]    = 'dsgo-has-reveal';
+				$animation    = isset( $attrs['revealAnimationType'] ) && 'collapse' === $attrs['revealAnimationType'] ? 'collapse' : 'fade';
+				$reveal_attrs = array( 'data-reveal-animation' => $animation );
+			} elseif ( ! empty( $attrs['dsgoRevealOnHover'] ) ) {
+				$classes[] = 'dsgo-reveal-item';
+			}
+		}
+
 		$max_width = $this->max_width_styles( $name, $attrs );
 		$grid      = $this->grid_styles( $name, $attrs );
 
@@ -118,19 +137,16 @@ class Dynamic_Block_Extension_Props {
 		// the whole block. Synced patterns, patterns, shortcodes and similar
 		// print sibling elements with no wrapper; putting the props on the
 		// first of them would hide or size only part of the block.
-		if ( ! self::has_single_root( $block_content ) ) {
+		$processor = self::root_processor( $block_content );
+		if ( null === $processor ) {
 			return $block_content;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $block_content );
-		do {
-			if ( ! $processor->next_tag() ) {
-				return $block_content;
-			}
-		} while ( in_array( $processor->get_tag(), self::NON_RENDERING_TAGS, true ) );
-
 		foreach ( $classes as $class ) {
 			$processor->add_class( $class );
+		}
+		foreach ( $reveal_attrs as $key => $value ) {
+			$processor->set_attribute( $key, $value );
 		}
 
 		// Hybrid blocks (render_callback plus save()) already carry the saved
@@ -164,11 +180,43 @@ class Dynamic_Block_Extension_Props {
 	}
 
 	/**
+	 * Tag processor positioned on the root element of rendered block HTML, or
+	 * null when the HTML is not a single element.
+	 *
+	 * This is the shared guard for every render-time injector: props describe
+	 * the whole block, so they need one element that is the whole block.
+	 * Synced patterns, patterns, shortcodes and similar print sibling elements
+	 * with no wrapper; putting the props on the first of them would affect only
+	 * part of the block. Leading non-rendering tags (a printed <style>) are
+	 * skipped.
+	 *
+	 * @param string $html Rendered block HTML.
+	 * @return \WP_HTML_Tag_Processor|null
+	 */
+	public static function root_processor( $html ) {
+		if ( ! self::has_single_root( $html ) ) {
+			return null;
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( $html );
+		do {
+			if ( ! $processor->next_tag() ) {
+				return null;
+			}
+		} while ( in_array( $processor->get_tag(), self::NON_RENDERING_TAGS, true ) );
+
+		return $processor;
+	}
+
+	/**
 	 * Whether rendered HTML is a single element (ignoring non-rendering tags
 	 * such as a leading <style>) with no visible text beside it.
 	 *
-	 * Markup the HTML API can't fully parse counts as not single-rooted, which
-	 * leaves the block as it was.
+	 * The HTML API only implements part of the spec on WordPress 6.7 and 6.8
+	 * (no tables, forms and others), and reports "unsupported" for markup it
+	 * can't model. Bailing there would silently skip core/search, core/calendar
+	 * and similar, so that case falls back to counting top-level tags with the
+	 * tag processor. Genuinely malformed markup still counts as not single.
 	 *
 	 * @param string $html Rendered block HTML.
 	 * @return bool
@@ -176,7 +224,7 @@ class Dynamic_Block_Extension_Props {
 	public static function has_single_root( $html ) {
 		$processor = \WP_HTML_Processor::create_fragment( $html );
 		if ( null === $processor ) {
-			return false;
+			return self::has_single_root_fallback( $html );
 		}
 
 		$roots = 0;
@@ -200,7 +248,60 @@ class Dynamic_Block_Extension_Props {
 			}
 		}
 
-		return null === $processor->get_last_error() && 1 === $roots;
+		$error = $processor->get_last_error();
+		if ( null !== $error ) {
+			return self::has_single_root_fallback( $html );
+		}
+
+		return 1 === $roots;
+	}
+
+	/**
+	 * Tag-processor version of the single-root check, for markup the HTML
+	 * processor reports as unsupported. Tracks nesting depth by hand and
+	 * rejects visible text outside the root.
+	 *
+	 * @param string $html Rendered block HTML.
+	 * @return bool
+	 */
+	private static function has_single_root_fallback( $html ) {
+		static $void = array( 'AREA', 'BASE', 'BR', 'COL', 'EMBED', 'HR', 'IMG', 'INPUT', 'LINK', 'META', 'SOURCE', 'TRACK', 'WBR', 'PARAM' );
+
+		// Visible text beside the root: strip every tag and whatever the
+		// non-rendering tags enclose, then require the single element to be all
+		// that's left.
+		$stripped = preg_replace( '#<(style|script|noscript|template)\b[^>]*>.*?</\1\s*>#is', '', $html );
+		$stripped = preg_replace( '#<!--.*?-->#s', '', (string) $stripped );
+		if ( ! preg_match( '#^\s*<[a-z]#i', (string) $stripped ) || ! preg_match( '#>\s*$#', (string) $stripped ) ) {
+			return false;
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( (string) $stripped );
+		$depth     = 0;
+		$roots     = 0;
+		while ( $processor->next_tag( array( 'tag_closers' => 'visit' ) ) ) {
+			$tag = $processor->get_tag();
+			if ( in_array( $tag, self::NON_RENDERING_TAGS, true ) ) {
+				continue;
+			}
+			if ( $processor->is_tag_closer() ) {
+				--$depth;
+				continue;
+			}
+			if ( 0 === $depth ) {
+				++$roots;
+				if ( $roots > 1 ) {
+					return false;
+				}
+			}
+			if ( ! in_array( $tag, $void, true ) && ! $processor->has_self_closing_flag() ) {
+				++$depth;
+			}
+		}
+
+		// A closer for something never opened would drive depth negative;
+		// require the tags to balance.
+		return 1 === $roots && 0 === $depth;
 	}
 
 	/**

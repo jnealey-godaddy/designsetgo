@@ -108,6 +108,35 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * "selector" inside longer identifiers, strings and attribute selectors is not the keyword.
+	 */
+	public function test_replace_selector_skips_identifiers_strings_and_attributes() {
+		$css = '.my-selector-list { --selector-gap: 1px; } [data-selector] { content: "selector"; } /* selector */ selector_x {} selector > p { gap: var(--selector-gap); }';
+
+		$result = $this->call_private_method( $this->renderer, 'replace_selector', array( $css, 'c' ) );
+
+		$this->assertStringContainsString( '.my-selector-list', $result );
+		$this->assertStringContainsString( '--selector-gap: 1px', $result );
+		$this->assertStringContainsString( '[data-selector]', $result );
+		$this->assertStringContainsString( 'content: "selector"', $result );
+		$this->assertStringContainsString( '/* selector */', $result );
+		$this->assertStringContainsString( 'selector_x', $result );
+		$this->assertStringContainsString( '.c > p', $result );
+		$this->assertStringContainsString( 'var(--selector-gap)', $result );
+	}
+
+	/**
+	 * Every @import is stripped, as in the editor preview.
+	 */
+	public function test_sanitize_css_strips_all_imports() {
+		$css    = "@import url('https://fonts.example/x.css');\n@import 'https://a.example/b.css';\nselector { color: red; }";
+		$result = $this->call_private_method( $this->renderer, 'sanitize_css', array( $css ) );
+
+		$this->assertStringNotContainsString( '@import', $result );
+		$this->assertStringContainsString( 'color: red', $result );
+	}
+
+	/**
 	 * Test sanitize_css removes dangerous content
 	 */
 	public function test_sanitize_css_security() {

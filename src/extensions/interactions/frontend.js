@@ -180,7 +180,12 @@ function attachDelegates() {
 
 		// Space/Enter activating a synthesised button IS focus-scoped: it
 		// stands in for a real click on the element the visitor is on.
-		const focused = sourceFor(e.target);
+		//
+		// Only when the synthesised button ITSELF has focus. A field or link
+		// inside it resolves to the same container via closest(), and acting
+		// there would swallow the visitor's typed space and stop Enter from
+		// following the link.
+		const focused = e.target?.hasAttribute?.(ATTR) ? e.target : null;
 		if (
 			focused &&
 			'button' === focused.getAttribute('role') &&

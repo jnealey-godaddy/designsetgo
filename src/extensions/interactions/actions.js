@@ -29,6 +29,16 @@ const URL_ATTRIBUTE =
 
 const DANGEROUS_SCHEME = /^(javascript|data|vbscript):/i;
 
+// 4. Attributes that send the visitor's data somewhere. A scheme check cannot
+//    help: `https://attacker.example` is a perfectly valid form action. These
+//    may only point at this site, so an interaction cannot turn a form into a
+//    credential-harvesting endpoint.
+const SAME_ORIGIN_ATTRIBUTE = /^(action|formaction|ping)$/i;
+
+// 5. Inline styles can overlay the page (clickjacking), pull in remote images
+//    and hide content. Class actions are the supported way to restyle.
+const FORBIDDEN_STYLE_ATTRIBUTE = /^style$/i;
+
 // Browsers strip ASCII tab, newline and carriage return from ANYWHERE in a
 // URL before resolving its scheme (WHATWG URL, "URL parsing"), and trim
 // leading C0 controls and spaces. So `jav&#9;ascript:alert(1)` is dead text
@@ -56,6 +66,28 @@ export function isDangerousUrl(value) {
 // — <base href> silently repoints every relative URL on the page, and
 // <meta http-equiv="refresh"> redirects it.
 const FORBIDDEN_TARGET = /^(SCRIPT|BASE|META)$/;
+
+/**
+ * Whether a URL resolves to this site's origin.
+ *
+ * @param {string} value Raw attribute value.
+ * @return {boolean} True for an empty value or a same-origin URL.
+ */
+function isSameOrigin(value) {
+	const raw = String(value ?? '')
+		.replace(URL_NOISE, '')
+		.trim();
+	if ('' === raw) {
+		return true;
+	}
+	try {
+		return (
+			new URL(raw, window.location.href).origin === window.location.origin
+		);
+	} catch {
+		return false;
+	}
+}
 
 /**
  * Split an author-supplied class string into individual, usable class names.
@@ -97,7 +129,15 @@ export function isAttributeAllowed(name, value) {
 		return false;
 	}
 
-	if (FORBIDDEN_ATTRIBUTE.test(name) || HTML_VALUED_ATTRIBUTE.test(name)) {
+	if (
+		FORBIDDEN_ATTRIBUTE.test(name) ||
+		HTML_VALUED_ATTRIBUTE.test(name) ||
+		FORBIDDEN_STYLE_ATTRIBUTE.test(name)
+	) {
+		return false;
+	}
+
+	if (SAME_ORIGIN_ATTRIBUTE.test(name) && !isSameOrigin(value)) {
 		return false;
 	}
 

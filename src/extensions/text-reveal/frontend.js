@@ -13,7 +13,7 @@
 export { UNIT_CLASS, wrapTextNodes } from './splitter';
 import { UNIT_CLASS, wrapTextNodes } from './splitter';
 
-// Store observers for cleanup
+// Store observers (and their scroll listeners) for cleanup
 const activeObservers = new WeakMap();
 
 /**
@@ -153,6 +153,12 @@ function initTextReveal(element) {
 	const scrollHandler = () => {
 		if (!ticking) {
 			requestAnimationFrame(() => {
+				// A soft navigation can swap the element out; stop servicing it.
+				if (!element.isConnected) {
+					destroyTextReveal(element);
+					ticking = false;
+					return;
+				}
 				updateRevealProgress(element, spans, totalUnits);
 				ticking = false;
 			});
@@ -184,7 +190,7 @@ function initTextReveal(element) {
 	);
 
 	// Store observer for cleanup
-	activeObservers.set(element, observer);
+	activeObservers.set(element, { observer, scrollHandler });
 	observer.observe(element);
 }
 
@@ -194,9 +200,10 @@ function initTextReveal(element) {
  * @param {HTMLElement} element The element to clean up
  */
 function destroyTextReveal(element) {
-	const observer = activeObservers.get(element);
-	if (observer) {
-		observer.disconnect();
+	const entry = activeObservers.get(element);
+	if (entry) {
+		entry.observer.disconnect();
+		window.removeEventListener('scroll', entry.scrollHandler);
 		activeObservers.delete(element);
 	}
 }

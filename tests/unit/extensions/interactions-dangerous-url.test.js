@@ -87,3 +87,32 @@ describe('isAttributeAllowed with obfuscated URLs', () => {
 		).toBe(true);
 	});
 });
+
+describe('isAttributeAllowed data-exfiltration attributes', () => {
+	it.each(['action', 'formaction', 'ping'])(
+		'refuses %s pointing at another origin',
+		(name) => {
+			expect(isAttributeAllowed(name, 'https://attacker.example/x')).toBe(
+				false
+			);
+			expect(isAttributeAllowed(name, '//attacker.example/x')).toBe(
+				false
+			);
+		}
+	);
+
+	it.each(['action', 'formaction'])('allows a same-origin %s', (name) => {
+		expect(isAttributeAllowed(name, '/contact')).toBe(true);
+		expect(
+			isAttributeAllowed(name, window.location.origin + '/contact')
+		).toBe(true);
+		expect(isAttributeAllowed(name, '')).toBe(true);
+	});
+
+	it('refuses to write inline styles', () => {
+		expect(isAttributeAllowed('style', 'position:fixed;inset:0')).toBe(
+			false
+		);
+		expect(isAttributeAllowed('STYLE', 'background:url(//x)')).toBe(false);
+	});
+});
