@@ -8,7 +8,7 @@
  */
 
 /* global MutationObserver, history, requestAnimationFrame */
-/* eslint-disable @wordpress/no-global-active-element, no-lonely-if, jsdoc/require-param-type, jsdoc/no-undefined-types */
+/* eslint-disable @wordpress/no-global-active-element, jsdoc/require-param-type */
 
 import { __ } from '@wordpress/i18n';
 
@@ -1190,7 +1190,9 @@ import { __ } from '@wordpress/i18n';
 
 			const span = document.createElement('span');
 			if (this.settings.navigationStyle === 'text') {
-				span.textContent = isNext ? 'Next' : 'Previous';
+				span.textContent = isNext
+					? __('Next', 'designsetgo')
+					: __('Previous', 'designsetgo');
 			} else {
 				// Chevrons (default)
 				span.textContent = isNext ? '›' : '‹';

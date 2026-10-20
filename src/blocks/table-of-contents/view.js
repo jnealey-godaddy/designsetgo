@@ -29,6 +29,35 @@ if (window.location.hash) {
 	window.scrollTo(0, 0);
 }
 
+/**
+ * Undo the early hash hijack above when the TOC can't take over scrolling
+ * (no headings found, or scanning threw): hand scroll restoration back to the
+ * browser and jump to the hash target ourselves, since the browser's own
+ * attempt already happened and was cancelled by the scrollTo(0, 0).
+ */
+function restoreNativeHash() {
+	const hash = window.dsgoInitialHash;
+	if (!hash || window.dsgoHashRestored) {
+		return;
+	}
+	window.dsgoHashRestored = true;
+
+	if ('scrollRestoration' in history) {
+		history.scrollRestoration = 'auto';
+	}
+
+	try {
+		const target = document.getElementById(
+			decodeURIComponent(hash.substring(1))
+		);
+		if (target) {
+			target.scrollIntoView();
+		}
+	} catch {
+		// Malformed hash: nothing to scroll to.
+	}
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 	initTableOfContents();
 });
@@ -79,6 +108,7 @@ class DSGTableOfContents {
 
 			if (headings.length === 0) {
 				this.showEmptyMessage();
+				restoreNativeHash();
 				return;
 			}
 
@@ -97,6 +127,7 @@ class DSGTableOfContents {
 		} catch {
 			// Silently fail - show empty message to user
 			this.showEmptyMessage();
+			restoreNativeHash();
 		}
 	}
 
@@ -134,13 +165,24 @@ class DSGTableOfContents {
 				return;
 			}
 
-			// Skip headings in excluded areas (comments, sidebars, footers, headers)
+			// Skip headings in comments, sidebars and site chrome. Only the
+			// site's own header/footer are excluded; a header, footer or
+			// aside element used inside the content (e.g. a Group's HTML
+			// element setting) is still part of the page's outline.
 			const excludedAreas = [
 				'.site-header',
-				'header',
 				'.site-footer',
-				'footer',
-				'aside',
+				'.wp-site-blocks > header',
+				'.wp-site-blocks > footer',
+				'body > header',
+				'body > footer',
+				'header.wp-block-template-part',
+				'footer.wp-block-template-part',
+				'aside.wp-block-template-part',
+				'[role="banner"]',
+				'[role="contentinfo"]',
+				'[role="complementary"]',
+				'nav',
 				'.sidebar',
 				'.widget',
 				'.comments-area',
@@ -234,7 +276,6 @@ class DSGTableOfContents {
 		a.href = `#${heading.id}`;
 		a.className = 'dsgo-table-of-contents__link';
 		a.textContent = heading.text;
-		a.setAttribute('aria-label', `Jump to section: ${heading.text}`);
 
 		li.appendChild(a);
 		return li;
@@ -429,6 +470,9 @@ class DSGTableOfContents {
 			const target = document.getElementById(targetId);
 
 			if (!target) {
+				if ('scrollRestoration' in history) {
+					history.scrollRestoration = 'auto';
+				}
 				return;
 			}
 
@@ -461,6 +505,7 @@ class DSGTableOfContents {
 		} catch {
 			// Ensure flag is reset even if there's an error
 			this.isInitialHashNavigation = false;
+			restoreNativeHash();
 		}
 	}
 
