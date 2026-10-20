@@ -8,7 +8,7 @@
  */
 
 /* global MutationObserver, history, requestAnimationFrame */
-/* eslint-disable @wordpress/no-global-active-element, jsdoc/require-param-type */
+/* eslint-disable @wordpress/no-global-active-element, jsdoc/require-param-type, jsdoc/no-undefined-types */
 
 import { __ } from '@wordpress/i18n';
 

@@ -34,6 +34,7 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		// wp_enqueue_scripts may enqueue unrelated assets; start from nothing.
 		$scripts->queue = array();
 		$styles->queue  = array();
+		self::forget_queued_deps();
 		// Inline data printed by an earlier test must not satisfy this one.
 		if ( isset( $scripts->registered['designsetgo-frontend'] ) ) {
 			$scripts->registered['designsetgo-frontend']->extra = array();
@@ -42,8 +43,29 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 
 	public function tear_down() {
 		list( wp_scripts()->queue, wp_scripts()->done, wp_styles()->queue, wp_styles()->done ) = $this->saved;
+		self::forget_queued_deps();
 		wp_set_current_user( 0 );
 		parent::tear_down();
+	}
+
+	/**
+	 * Drop the dependency map WP_Dependencies caches for the queue.
+	 *
+	 * `enqueued` checks read it, and only enqueue()/dequeue() clear it, so
+	 * assigning `queue` directly leaves the previous test's dependencies
+	 * looking enqueued (Tabs' view script brings designsetgo-frontend and
+	 * wp-i18n with it).
+	 */
+	private static function forget_queued_deps() {
+		// Private to WP_Dependencies, so reflect on the declaring class.
+		if ( ! property_exists( 'WP_Dependencies', 'all_queued_deps' ) ) {
+			return;
+		}
+		$property = new ReflectionProperty( 'WP_Dependencies', 'all_queued_deps' );
+		$property->setAccessible( true );
+		foreach ( array( wp_scripts(), wp_styles() ) as $registry ) {
+			$property->setValue( $registry, null );
+		}
 	}
 
 	/**
