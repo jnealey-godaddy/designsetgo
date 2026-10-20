@@ -121,22 +121,21 @@ describe('Sticky Sections - Frontend', () => {
 	});
 
 	describe('Reduced motion', () => {
-		test('skips initialization when reduced motion is preferred', () => {
+		test('still assigns z-index under reduced motion (CSS neutralises it)', () => {
 			const container = createContainer(3);
 			global.setMatchMedia(true);
 			loadView();
 
 			const sections = container.querySelectorAll('.dsgo-stack');
-			expect(sections[0].style.zIndex).toBe('');
-			expect(sections[1].style.zIndex).toBe('');
-			expect(
-				sections[1].classList.contains('dsgo-sticky-sections__stacking')
-			).toBe(false);
+			// Sticky/z-index/shadow are disabled by the stylesheet's
+			// reduced-motion rule, so a later preference change needs no re-init.
+			expect(sections[0].style.zIndex).toBe('1');
+			expect(sections[1].style.zIndex).toBe('2');
 		});
 	});
 
 	describe('Mobile viewport', () => {
-		test('skips initialization on mobile viewport (width < 781)', () => {
+		test('still assigns z-index on mobile (CSS neutralises it)', () => {
 			const container = createContainer(3);
 			Object.defineProperty(window, 'innerWidth', {
 				writable: true,
@@ -146,10 +145,8 @@ describe('Sticky Sections - Frontend', () => {
 			loadView();
 
 			const sections = container.querySelectorAll('.dsgo-stack');
-			expect(sections[0].style.zIndex).toBe('');
-			expect(
-				sections[1].classList.contains('dsgo-sticky-sections__stacking')
-			).toBe(false);
+			expect(sections[0].style.zIndex).toBe('1');
+			expect(sections[1].style.zIndex).toBe('2');
 		});
 	});
 
@@ -164,7 +161,7 @@ describe('Sticky Sections - Frontend', () => {
 	});
 
 	describe('Double initialization', () => {
-		test('does not double-initialize the same container', () => {
+		test('re-running init is idempotent and attaches no per-container listeners', () => {
 			const container = createContainer(3);
 
 			// Load once to initialize and set up the reinit listener.
@@ -173,13 +170,17 @@ describe('Sticky Sections - Frontend', () => {
 			const sections = container.querySelectorAll('.dsgo-stack');
 			expect(sections[0].style.zIndex).toBe('1');
 
-			// Mutate z-index to detect if reinit overwrites it.
 			sections[0].style.zIndex = '99';
 
-			// Dispatch reinit event; the WeakSet guard should skip this container.
+			// Reinit recomputes the same result (also fixes sections added later).
+			document.dispatchEvent(new Event('sticky-sections:reinit'));
 			document.dispatchEvent(new Event('sticky-sections:reinit'));
 
-			expect(sections[0].style.zIndex).toBe('99');
+			expect(sections[0].style.zIndex).toBe('1');
+			expect(sections[1].style.zIndex).toBe('2');
+			expect(sections[1].classList).toHaveLength(
+				new Set(sections[1].classList).size
+			);
 		});
 	});
 

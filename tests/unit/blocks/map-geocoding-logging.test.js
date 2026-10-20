@@ -50,7 +50,7 @@ describe.each([
 		'network error with raw address',
 		'network error with encoded URL',
 	])(
-		'warns without the configured address and initializes the fallback on %s',
+		'shows an error without logging the configured address on %s',
 		async (failure) => {
 			if (failure.startsWith('network error')) {
 				const detail =
@@ -82,15 +82,13 @@ describe.each([
 					)
 				)
 				.join(' ');
-			expect(console).toHaveWarned();
+			expect(console).not.toHaveWarned();
 			if (failure !== 'no results') {
 				expect(console).toHaveErrored();
 				expect(errors).toContain('Geocoding');
 			} else {
 				expect(console).not.toHaveErrored();
 			}
-			expect(warnings).toMatch(/could not geocode/i);
-			expect(warnings).toContain('Falling back to default coordinates.');
 			for (const output of [warnings, errors]) {
 				expect(output).not.toContain(ADDRESS);
 				expect(output).not.toContain(encodeURIComponent(ADDRESS));
@@ -98,10 +96,14 @@ describe.each([
 				expect(output).not.toContain('123%20F02%20Test%20Lane');
 				expect(output).not.toContain('Exampleville');
 			}
-			expect(map.config.lat).toBe(40.7128);
-			expect(map.config.lng).toBe(-74.006);
-			expect(initialize).toHaveBeenCalledTimes(1);
-			expect(initialize).toHaveBeenCalledWith(map);
+			// No silent New York fallback: the visitor gets an accessible error.
+			expect(map.config.lat).toBe(0);
+			expect(map.config.lng).toBe(0);
+			expect(initialize).not.toHaveBeenCalled();
+			const alert = map.element.querySelector('.dsgo-map__error');
+			expect(alert).not.toBeNull();
+			expect(alert.getAttribute('role')).toBe('alert');
+			expect(alert.textContent).not.toContain(ADDRESS);
 		}
 	);
 

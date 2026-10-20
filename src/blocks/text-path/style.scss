@@ -40,3 +40,15 @@
 		text-decoration: none;
 	}
 }
+
+.wp-block-designsetgo-text-path :where(.dsgo-text-path__pause) {
+	display: block;
+	margin-block-start: 0.5em;
+	padding: 0.25em 0.75em;
+	border: 1px solid currentcolor;
+	border-radius: 2px;
+	background: transparent;
+	color: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+}

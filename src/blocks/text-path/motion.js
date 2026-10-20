@@ -117,8 +117,12 @@ function getMotionSettings(block) {
 	};
 }
 
+function canRun(state) {
+	return state.visible && !state.userPaused && !document.hidden;
+}
+
 function renderFrame(state, timestamp) {
-	if (!state.textPath.isConnected || document.hidden) {
+	if (!state.textPath.isConnected || !canRun(state)) {
 		state.frame = null;
 		return;
 	}
@@ -147,7 +151,7 @@ function renderFrame(state, timestamp) {
 }
 
 function start(state) {
-	if (state.frame !== null || document.hidden) {
+	if (state.frame !== null || !canRun(state)) {
 		return;
 	}
 
@@ -219,9 +223,35 @@ export function stopTextPathMotion(root = document) {
 		}
 
 		pause(state);
+		state.observer?.disconnect();
+		state.fontsCancelled = true;
 		state.textPath.setAttribute('startOffset', `${state.initialOffset}%`);
 		motionStates.delete(block);
 	});
+}
+
+/**
+ * Pause or resume a block's motion on the visitor's behalf (WCAG 2.2.2).
+ *
+ * @param {Element} block  Motion block element.
+ * @param {boolean} paused Whether motion should be paused.
+ * @return {boolean} Whether the block has motion that was updated.
+ */
+export function setTextPathMotionPaused(block, paused) {
+	const state = motionStates.get(block);
+
+	if (!state) {
+		return false;
+	}
+
+	state.userPaused = paused;
+	if (paused) {
+		pause(state);
+	} else {
+		start(state);
+	}
+
+	return true;
 }
 
 export function initTextPathMotion(root = document) {
@@ -255,8 +285,40 @@ export function initTextPathMotion(root = document) {
 			elapsedBeforeRun: 0,
 			frame: null,
 			startTime: null,
+			// Assume visible until an observer says otherwise (no observer
+			// support: always run, as before).
+			visible: true,
+			userPaused: false,
+			observer: null,
+			fontsCancelled: false,
 		};
 		motionStates.set(block, state);
+
+		// Only animate while on screen.
+		if (typeof window.IntersectionObserver === 'function') {
+			state.visible = false;
+			state.observer = new window.IntersectionObserver((entries) => {
+				const entry = entries[entries.length - 1];
+				state.visible = !!entry?.isIntersecting;
+				if (state.visible) {
+					start(state);
+				} else {
+					pause(state);
+				}
+			});
+			state.observer.observe(block);
+		}
+
+		// The travel range depends on the text length, which changes once
+		// web fonts load; measure again then.
+		document.fonts?.ready?.then(() => {
+			if (state.fontsCancelled || !state.textPath.isConnected) {
+				return;
+			}
+			const refreshed = getOpenPathMaximumOffset(state.textPath);
+			state.maximumOffset = refreshed;
+		});
+
 		start(state);
 	});
 }

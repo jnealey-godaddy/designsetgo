@@ -61,6 +61,10 @@ function createImageAccordion({
  * @param {boolean} isTouch Whether to simulate a touch device.
  */
 function setTouchDevice(isTouch) {
+	// view.js asks `(hover: hover)` per interaction, not touch support.
+	window.matchMedia = jest.fn((query) => ({
+		matches: query === '(hover: hover)' ? !isTouch : false,
+	}));
 	if (isTouch) {
 		window.ontouchstart = null;
 	} else {
@@ -133,6 +137,17 @@ function cleanup() {
 }
 
 describe('Image Accordion - Frontend', () => {
+	test('labels a panel from its heading instead of overriding the name', () => {
+		const accordion = createImageAccordion({ itemCount: 1 });
+		accordion.querySelector('.dsgo-image-accordion-item').innerHTML =
+			'<h3>Hello</h3><a href="#x">More</a>';
+		loadView();
+		const item = accordion.querySelector('.dsgo-image-accordion-item');
+		const heading = item.querySelector('h3');
+		expect(item.getAttribute('aria-labelledby')).toBe(heading.id);
+		expect(item.hasAttribute('aria-label')).toBe(false);
+	});
+
 	beforeEach(() => {
 		setTouchDevice(false);
 	});
@@ -151,7 +166,10 @@ describe('Image Accordion - Frontend', () => {
 			);
 
 			items.forEach((item, index) => {
-				expect(item.getAttribute('role')).toBe('button');
+				// A labelled group, not a button: a button's name would hide
+				// the panel's heading, caption and links.
+				expect(item.getAttribute('role')).toBe('group');
+				expect(item.getAttribute('aria-expanded')).toBeNull();
 				expect(item.getAttribute('aria-label')).toBe(
 					`Image panel ${index + 1}`
 				);
@@ -201,7 +219,7 @@ describe('Image Accordion - Frontend', () => {
 			items.forEach((item) => {
 				expect(item.classList.contains('is-expanded')).toBe(false);
 				expect(item.classList.contains('is-collapsed')).toBe(false);
-				expect(item.getAttribute('aria-expanded')).toBe('false');
+				expect(item.classList.contains('is-expanded')).toBe(false);
 			});
 		});
 	});
@@ -222,11 +240,11 @@ describe('Image Accordion - Frontend', () => {
 			items[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
 			expect(items[1].classList.contains('is-expanded')).toBe(true);
-			expect(items[1].getAttribute('aria-expanded')).toBe('true');
+			expect(items[1].classList.contains('is-expanded')).toBe(true);
 
 			// Others should be collapsed
 			expect(items[0].classList.contains('is-collapsed')).toBe(true);
-			expect(items[0].getAttribute('aria-expanded')).toBe('false');
+			expect(items[0].classList.contains('is-expanded')).toBe(false);
 			expect(items[2].classList.contains('is-collapsed')).toBe(true);
 		});
 
@@ -295,7 +313,7 @@ describe('Image Accordion - Frontend', () => {
 			items[1].dispatchEvent(keyEvent);
 
 			expect(items[1].classList.contains('is-expanded')).toBe(true);
-			expect(items[1].getAttribute('aria-expanded')).toBe('true');
+			expect(items[1].classList.contains('is-expanded')).toBe(true);
 		});
 
 		test('Space expands item', () => {
@@ -318,7 +336,7 @@ describe('Image Accordion - Frontend', () => {
 			items[2].dispatchEvent(keyEvent);
 
 			expect(items[2].classList.contains('is-expanded')).toBe(true);
-			expect(items[2].getAttribute('aria-expanded')).toBe('true');
+			expect(items[2].classList.contains('is-expanded')).toBe(true);
 		});
 	});
 
