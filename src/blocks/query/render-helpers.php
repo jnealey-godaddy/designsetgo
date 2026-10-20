@@ -37,6 +37,28 @@ defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/param-scoping.php';
 
+if ( ! function_exists( 'designsetgo_query_status_html' ) ) {
+	/**
+	 * The live-region element announcing result counts. Shared by first paint and
+	 * the REST refresh so both emit identical markup.
+	 *
+	 * @param string $query_id    Query id.
+	 * @param int    $total_items Total matching items.
+	 * @return string
+	 */
+	function designsetgo_query_status_html( $query_id, $total_items ) {
+		return sprintf(
+			'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d" data-dsgo-msg-none="%3$s" data-dsgo-msg-one="%4$s" data-dsgo-msg-many="%5$s"></div>',
+			esc_attr( $query_id ),
+			(int) $total_items,
+			esc_attr__( 'No results found', 'designsetgo' ),
+			esc_attr__( '1 result found', 'designsetgo' ),
+			/* translators: %d: number of results */
+			esc_attr__( '%d results found', 'designsetgo' )
+		);
+	}
+}
+
 if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
 
 	/**
@@ -634,6 +656,33 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	}
 
 	/**
+	 * The Interactivity context a Query region carries for view.js.
+	 *
+	 * A random-order Query also carries the seed its first paint used, so Load
+	 * more continues the same shuffle instead of repeating and skipping posts.
+	 *
+	 * @param string $query_id Unique query identifier.
+	 * @param string $source   Query source.
+	 * @param int    $page     Current page number.
+	 * @return array
+	 */
+	function designsetgo_query_region_context( $query_id, $source, $page ) {
+		$context = array(
+			'queryId' => $query_id,
+			'source'  => $source,
+			'page'    => $page,
+			'busy'    => false,
+			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+			'nonce'   => designsetgo_query_rest_nonce(),
+		);
+		$seeds   = isset( $GLOBALS['designsetgo_query_rand_seeds'] ) ? (array) $GLOBALS['designsetgo_query_rand_seeds'] : array();
+		if ( ! empty( $seeds[ (string) $query_id ] ) ) {
+			$context['seed'] = (int) $seeds[ (string) $query_id ];
+		}
+		return $context;
+	}
+
+	/**
 	 * Retrieve the last-render state for a Query ID.
 	 *
 	 * @param string $query_id Unique query identifier.
@@ -694,6 +743,12 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		$query_id        = sanitize_key( (string) $context['query_id'] );
 		$full_inner_html = (string) $context['inner_html'];
 		$parsed_children = function_exists( 'parse_blocks' ) ? parse_blocks( $full_inner_html ) : array();
+
+		// The container below builds its own render context, so a Load more
+		// request's shuffle seed is handed to the posts query by Query ID.
+		if ( ! empty( $context['rand_seed'] ) ) {
+			$GLOBALS['designsetgo_query_requested_rand_seeds'][ $query_id ] = absint( $context['rand_seed'] );
+		}
 
 		// Delegate to the shared container renderer. The REST path has no outer
 		// block wrapper (no $block instance), so we emit a simple class-only
@@ -879,20 +934,9 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			if ( ! $results_child ) {
 				$children_html_direct = (string) $result['html'];
 				$blobs                = designsetgo_query_render_blobs( $query_id, $attributes, $parsed_children, $refresh_source_post_id );
-				$status               = sprintf(
-					'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
-					esc_attr( $query_id ),
-					(int) $total_items
-				);
+				$status               = designsetgo_query_status_html( $query_id, $total_items );
 				$wp_context_legacy    = wp_json_encode(
-					array(
-						'queryId' => $query_id,
-						'source'  => $source,
-						'page'    => (int) $page,
-						'busy'    => false,
-						'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-						'nonce'   => designsetgo_query_rest_nonce(),
-					),
+					designsetgo_query_region_context( $query_id, $source, (int) $page ),
 					JSON_HEX_APOS
 				);
 				$iapi_attrs_legacy    = sprintf(
@@ -969,14 +1013,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// IAPI + state-announcement markup. Appended to the block wrapper so
 		// view.js has a single refresh target.
 		$wp_context = wp_json_encode(
-			array(
-				'queryId' => $query_id,
-				'source'  => $source,
-				'page'    => (int) $page,
-				'busy'    => false,
-				'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-				'nonce'   => designsetgo_query_rest_nonce(),
-			),
+			designsetgo_query_region_context( $query_id, $source, (int) $page ),
 			JSON_HEX_APOS
 		);
 
@@ -994,11 +1031,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 
 		// Signed definition the public refresh route renders from.
 		$blobs  = designsetgo_query_render_blobs( $query_id, $attributes, $parsed_children, $refresh_source_post_id );
-		$status = sprintf(
-			'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
-			esc_attr( $query_id ),
-			(int) $total_items
-		);
+		$status = designsetgo_query_status_html( $query_id, $total_items );
 
 		return sprintf(
 			'<div %1$s>%2$s%3$s%4$s</div>',

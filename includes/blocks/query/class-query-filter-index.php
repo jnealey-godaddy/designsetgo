@@ -260,6 +260,43 @@ class FilterIndex {
 	}
 
 	/**
+	 * Deletes index rows that point at a deleted term.
+	 *
+	 * Core's wp_delete_term() detaches posts without firing set_object_terms, so
+	 * the per-post hooks never see it and the rows would keep counting a term
+	 * that no longer exists.
+	 *
+	 * @param int    $term_id  Deleted term ID.
+	 * @param string $taxonomy Taxonomy the term belonged to.
+	 * @return void
+	 */
+	public static function remove_term_values( int $term_id, string $taxonomy ): void {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$removed = false;
+		foreach ( FilterRegistry::all() as $filter_key => $config ) {
+			if ( 'taxonomy' !== ( $config['type'] ?? '' ) || ( $config['source'] ?? '' ) !== $taxonomy ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
+			$wpdb->delete(
+				self::table_name(),
+				array(
+					'filter_key'   => (string) $filter_key,
+					'filter_value' => (string) $term_id,
+				),
+				array( '%s', '%s' )
+			);
+			$removed = true;
+		}
+		if ( $removed ) {
+			self::bump_counts_cache();
+		}
+	}
+
+	/**
 	 * Deletes all index rows for a given object.
 	 *
 	 * Scoped by both object_id and object_type to avoid cross-type collisions

@@ -115,7 +115,8 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 			if ( is_numeric( $value ) ) {
 				return array( (int) $value );
 			}
-			$unserialized = maybe_unserialize( $value );
+			// Never instantiate objects from stored meta (PHP object injection).
+			$unserialized = is_serialized( $value ) ? unserialize( $value, array( 'allowed_classes' => false ) ) : false; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- allowed_classes is false.
 			if ( is_array( $unserialized ) ) {
 				return designsetgo_query_relationship_normalize_ids( $unserialized );
 			}

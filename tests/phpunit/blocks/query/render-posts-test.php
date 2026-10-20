@@ -101,6 +101,77 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$this->assertSame( 1, $result['totalItems'] );
 	}
 
+	public function test_url_sort_override_drops_meta_key_for_non_meta_sort() {
+		$this->load_helpers();
+		$atts = designsetgo_query_defaults( array( 'postType' => 'post', 'orderBy' => 'meta_value', 'orderByMetaKey' => 'price' ) );
+
+		$args = designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array( 'sort' => 'title.ASC' ) ) );
+
+		$this->assertSame( 'title', $args['orderby'] );
+		$this->assertArrayNotHasKey( 'meta_key', $args );
+	}
+
+	public function test_meta_sort_option_without_a_key_is_ignored() {
+		$this->load_helpers();
+		$atts = designsetgo_query_defaults( array( 'postType' => 'post', 'orderBy' => 'date' ) );
+
+		$args = designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array( 'sort' => 'meta_value.ASC' ) ) );
+
+		$this->assertSame( 'date', $args['orderby'] );
+	}
+
+	public function test_random_order_is_seeded_so_pages_do_not_repeat() {
+		$this->load_helpers();
+		$atts = designsetgo_query_defaults( array( 'postType' => 'post', 'orderBy' => 'rand' ) );
+
+		$args = designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array() ) );
+		$this->assertArrayHasKey( 'dsgo_rand_seed', $args );
+
+		$query = new WP_Query( $args );
+		$this->assertStringContainsString( 'RAND(' . $args['dsgo_rand_seed'] . ')', $query->request );
+	}
+
+	public function test_load_more_continues_the_first_paint_seed() {
+		$this->load_helpers();
+		$atts = designsetgo_query_defaults( array( 'postType' => 'post', 'orderBy' => 'rand' ) );
+
+		$first = designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array(), 'query_id' => 'qrand' ) );
+		$this->assertGreaterThan( 0, $first['dsgo_rand_seed'] );
+		$this->assertSame( $first['dsgo_rand_seed'], designsetgo_query_region_context( 'qrand', 'posts', 1 )['seed'] );
+
+		$next = designsetgo_query_build_posts_args(
+			$atts,
+			array(
+				'page'      => 2,
+				'params'    => array(),
+				'query_id'  => 'qrand',
+				'rand_seed' => $first['dsgo_rand_seed'],
+			)
+		);
+		$this->assertSame( $first['dsgo_rand_seed'], $next['dsgo_rand_seed'] );
+	}
+
+	public function test_region_render_hands_the_requested_seed_to_the_posts_query() {
+		$this->load_helpers();
+		self::factory()->post->create_many( 3, array( 'post_status' => 'publish' ) );
+
+		designsetgo_query_render_region(
+			array(
+				'queryId' => 'qseedreg',
+				'orderBy' => 'rand',
+				'perPage' => 1,
+			),
+			array(
+				'query_id'   => 'qseedreg',
+				'page'       => 2,
+				'inner_html' => '<!-- wp:designsetgo/query-results --><div class="wp-block-designsetgo-query-results"><!-- wp:post-title /--></div><!-- /wp:designsetgo/query-results -->',
+				'rand_seed'  => 4242,
+			)
+		);
+
+		$this->assertSame( 4242, $GLOBALS['designsetgo_query_rand_seeds']['qseedreg'] ?? null );
+	}
+
 	public function test_applies_designsetgo_query_args_filter_hook() {
 		self::factory()->post->create_many( 5, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();

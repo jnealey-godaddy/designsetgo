@@ -248,6 +248,31 @@ function dsgoGetQueryContainer(queryId, el) {
 	return region?.querySelector(selector) || doc.querySelector(selector);
 }
 
+/**
+ * A random-order Query's shuffle seed, from its region.
+ *
+ * On first paint the Interactivity API merges the region's context (which
+ * holds the seed) into the pagination and filter contexts. After a swap the
+ * delegated handlers read only an element's own context, so fall back to the
+ * region, whose outer element and context survive every swap.
+ *
+ * @param {Object}           ctx Context of the control that was used.
+ * @param {HTMLElement|null} el  The control, to find its own region.
+ * @return {number|undefined} Seed, or undefined for a non-random Query.
+ */
+function dsgoQuerySeed(ctx, el) {
+	if (ctx?.seed) {
+		return ctx.seed;
+	}
+	const selector = `[data-dsgo-query-region="${ctx?.queryId}"]`;
+	const region = el?.closest?.(selector) || document.querySelector(selector);
+	try {
+		return JSON.parse(region?.getAttribute('data-wp-context') || '{}').seed;
+	} catch {
+		return undefined;
+	}
+}
+
 async function dsgoLoadMorePlain(ctx, button) {
 	if (!ctx?.queryId || ctx.busy || !(button instanceof HTMLElement)) {
 		return;
@@ -290,6 +315,8 @@ async function dsgoLoadMorePlain(ctx, button) {
 			params: dsgoCollectParams(new URL(window.location.href)),
 			currentUrl: window.location.href,
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// Continue a random-order Query's shuffle rather than re-rolling it.
+			seed: dsgoQuerySeed(ctx, button),
 		});
 		const res = await fetch(request.url, request.init);
 
@@ -726,6 +753,9 @@ function* dsgoQueryRefresh(ctx, url) {
 			params: dsgoCollectParams(url),
 			currentUrl: url.toString(),
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// The region's context (and its seed) outlives this swap, so keep
+			// the shuffle Load more will continue.
+			seed: dsgoQuerySeed(ctx, null),
 		});
 		const res = yield fetch(request.url, request.init);
 
@@ -848,6 +878,9 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			params: dsgoCollectParams(url),
 			currentUrl: url.toString(),
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// The region's context (and its seed) outlives this swap, so keep
+			// the shuffle Load more will continue.
+			seed: dsgoQuerySeed(ctx, null),
 		});
 		const res = await fetch(request.url, request.init);
 

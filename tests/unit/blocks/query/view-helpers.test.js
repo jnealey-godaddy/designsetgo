@@ -206,6 +206,19 @@ describe('announceResultCount', () => {
 		).toBe('42 results found');
 	});
 
+	it('uses server-provided translated templates when present', () => {
+		mountHTML(
+			'<div role="status" data-dsgo-query-status="q1" data-dsgo-msg-none="Keine" data-dsgo-msg-one="Ein Ergebnis" data-dsgo-msg-many="%d Ergebnisse"></div>'
+		);
+		const el = document.querySelector('[data-dsgo-query-status="q1"]');
+		announceResultCount('q1', 0);
+		expect(el.textContent).toBe('Keine');
+		announceResultCount('q1', 1);
+		expect(el.textContent).toBe('Ein Ergebnis');
+		announceResultCount('q1', 7);
+		expect(el.textContent).toBe('7 Ergebnisse');
+	});
+
 	it('is a no-op when the status element is missing', () => {
 		mountHTML('<div></div>');
 		expect(() => announceResultCount('q1', 5)).not.toThrow();

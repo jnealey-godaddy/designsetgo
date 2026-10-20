@@ -55,7 +55,7 @@ class DesignSetGo_Query_Preview_Route_Test extends WP_UnitTestCase {
 
 		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		$request->set_param( 'attributes', array( 'source' => 'users' ) );
+		$request->set_param( 'attributes', array( 'source' => 'terms' ) );
 
 		$response = rest_do_request( $request );
 		// Should be 200 (an array, possibly empty — no users created yet is fine).
@@ -83,7 +83,7 @@ class DesignSetGo_Query_Preview_Route_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	public function test_users_source_returns_items_array() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		$this->factory->user->create_many( 3, array( 'role' => 'subscriber' ) );
 
 		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/preview' );
@@ -105,7 +105,7 @@ class DesignSetGo_Query_Preview_Route_Test extends WP_UnitTestCase {
 	}
 
 	public function test_users_source_respects_per_page() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		$this->factory->user->create_many( 10, array( 'role' => 'subscriber' ) );
 
 		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/preview' );
@@ -117,6 +117,37 @@ class DesignSetGo_Query_Preview_Route_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertCount( 4, $data );
+	}
+
+	public function test_users_source_shows_only_authors_without_list_users() {
+		$author = $this->factory->user->create( array( 'role' => 'author', 'display_name' => 'Published Author' ) );
+		$this->factory->post->create( array( 'post_author' => $author, 'post_status' => 'publish' ) );
+		$this->factory->user->create( array( 'role' => 'subscriber', 'display_name' => 'Quiet Subscriber' ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/preview' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'attributes', array( 'source' => 'users', 'perPage' => 50 ) );
+
+		$response = rest_do_request( $request );
+		$names    = wp_list_pluck( $response->get_data(), 'name' );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertContains( 'Published Author', $names );
+		$this->assertNotContains( 'Quiet Subscriber', $names );
+	}
+
+	public function test_terms_source_rejects_a_non_public_taxonomy_for_a_contributor() {
+		register_taxonomy( 'dsgo_internal_tax', 'post', array( 'public' => false, 'show_ui' => false, 'show_in_rest' => false ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'contributor' ) ) );
+
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/preview' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'attributes', array( 'source' => 'terms', 'taxonomy' => 'dsgo_internal_tax' ) );
+
+		$status = rest_do_request( $request )->get_status();
+		unregister_taxonomy( 'dsgo_internal_tax' );
+		$this->assertSame( 403, $status );
 	}
 
 	// -------------------------------------------------------------------------

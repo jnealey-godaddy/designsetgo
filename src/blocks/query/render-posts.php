@@ -243,51 +243,59 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( $use_groups && ! empty( $collected_ids ) ) {
 			require_once __DIR__ . '/render-helpers.php';
 			$groups = designsetgo_query_partition_items( $collected_ids, $atts['groupBy'] );
-			foreach ( $groups as $group ) {
-				// Render group header block(s) with group context.
-				$header_html_out = '';
-				foreach ( $group_header_blocks as $hb ) {
-					$header_block     = new WP_Block(
-						$hb,
-						array(
-							'designsetgo/queryId'    => sanitize_key( (string) ( $context['query_id'] ?? '' ) ),
-							'designsetgo/groupLabel' => (string) $group['label'],
-							'designsetgo/groupValue' => (string) $group['value'],
-						)
-					);
-					$header_html_out .= $header_block->render();
-				}
-				// Render items in this group.
-				// Pass both the flat cross-group index (designsetgo/itemIndex) and a
-				// per-group zero-based index (designsetgo/groupItemIndex) so authors
-				// can target either in custom bindings or visibility rules.
-				$group_items_html = '';
-				$group_item_index = 0;
-				foreach ( $group['ids'] as $gid ) {
-					$post_obj = get_post( $gid );
-					if ( ! $post_obj ) {
-						continue;
+			try {
+				foreach ( $groups as $group ) {
+					// Render group header block(s) with group context.
+					$header_html_out = '';
+					foreach ( $group_header_blocks as $hb ) {
+						$header_block     = new WP_Block(
+							$hb,
+							array(
+								'designsetgo/queryId'    => sanitize_key( (string) ( $context['query_id'] ?? '' ) ),
+								'designsetgo/groupLabel' => (string) $group['label'],
+								'designsetgo/groupValue' => (string) $group['value'],
+							)
+						);
+						$header_html_out .= $header_block->render();
 					}
-					$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
-					$group_items_html .= designsetgo_query_render_item(
-						$item_template_html,
-						array(
-							'postId'                     => (int) $gid,
-							'postType'                   => $post_obj->post_type,
-							'index'                      => $item_index,
-							'designsetgo/itemIndex'      => $item_index,
-							'designsetgo/groupItemIndex' => $group_item_index,
-						),
-						$atts['itemTagName']
+					// Render items in this group.
+					// Pass both the flat cross-group index (designsetgo/itemIndex) and a
+					// per-group zero-based index (designsetgo/groupItemIndex) so authors
+					// can target either in custom bindings or visibility rules.
+					$group_items_html = '';
+					$group_item_index = 0;
+					foreach ( $group['ids'] as $gid ) {
+						$post_obj = get_post( $gid );
+						if ( ! $post_obj ) {
+							continue;
+						}
+						// Core blocks in the item template read the global post, so it
+						// must be this item, not the page the loop sits on.
+						setup_postdata( $post_obj );
+						$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
+						$group_items_html .= designsetgo_query_render_item(
+							$item_template_html,
+							array(
+								'postId'                => (int) $gid,
+								'postType'              => $post_obj->post_type,
+								'index'                 => $item_index,
+								'designsetgo/itemIndex' => $item_index,
+								'designsetgo/groupItemIndex' => $group_item_index,
+							),
+							$atts['itemTagName']
+						);
+						++$group_item_index;
+					}
+					$items_html .= sprintf(
+						'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
+						esc_attr( (string) $group['value'] ),
+						$header_html_out,     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output.
+						$group_items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from designsetgo_query_render_item().
 					);
-					++$group_item_index;
 				}
-				$items_html .= sprintf(
-					'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
-					esc_attr( (string) $group['value'] ),
-					$header_html_out,     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output.
-					$group_items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from designsetgo_query_render_item().
-				);
+			} finally {
+				wp_reset_postdata();
+				$post = $saved_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 			}
 		}
 
@@ -573,13 +581,61 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$sort_by         = sanitize_key( $parts[0] );
 			$sort_dir        = isset( $parts[1] ) && 'ASC' === strtoupper( $parts[1] ) ? 'ASC' : 'DESC';
 			$allowed_orderby = array( 'date', 'title', 'menu_order', 'rand', 'comment_count', 'meta_value', 'meta_value_num' );
-			if ( in_array( $sort_by, $allowed_orderby, true ) ) {
+			$is_meta_sort    = in_array( $sort_by, array( 'meta_value', 'meta_value_num' ), true );
+			// Sort options carry no meta key, so a meta sort needs one from the
+			// block; without it the option can't be honoured and is ignored
+			// rather than silently falling back to date.
+			$meta_key = isset( $args['meta_key'] ) ? $args['meta_key'] : sanitize_text_field( (string) $atts['orderByMetaKey'] );
+			if ( in_array( $sort_by, $allowed_orderby, true ) && ( ! $is_meta_sort || '' !== $meta_key ) ) {
 				$args['orderby'] = $sort_by;
 				$args['order']   = $sort_dir;
+				if ( $is_meta_sort ) {
+					$args['meta_key'] = $meta_key; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				} else {
+					// A leftover meta_key would drop every post that lacks it.
+					unset( $args['meta_key'] );
+				}
+			}
+		}
+
+		// Random order re-rolls on every request, so offset pagination would
+		// repeat and skip posts. Each first paint picks a fresh seed, which the
+		// region hands back with Load more / infinite scroll so later pages
+		// continue the same shuffle.
+		if ( 'rand' === $args['orderby'] ) {
+			$query_key = (string) ( $context['query_id'] ?? '' );
+			$requested = isset( $GLOBALS['designsetgo_query_requested_rand_seeds'] ) ? (array) $GLOBALS['designsetgo_query_requested_rand_seeds'] : array();
+			$seed      = isset( $context['rand_seed'] ) ? absint( $context['rand_seed'] ) : absint( $requested[ $query_key ] ?? 0 );
+			if ( $seed < 1 ) {
+				$seed = wp_rand( 1, 2147483647 );
+			}
+			$seed = (int) apply_filters( 'designsetgo_query_rand_seed', $seed, $atts, $context );
+
+			$GLOBALS['designsetgo_query_rand_seeds'][ $query_key ] = $seed;
+			$args['dsgo_rand_seed']                                = $seed;
+			if ( ! has_filter( 'posts_orderby', 'designsetgo_query_seeded_rand_orderby' ) ) {
+				add_filter( 'posts_orderby', 'designsetgo_query_seeded_rand_orderby', 10, 2 );
 			}
 		}
 
 		return $args;
 	}
 
+endif;
+
+if ( ! function_exists( 'designsetgo_query_seeded_rand_orderby' ) ) :
+	/**
+	 * Swap RAND() for RAND(seed) on Query loops that asked for a seeded shuffle.
+	 *
+	 * @param string    $orderby ORDER BY clause.
+	 * @param \WP_Query $query   Query.
+	 * @return string
+	 */
+	function designsetgo_query_seeded_rand_orderby( $orderby, $query ) {
+		$seed = $query instanceof \WP_Query ? $query->get( 'dsgo_rand_seed' ) : '';
+		if ( '' === $seed || null === $seed || false === strpos( (string) $orderby, 'RAND()' ) ) {
+			return $orderby;
+		}
+		return str_replace( 'RAND()', 'RAND(' . (int) $seed . ')', $orderby );
+	}
 endif;

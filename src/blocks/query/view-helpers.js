@@ -250,13 +250,20 @@ export function announceResultCount(
 		return;
 	}
 	const n = Number.isFinite(totalItems) ? totalItems : 0;
+	// Translated templates arrive from PHP as data attributes: this file is a
+	// script module, where @wordpress/i18n is not reliably available. English
+	// is the fallback when the attributes are absent.
+	const attr = (name, fallback) => statusEl.getAttribute(name) || fallback;
 	let message;
 	if (n === 0) {
-		message = 'No results found';
+		message = attr('data-dsgo-msg-none', 'No results found');
 	} else if (n === 1) {
-		message = '1 result found';
+		message = attr('data-dsgo-msg-one', '1 result found');
 	} else {
-		message = `${n} results found`;
+		message = attr('data-dsgo-msg-many', '%d results found').replace(
+			'%d',
+			String(n)
+		);
 	}
 	statusEl.textContent = message;
 	statusEl.setAttribute('data-dsgo-total-items', String(n));
@@ -444,6 +451,8 @@ export function readRefreshSource(blobsHost) {
  * @param {boolean} [request.multiQuery] Whether the page has other Queries,
  *                                       so rendered controls and pagination
  *                                       use per-Query keys.
+ * @param {number}  [request.seed]       A random-order Query's first-paint
+ *                                       seed, so later pages continue it.
  * @return {{url: string, init: Object}} fetch() URL and options.
  */
 export function buildRefreshRequest(ctx, refreshSource, request) {
@@ -469,6 +478,7 @@ export function buildRefreshRequest(ctx, refreshSource, request) {
 				params: request.params,
 				currentUrl: request.currentUrl,
 				multiQuery: !!request.multiQuery,
+				...(request.seed ? { seed: request.seed } : {}),
 			}),
 		},
 	};

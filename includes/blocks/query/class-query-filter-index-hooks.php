@@ -53,6 +53,7 @@ class FilterIndexHooks {
 		self::$registered = true;
 		add_action( 'save_post', array( __CLASS__, 'on_save_post' ), 20, 2 );
 		add_action( 'deleted_post', array( __CLASS__, 'on_deleted_post' ), 20, 1 );
+		add_action( 'delete_term', array( __CLASS__, 'on_delete_term' ), 20, 3 );
 		add_action( 'set_object_terms', array( __CLASS__, 'on_set_object_terms' ), 20, 4 );
 		add_action( 'added_post_meta', array( __CLASS__, 'on_post_meta_changed' ), 20, 3 );
 		add_action( 'updated_post_meta', array( __CLASS__, 'on_post_meta_changed' ), 20, 3 );
@@ -226,6 +227,18 @@ class FilterIndexHooks {
 	 */
 	public static function on_deleted_post( int $post_id ): void {
 		FilterIndex::remove_object( 'post', $post_id );
+	}
+
+	/**
+	 * Purges index rows for a deleted term.
+	 *
+	 * @param int    $term_id  Term ID.
+	 * @param int    $tt_id    Unused — term taxonomy ID.
+	 * @param string $taxonomy Taxonomy slug.
+	 * @return void
+	 */
+	public static function on_delete_term( $term_id, $tt_id, $taxonomy ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+		FilterIndex::remove_term_values( (int) $term_id, (string) $taxonomy );
 	}
 
 	/**

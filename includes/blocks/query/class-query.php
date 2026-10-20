@@ -72,6 +72,13 @@ class Controller {
 						'type'    => 'boolean',
 						'default' => false,
 					),
+					// A random-order Query's first-paint seed, so later pages
+					// continue the same shuffle.
+					'seed'       => array(
+						'type'              => 'integer',
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					),
 				),
 			)
 		);
@@ -264,11 +271,13 @@ class Controller {
 
 		if ( 'users' === $source ) {
 			$user_query = new \WP_User_Query(
-				array(
-					'number'  => $per_page,
-					'orderby' => 'registered',
-					'order'   => 'DESC',
-					'fields'  => array( 'ID', 'display_name' ),
+				self::restrict_preview_users(
+					array(
+						'number'  => $per_page,
+						'orderby' => 'registered',
+						'order'   => 'DESC',
+						'fields'  => array( 'ID', 'display_name' ),
+					)
 				)
 			);
 			$items      = array();
@@ -286,7 +295,14 @@ class Controller {
 			$taxonomy = isset( $attributes['taxonomy'] )
 				? sanitize_key( $attributes['taxonomy'] )
 				: 'category';
-			$terms    = get_terms(
+			if ( ! self::can_preview_taxonomy( $taxonomy ) ) {
+				return new \WP_Error(
+					'rest_forbidden',
+					__( 'You cannot preview this taxonomy.', 'designsetgo' ),
+					array( 'status' => 403 )
+				);
+			}
+			$terms = get_terms(
 				array(
 					'taxonomy'   => $taxonomy,
 					'number'     => $per_page,
@@ -311,6 +327,23 @@ class Controller {
 		}
 
 		return rest_ensure_response( array() );
+	}
+
+	/**
+	 * Whether the current user may see a taxonomy's terms in an editor preview.
+	 *
+	 * Only taxonomies meant to be seen (public or with an admin UI) that the user
+	 * can assign terms from. Internal taxonomies stay hidden from contributors.
+	 *
+	 * @param string $taxonomy Taxonomy slug.
+	 * @return bool
+	 */
+	public static function can_preview_taxonomy( string $taxonomy ): bool {
+		$object = get_taxonomy( $taxonomy );
+		if ( ! $object ) {
+			return false;
+		}
+		return ( ! empty( $object->public ) || ! empty( $object->show_ui ) ) && current_user_can( $object->cap->assign_terms );
 	}
 
 	/**
@@ -546,6 +579,14 @@ class Controller {
 		$query_id   = (string) $request->get_param( 'queryId' );
 		$source     = sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) );
 
+		if ( 'terms' === $source && ! self::can_preview_taxonomy( sanitize_key( (string) ( $attributes['taxonomy'] ?? 'category' ) ) ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You cannot preview this taxonomy.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		// Anyone who can edit posts can preview, so a query is limited to post
 		// types they could already see or edit — never coupons, orders, etc.
 		// Every source but users and terms can reach the posts renderer:
@@ -564,9 +605,13 @@ class Controller {
 		// each path to them, after the query-scoped filter too: its name comes
 		// from the caller's queryId.
 		$restrict = array( __CLASS__, 'restrict_preview_post_types' );
+		$users    = array( __CLASS__, 'restrict_preview_users' );
 		$hooks    = array( 'designsetgo_query_args', 'designsetgo/query/' . $query_id . '/args' );
 		foreach ( $hooks as $hook ) {
 			add_filter( $hook, $restrict, PHP_INT_MAX );
+			if ( 'users' === $source ) {
+				add_filter( $hook, $users, PHP_INT_MAX );
+			}
 		}
 
 		try {
@@ -580,8 +625,26 @@ class Controller {
 		} finally {
 			foreach ( $hooks as $hook ) {
 				remove_filter( $hook, $restrict, PHP_INT_MAX );
+				remove_filter( $hook, $users, PHP_INT_MAX );
 			}
 		}
+	}
+
+	/**
+	 * Narrow an editor preview's user query for someone who can't list users.
+	 *
+	 * They see only people with published posts, who are public already through
+	 * their author archives, rather than every account on the site.
+	 *
+	 * @param mixed $args WP_User_Query args.
+	 * @return mixed Args, limited to authors when the user can't list users.
+	 */
+	public static function restrict_preview_users( $args ) {
+		if ( ! is_array( $args ) || current_user_can( 'list_users' ) ) {
+			return $args;
+		}
+		$args['has_published_posts'] = true;
+		return $args;
 	}
 
 	/**
@@ -716,6 +779,7 @@ class Controller {
 			'inner_html'             => $inner_html,
 			'params'                 => $params,
 			'refresh_source_post_id' => $source_post_id,
+			'rand_seed'              => absint( $request->get_param( 'seed' ) ),
 		);
 
 		try {
