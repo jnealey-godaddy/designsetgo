@@ -7,7 +7,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useCallback } from '@wordpress/element';
 import { Button, Spinner, Notice, TabPanel } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 
@@ -23,25 +23,55 @@ import LLMSTxtPanel from './settings-panels/LLMSTxtPanel';
 
 const Settings = () => {
 	const [settings, setSettings] = useState(null);
+	// Last state the server confirmed, used to send only what changed.
+	const [savedSettings, setSavedSettings] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [loadFailed, setLoadFailed] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [notice, setNotice] = useState(null);
 
+	const isDirty =
+		settings !== null &&
+		savedSettings !== null &&
+		JSON.stringify(settings) !== JSON.stringify(savedSettings);
+
 	// Fetch initial data
-	useEffect(() => {
+	const loadSettings = useCallback(() => {
+		setLoading(true);
+		setLoadFailed(false);
+
 		apiFetch({ path: '/designsetgo/v1/settings' })
 			.then((data) => {
+				// A non-object body must never become the editable state.
+				if (!data || typeof data !== 'object' || Array.isArray(data)) {
+					throw new Error('Invalid settings response.');
+				}
 				setSettings(data);
+				setSavedSettings(data);
 				setLoading(false);
 			})
 			.catch(() => {
-				setNotice({
-					status: 'error',
-					message: __('Failed to load settings.', 'designsetgo'),
-				});
+				setLoadFailed(true);
 				setLoading(false);
 			});
 	}, []);
+
+	useEffect(() => {
+		loadSettings();
+	}, [loadSettings]);
+
+	// Warn before leaving with unsaved changes.
+	useEffect(() => {
+		if (!isDirty) {
+			return;
+		}
+		const warn = (event) => {
+			event.preventDefault();
+			event.returnValue = '';
+		};
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	}, [isDirty]);
 
 	// Auto-dismiss success notices
 	useEffect(() => {
@@ -72,17 +102,50 @@ const Settings = () => {
 
 	/**
 	 * Save settings
+	 *
+	 * Sends only the top-level sections that changed (the server merges them
+	 * into what is stored), so a stale tab cannot clobber sections it never
+	 * touched, then adopts the server's sanitized copy.
 	 */
 	const saveSettings = () => {
+		if (!settings || !savedSettings) {
+			return;
+		}
+
+		const changed = {};
+		Object.keys(settings).forEach((key) => {
+			if (
+				JSON.stringify(settings[key]) !==
+				JSON.stringify(savedSettings[key])
+			) {
+				changed[key] = settings[key];
+			}
+		});
+
+		if (Object.keys(changed).length === 0) {
+			setNotice({
+				status: 'success',
+				message: __('No changes to save.', 'designsetgo'),
+			});
+			return;
+		}
+
 		setSaving(true);
 		setNotice(null);
 
 		apiFetch({
 			path: '/designsetgo/v1/settings',
 			method: 'POST',
-			data: settings,
+			data: changed,
 		})
-			.then(() => {
+			.then((response) => {
+				const saved = response?.settings;
+				if (saved && typeof saved === 'object') {
+					setSettings(saved);
+					setSavedSettings(saved);
+				} else {
+					setSavedSettings(settings);
+				}
 				setNotice({
 					status: 'success',
 					message: __('Settings saved successfully!', 'designsetgo'),
@@ -104,6 +167,27 @@ const Settings = () => {
 		return (
 			<div className="designsetgo-admin-loading">
 				<Spinner />
+			</div>
+		);
+	}
+
+	if (loadFailed || !settings) {
+		return (
+			<div className="designsetgo-settings">
+				<div className="designsetgo-settings__header">
+					<h1>{__('Settings', 'designsetgo')}</h1>
+				</div>
+				<Notice status="error" isDismissible={false}>
+					{__(
+						'Settings could not be loaded. Saving is disabled until they load.',
+						'designsetgo'
+					)}
+				</Notice>
+				<p>
+					<Button variant="secondary" onClick={loadSettings}>
+						{__('Retry', 'designsetgo')}
+					</Button>
+				</p>
 			</div>
 		);
 	}
@@ -220,7 +304,7 @@ const Settings = () => {
 					variant="primary"
 					onClick={saveSettings}
 					isBusy={saving}
-					disabled={saving}
+					disabled={saving || !settings}
 				>
 					{saving
 						? __('Saving…', 'designsetgo')

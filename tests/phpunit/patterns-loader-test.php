@@ -56,7 +56,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 
 		// Clean up all category-level transients.
 		foreach ( Loader::ALLOWED_CATEGORIES as $category ) {
-			delete_transient( Loader::CACHE_TRANSIENT_PREFIX . $category );
+			delete_transient( Loader::get_transient_key( $category ) );
 		}
 
 		// Remove any test filters.
@@ -362,14 +362,14 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		// Enable caching for this test (normally disabled when WP_DEBUG is true).
 		add_filter( 'designsetgo_pattern_cache_enabled', '__return_true' );
 
-		$cached = get_transient( Loader::CACHE_TRANSIENT_PREFIX . 'hero' );
+		$cached = get_transient( Loader::get_transient_key( 'hero' ) );
 		// Should be false before caching.
 		$this->assertFalse( $cached, 'Transient should not exist before caching' );
 
 		// Call get_category_patterns to populate cache.
 		$this->call_private_method( 'get_category_patterns', array( 'hero' ) );
 
-		$cached = get_transient( Loader::CACHE_TRANSIENT_PREFIX . 'hero' );
+		$cached = get_transient( Loader::get_transient_key( 'hero' ) );
 
 		$this->assertIsArray( $cached, 'Transient should contain an array' );
 		$this->assertArrayHasKey( 'version', $cached, 'Cache should include version key' );
@@ -430,7 +430,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$hash     = $this->call_private_static_method( 'compute_files_hash', array( $files ) );
 
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			$this->make_compressed_transient( $fake_patterns, $hash ),
 			DAY_IN_SECONDS
 		);
@@ -445,7 +445,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 */
 	public function test_stale_version_cache_rebuilds() {
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			$this->make_compressed_transient(
 				array(
 					'designsetgo/hero/hero-fake' => array(
@@ -470,7 +470,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 */
 	public function test_stale_hash_cache_rebuilds() {
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			$this->make_compressed_transient(
 				array(
 					'designsetgo/hero/hero-fake' => array(
@@ -495,7 +495,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	public function test_malformed_cache_rebuilds() {
 		// Missing 'patterns' key.
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array( 'version' => DESIGNSETGO_VERSION ),
 			DAY_IN_SECONDS
 		);
@@ -511,7 +511,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 */
 	public function test_non_string_compressed_cache_rebuilds() {
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array(
 				'version'    => DESIGNSETGO_VERSION,
 				'hash'       => 'some-hash',
@@ -531,7 +531,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 */
 	public function test_corrupted_base64_cache_rebuilds() {
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array(
 				'version'    => DESIGNSETGO_VERSION,
 				'hash'       => 'some-hash',
@@ -558,7 +558,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$compressed = base64_encode( $bad_raw );
 
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array(
 				'version'    => DESIGNSETGO_VERSION,
 				'hash'       => 'some-hash',
@@ -582,7 +582,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$compressed = base64_encode( $bad_raw );
 
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array(
 				'version'    => DESIGNSETGO_VERSION,
 				'hash'       => 'some-hash',
@@ -604,7 +604,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$compressed = base64_encode( gzcompress( '"just a string"' ) );
 
 		set_transient(
-			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			Loader::get_transient_key( 'hero' ),
 			array(
 				'version'    => DESIGNSETGO_VERSION,
 				'hash'       => 'some-hash',
@@ -633,7 +633,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		// Set a few category transients.
 		foreach ( array( 'hero', 'homepage', 'content' ) as $category ) {
 			set_transient(
-				Loader::CACHE_TRANSIENT_PREFIX . $category,
+				Loader::get_transient_key( $category ),
 				$this->make_compressed_transient( array(), 'test' ),
 				DAY_IN_SECONDS
 			);
@@ -645,7 +645,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 
 		foreach ( Loader::ALLOWED_CATEGORIES as $category ) {
 			$this->assertFalse(
-				get_transient( Loader::CACHE_TRANSIENT_PREFIX . $category ),
+				get_transient( Loader::get_transient_key( $category ) ),
 				"Category transient for '$category' should be deleted"
 			);
 		}
@@ -979,7 +979,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$this->call_private_method( 'get_category_patterns', array( 'hero' ) );
 
 		// Verify transient was set (it exists).
-		$cached = get_transient( Loader::CACHE_TRANSIENT_PREFIX . 'hero' );
+		$cached = get_transient( Loader::get_transient_key( 'hero' ) );
 		$this->assertIsArray( $cached, 'Cache should be set even with custom duration' );
 	}
 
@@ -1016,5 +1016,16 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 				"Category '$category' compressed transient ($serialized_size bytes) exceeds 500 KB limit"
 			);
 		}
+	}
+
+	/**
+	 * The category cache is keyed by locale so one language cannot serve another.
+	 */
+	public function test_transient_key_is_locale_specific() {
+		$this->assertNotSame(
+			Loader::get_transient_key( 'hero', 'en_US' ),
+			Loader::get_transient_key( 'hero', 'fr_FR' )
+		);
+		$this->assertStringContainsString( 'fr_fr', Loader::get_transient_key( 'hero', 'fr_FR' ) );
 	}
 }

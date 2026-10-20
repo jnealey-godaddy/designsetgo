@@ -331,7 +331,7 @@ Generic ability to update **any** block's attributes by document-order index, bl
 }
 ```
 
-Target a block by either `block_index` (document-order from `get-post-blocks`) or `block_client_id`. The `attributes` object accepts any valid attribute from the block's schema.
+Target a block by `block_index` (document order from `get-post-blocks`). `block_client_id` only matches a block whose stored attributes include a `clientId`, which the editor never saves, so prefer `block_index`. The `attributes` object accepts any valid attribute from the block's schema.
 
 ---
 

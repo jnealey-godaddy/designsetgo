@@ -210,7 +210,7 @@ class GDPR_Compliance {
 		$candidate_ids = array();
 		$per_page      = 100;
 		for ( $batch = 1; ; $batch++ ) {
-			$candidates = new WP_Query(
+			$candidates    = new WP_Query(
 				array(
 					'post_type'      => 'dsgo_form_submission',
 					'posts_per_page' => $per_page,

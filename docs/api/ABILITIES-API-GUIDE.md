@@ -293,7 +293,7 @@ Generic attribute configurator that works with **any** block. Validates attribut
 }
 ```
 
-Target a block by either `block_index` (document-order from `get-post-blocks`) or `block_client_id`. The `attributes` object accepts any valid attribute from the block's schema.
+Target a block by `block_index` (document order from `get-post-blocks`). `block_client_id` only matches a block whose stored attributes include a `clientId`, which the editor never saves, so prefer `block_index`. The `attributes` object accepts any valid attribute from the block's schema.
 
 ### Operation Abilities
 
@@ -343,7 +343,7 @@ Removes blocks from a post.
 }
 ```
 
-Target by `block_name`, `block_client_id`, or `position`. Set `delete_all: true` to remove all matching blocks. This ability has the `destructive` annotation.
+Target by `block_name` or `position`. (`block_client_id` only matches a stored `clientId` attribute, which the editor never saves.) Set `delete_all: true` to remove all matching blocks. This ability has the `destructive` annotation.
 
 ## Authentication
 
