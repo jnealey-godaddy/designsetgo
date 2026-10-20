@@ -48,6 +48,14 @@ class Dynamic_Block_Extension_Props {
 	const HOVER_EFFECTS = array( 'lift', 'sink', 'grow', 'shrink', 'tilt', 'glow' );
 
 	/**
+	 * Top-level tags that render nothing visible, so they never count as a
+	 * block's root (a block may print a stylesheet or script before it).
+	 *
+	 * @var string[]
+	 */
+	const NON_RENDERING_TAGS = array( 'STYLE', 'SCRIPT', 'LINK', 'META', 'NOSCRIPT', 'TEMPLATE' );
+
+	/**
 	 * Register hooks.
 	 */
 	public function init() {
@@ -106,10 +114,20 @@ class Dynamic_Block_Extension_Props {
 			return $block_content;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $block_content );
-		if ( ! $processor->next_tag() ) {
+		// The props describe the whole block, so they need one element that is
+		// the whole block. Synced patterns, patterns, shortcodes and similar
+		// print sibling elements with no wrapper; putting the props on the
+		// first of them would hide or size only part of the block.
+		if ( ! self::has_single_root( $block_content ) ) {
 			return $block_content;
 		}
+
+		$processor = new \WP_HTML_Tag_Processor( $block_content );
+		do {
+			if ( ! $processor->next_tag() ) {
+				return $block_content;
+			}
+		} while ( in_array( $processor->get_tag(), self::NON_RENDERING_TAGS, true ) );
 
 		foreach ( $classes as $class ) {
 			$processor->add_class( $class );
@@ -143,6 +161,46 @@ class Dynamic_Block_Extension_Props {
 		}
 
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Whether rendered HTML is a single element (ignoring non-rendering tags
+	 * such as a leading <style>) with no visible text beside it.
+	 *
+	 * Markup the HTML API can't fully parse counts as not single-rooted, which
+	 * leaves the block as it was.
+	 *
+	 * @param string $html Rendered block HTML.
+	 * @return bool
+	 */
+	public static function has_single_root( $html ) {
+		$processor = \WP_HTML_Processor::create_fragment( $html );
+		if ( null === $processor ) {
+			return false;
+		}
+
+		$roots = 0;
+		$base  = null;
+		while ( $processor->next_token() ) {
+			$depth = $processor->get_current_depth();
+			if ( null === $base ) {
+				$base = $depth;
+			}
+			if ( $depth !== $base || $processor->is_tag_closer() ) {
+				continue;
+			}
+			$type = $processor->get_token_type();
+			if ( '#tag' === $type && ! in_array( $processor->get_tag(), self::NON_RENDERING_TAGS, true ) ) {
+				++$roots;
+			} elseif ( '#text' === $type && '' !== trim( $processor->get_modifiable_text() ) ) {
+				return false;
+			}
+			if ( $roots > 1 ) {
+				return false;
+			}
+		}
+
+		return null === $processor->get_last_error() && 1 === $roots;
 	}
 
 	/**

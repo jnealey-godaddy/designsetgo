@@ -138,4 +138,54 @@ class DesignSetGo_Dynamic_Block_Extension_Props_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'dsgo-hide-mobile', $out );
 		$this->assertStringContainsString( 'max-width:300px', $out );
 	}
+
+	/**
+	 * A wrapperless block (siblings, no single root) is left untouched rather
+	 * than having one child hidden or sized.
+	 */
+	public function test_wrapperless_output_is_left_alone() {
+		$siblings = "<h2>Title</h2>\n<p>Body</p>\n<div class=\"wp-block-buttons\"></div>";
+		$this->assertSame( $siblings, $this->run_filter( 'dsgotest/ext-dynamic', array( 'dsgoHideOnMobile' => true ), $siblings ) );
+
+		$text = '<div>a</div> trailing text';
+		$this->assertSame( $text, $this->run_filter( 'dsgotest/ext-dynamic', array( 'dsgoMaxWidth' => '300px' ), $text ) );
+	}
+
+	/**
+	 * A synced pattern with several blocks keeps every block visible.
+	 */
+	public function test_synced_pattern_with_several_blocks_is_untouched() {
+		$ref = self::factory()->post->create(
+			array(
+				'post_type'    => 'wp_block',
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:heading --><h2 class="wp-block-heading">Hi</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Body</p><!-- /wp:paragraph -->',
+			)
+		);
+		$html = do_blocks( '<!-- wp:block {"ref":' . $ref . ',"dsgoHideOnMobile":true} /-->' );
+		$this->assertStringContainsString( 'Hi', $html );
+		$this->assertStringNotContainsString( 'dsgo-hide-mobile', $html );
+	}
+
+	/**
+	 * A leading stylesheet doesn't take the props; the element after it does.
+	 */
+	public function test_props_skip_a_leading_style_tag() {
+		$html = '<style>.x{color:red}</style><div class="x">a</div>';
+		$out  = $this->run_filter( 'dsgotest/ext-dynamic', array( 'dsgoHideOnMobile' => true ), $html );
+		$this->assertStringContainsString( '<style>.x{color:red}</style>', $out );
+		$this->assertStringContainsString( '<div class="x dsgo-hide-mobile">', $out );
+	}
+
+	/**
+	 * Single-root detection.
+	 */
+	public function test_has_single_root() {
+		$single = \DesignSetGo\Dynamic_Block_Extension_Props::class;
+		$this->assertTrue( $single::has_single_root( "\n<ul><li>a</li><li>b</li></ul>\n" ) );
+		$this->assertTrue( $single::has_single_root( '<form role="search"><input><button>x</button></form>' ) );
+		$this->assertFalse( $single::has_single_root( '<h2>A</h2><p>B</p>' ) );
+		$this->assertFalse( $single::has_single_root( 'just text' ) );
+		$this->assertFalse( $single::has_single_root( '' ) );
+	}
 }
