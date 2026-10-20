@@ -545,4 +545,158 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 		$this->draft_mode->discard_draft( $draft_id_2 );
 		$this->assertTrue( $discarded_fired );
 	}
+
+	/**
+	 * Quick Edit, bulk edit, REST and scheduling all end in wp_insert_post():
+	 * a draft copy must stay a draft.
+	 */
+	public function test_draft_copy_cannot_be_published_directly() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+
+		wp_update_post( array( 'ID' => $draft_id, 'post_status' => 'publish' ) );
+		$this->assertSame( 'draft', get_post_status( $draft_id ) );
+
+		wp_update_post(
+			array(
+				'ID'          => $draft_id,
+				'post_status' => 'publish',
+				'post_date'   => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+				'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+			)
+		);
+		$this->assertSame( 'draft', get_post_status( $draft_id ), 'Scheduling must not work either' );
+
+		// A normal page is unaffected.
+		$other = $this->factory->post->create( array( 'post_type' => 'page', 'post_status' => 'draft' ) );
+		wp_update_post( array( 'ID' => $other, 'post_status' => 'publish' ) );
+		$this->assertSame( 'publish', get_post_status( $other ) );
+	}
+
+	/**
+	 * Publishing still works through the merge, and the guard does not get in the way.
+	 */
+	public function test_merge_publish_still_works_with_guard() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id, array( 'title' => 'Merged' ) );
+		$this->assertEquals( $this->page_id, $this->draft_mode->publish_draft( $draft_id ) );
+		$this->assertSame( 'Merged', get_post( $this->page_id )->post_title );
+		$this->assertSame( 'publish', get_post_status( $this->page_id ) );
+	}
+
+	public function test_publish_detects_live_page_conflict_and_force_overrides() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id, array( 'title' => 'Draft title' ) );
+
+		// The live page is edited after the draft exists.
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, array( 'post_modified_gmt' => '2031-01-01 00:00:00' ), array( 'ID' => $this->page_id ) );
+		clean_post_cache( $this->page_id );
+
+		$result = $this->draft_mode->publish_draft( $draft_id );
+		$this->assertWPError( $result );
+		$this->assertSame( 'draft_conflict', $result->get_error_code() );
+		$this->assertSame( 409, $result->get_error_data()['status'] );
+		$this->assertNotSame( 'Draft title', get_post( $this->page_id )->post_title );
+
+		$this->assertEquals( $this->page_id, $this->draft_mode->publish_draft( $draft_id, true ) );
+		$this->assertSame( 'Draft title', get_post( $this->page_id )->post_title );
+	}
+
+	public function test_publish_syncs_template_menu_order_slug_and_parent() {
+		add_filter(
+			'theme_page_templates',
+			static function ( $templates ) {
+				return $templates + array(
+					'old.php' => 'Old',
+					'new.php' => 'New',
+				);
+			}
+		);
+		update_post_meta( $this->page_id, '_wp_page_template', 'old.php' );
+		$parent_id = $this->factory->post->create( array( 'post_type' => 'page', 'post_status' => 'publish' ) );
+		$draft_id  = $this->draft_mode->create_draft( $this->page_id );
+
+		update_post_meta( $draft_id, '_wp_page_template', 'new.php' );
+		wp_update_post( array( 'ID' => $draft_id, 'menu_order' => 7, 'post_name' => 'brand-new-slug', 'post_parent' => $parent_id ) );
+
+		$this->draft_mode->publish_draft( $draft_id );
+
+		$page = get_post( $this->page_id );
+		$this->assertSame( 'new.php', get_post_meta( $this->page_id, '_wp_page_template', true ) );
+		$this->assertSame( 7, (int) $page->menu_order );
+		$this->assertSame( 'brand-new-slug', $page->post_name );
+		$this->assertSame( $parent_id, (int) $page->post_parent );
+	}
+
+	public function test_publish_keeps_slug_and_parent_when_draft_did_not_change_them() {
+		$page = get_post( $this->page_id );
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->draft_mode->publish_draft( $draft_id );
+
+		$after = get_post( $this->page_id );
+		$this->assertSame( $page->post_name, $after->post_name );
+		$this->assertSame( (int) $page->post_parent, (int) $after->post_parent );
+	}
+
+	public function test_publish_syncs_terms() {
+		register_taxonomy_for_object_type( 'category', 'page' );
+		$keep = $this->factory->category->create();
+		$add  = $this->factory->category->create();
+		wp_set_object_terms( $this->page_id, array( $keep ), 'category' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertSame( array( $keep ), array_map( 'intval', wp_get_object_terms( $draft_id, 'category', array( 'fields' => 'ids' ) ) ) );
+
+		wp_set_object_terms( $draft_id, array( $add ), 'category' );
+		$this->draft_mode->publish_draft( $draft_id );
+
+		$this->assertSame( array( $add ), array_map( 'intval', wp_get_object_terms( $this->page_id, 'category', array( 'fields' => 'ids' ) ) ) );
+	}
+
+	public function test_trashing_original_trashes_draft_and_restoring_restores_it() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+
+		wp_trash_post( $this->page_id );
+		$this->assertSame( 'trash', get_post_status( $draft_id ) );
+
+		wp_untrash_post( $this->page_id );
+		$this->assertSame( 'draft', get_post_status( $draft_id ) );
+		$this->assertSame( $draft_id, (int) get_post_meta( $this->page_id, Draft_Mode::META_HAS_DRAFT, true ) );
+	}
+
+	/**
+	 * Backdate the page and the draft's baseline so a trash/restore in the
+	 * same second still moves the page's modified time.
+	 *
+	 * @param int    $draft_id Draft post ID.
+	 * @param string $base     Baseline stored on the draft.
+	 */
+	private function backdate_page_and_base( $draft_id, $base ) {
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, array( 'post_modified_gmt' => '2020-01-01 00:00:00' ), array( 'ID' => $this->page_id ) );
+		clean_post_cache( $this->page_id );
+		update_post_meta( $draft_id, Draft_Mode::META_BASE_MODIFIED, $base );
+	}
+
+	public function test_restoring_a_trashed_page_is_not_a_publish_conflict() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->backdate_page_and_base( $draft_id, '2020-01-01 00:00:00' );
+
+		wp_trash_post( $this->page_id );
+		wp_untrash_post( $this->page_id );
+
+		$this->assertNotSame( '2020-01-01 00:00:00', get_post_field( 'post_modified_gmt', $this->page_id ) );
+		$this->assertSame( $this->page_id, (int) $this->draft_mode->publish_draft( $draft_id ) );
+	}
+
+	public function test_an_edit_before_trashing_still_conflicts_after_restore() {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		// The draft's baseline is older than the page: the page was edited.
+		$this->backdate_page_and_base( $draft_id, '2019-06-01 00:00:00' );
+
+		wp_trash_post( $this->page_id );
+		wp_untrash_post( $this->page_id );
+
+		$result = $this->draft_mode->publish_draft( $draft_id );
+		$this->assertWPError( $result );
+		$this->assertSame( 'draft_conflict', $result->get_error_code() );
+	}
 }

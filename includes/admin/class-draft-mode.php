@@ -36,6 +36,25 @@ class Draft_Mode {
 	const META_DRAFT_CREATED = '_dsgo_draft_created';
 
 	/**
+	 * Meta key on the draft: the original's post_modified_gmt when the draft
+	 * was created. Publishing compares it with the original's current value to
+	 * detect that the live page changed in the meantime. Its presence also
+	 * marks a draft that carries the page's terms (drafts created before it
+	 * existed have neither, so their terms are never synced).
+	 */
+	const META_BASE_MODIFIED = '_dsgo_draft_base_modified';
+
+	/**
+	 * Set on a draft trashed with its page while still in step with it.
+	 */
+	const META_BASE_IN_SYNC_AT_TRASH = '_dsgo_draft_base_in_sync_at_trash';
+
+	/**
+	 * User meta: a draft publish was blocked, so the next admin screen can say why.
+	 */
+	const USER_META_BLOCKED_NOTICE = '_dsgo_draft_publish_blocked';
+
+	/**
 	 * Default maximum nesting depth scanned by meta_rejection_reason().
 	 *
 	 * Anything deeper is rejected (fail closed), capping recursion so a
@@ -88,6 +107,15 @@ class Draft_Mode {
 
 		// Always clean up meta when posts are deleted.
 		add_action( 'before_delete_post', array( $this, 'cleanup_draft_meta' ) );
+
+		// A draft copy must only go live through the merge endpoint. These stay
+		// on even when Draft Mode is switched off, because existing drafts
+		// remain in the database.
+		add_filter( 'wp_insert_post_data', array( $this, 'block_draft_copy_publish' ), 10, 2 );
+
+		// Keep the draft with its original when the original is trashed/restored.
+		add_action( 'wp_trash_post', array( $this, 'trash_draft_with_original' ) );
+		add_action( 'untrashed_post', array( $this, 'untrash_draft_with_original' ) );
 	}
 
 	/**
@@ -101,8 +129,6 @@ class Draft_Mode {
 			'show_page_list_actions' => true,
 			'show_page_list_column'  => true,
 			'show_frontend_preview'  => true,
-			'auto_save_enabled'      => true,
-			'auto_save_interval'     => 60,
 		);
 
 		$all_settings = Settings::get_settings();
@@ -197,8 +223,11 @@ class Draft_Mode {
 			set_post_thumbnail( $draft_id, $thumbnail_id );
 		}
 
+		$this->copy_terms( $post_id, $draft_id );
+
 		update_post_meta( $draft_id, self::META_DRAFT_OF, $post_id );
 		update_post_meta( $draft_id, self::META_DRAFT_CREATED, current_time( 'mysql' ) );
+		update_post_meta( $draft_id, self::META_BASE_MODIFIED, $post->post_modified_gmt );
 		update_post_meta( $post_id, self::META_HAS_DRAFT, $draft_id );
 
 		/**
@@ -215,10 +244,11 @@ class Draft_Mode {
 	/**
 	 * Publish (merge) a draft into its original post
 	 *
-	 * @param int $draft_id The draft post ID.
+	 * @param int  $draft_id The draft post ID.
+	 * @param bool $force    Publish even if the live page changed after the draft was created.
 	 * @return int|\WP_Error Original post ID on success, WP_Error on failure.
 	 */
-	public function publish_draft( $draft_id ) {
+	public function publish_draft( $draft_id, $force = false ) {
 		$draft = get_post( $draft_id );
 
 		if ( ! $draft ) {
@@ -249,6 +279,22 @@ class Draft_Mode {
 			);
 		}
 
+		// The live page was edited after this draft was created: merging would
+		// silently overwrite those edits, so ask first. Drafts created before the
+		// baseline was recorded have nothing to compare and publish as before.
+		$base_modified = get_post_meta( $draft_id, self::META_BASE_MODIFIED, true );
+		if ( ! $force && $base_modified && $base_modified !== $original->post_modified_gmt ) {
+			return new \WP_Error(
+				'draft_conflict',
+				__( 'The live page was changed after this draft was created. Publishing now will overwrite those changes.', 'designsetgo' ),
+				array(
+					'status'            => 409,
+					'live_modified_gmt' => $original->post_modified_gmt,
+					'draft_base_gmt'    => $base_modified,
+				)
+			);
+		}
+
 		// Step 1: Update the original post content.
 		// wp_slash() is required because wp_update_post() expects slashed data
 		// and internally calls wp_unslash(). Without it, backslashes in block
@@ -259,12 +305,44 @@ class Draft_Mode {
 			'post_title'   => $draft->post_title,
 			'post_content' => $draft->post_content,
 			'post_excerpt' => $draft->post_excerpt,
+			'menu_order'   => $draft->menu_order,
 		);
+
+		// Slug: a draft has no post_name until the author types one, so a
+		// non-empty value that differs from the live slug is a deliberate change.
+		if ( '' !== $draft->post_name && $draft->post_name !== $original->post_name ) {
+			$update_data['post_name'] = $draft->post_name;
+
+			// The draft still holds that slug until it is deleted below, and
+			// wp_unique_post_slug() would turn the live slug into "-2".
+			wp_update_post(
+				array(
+					'ID'        => $draft_id,
+					'post_name' => '',
+				)
+			);
+		}
+
+		// Parent: the draft's own parent is forced to the original (it is how the
+		// copy is nested under its page), so only a different value means the
+		// author picked a new parent for the live page.
+		if ( (int) $draft->post_parent !== (int) $original_id && (int) $draft->post_parent !== (int) $original->post_parent ) {
+			$new_parent = (int) $draft->post_parent;
+			if ( 0 === $new_parent || 'page' === get_post_type( $new_parent ) ) {
+				$update_data['post_parent'] = $new_parent;
+			}
+		}
 
 		$result = wp_update_post( wp_slash( $update_data ), true );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
+		}
+
+		// Terms: only drafts that were given the page's terms at creation can
+		// say what the terms should be now.
+		if ( $base_modified ) {
+			$this->sync_terms( $draft_id, $original_id );
 		}
 
 		// Step 2: Sync post meta (this operation doesn't return errors).
@@ -422,7 +500,8 @@ class Draft_Mode {
 			self::META_DRAFT_CREATED,
 			'_wp_old_slug',
 			'_wp_old_date',
-			'_wp_page_template',
+			self::META_BASE_MODIFIED,
+			self::META_BASE_IN_SYNC_AT_TRASH,
 		);
 
 		/**
@@ -498,6 +577,122 @@ class Draft_Mode {
 	}
 
 	/**
+	 * Copy a page's terms onto its draft copy.
+	 *
+	 * @param int $source_id Original post ID.
+	 * @param int $target_id Draft post ID.
+	 */
+	private function copy_terms( $source_id, $target_id ) {
+		foreach ( get_object_taxonomies( 'page' ) as $taxonomy ) {
+			$term_ids = wp_get_object_terms( $source_id, $taxonomy, array( 'fields' => 'ids' ) );
+			if ( ! is_wp_error( $term_ids ) && $term_ids ) {
+				wp_set_object_terms( $target_id, array_map( 'intval', $term_ids ), $taxonomy );
+			}
+		}
+	}
+
+	/**
+	 * Copy the draft's terms onto the original when publishing.
+	 *
+	 * @param int $draft_id    Draft post ID.
+	 * @param int $original_id Original post ID.
+	 */
+	private function sync_terms( $draft_id, $original_id ) {
+		foreach ( get_object_taxonomies( 'page', 'objects' ) as $taxonomy ) {
+			if ( ! current_user_can( $taxonomy->cap->assign_terms ) ) {
+				continue;
+			}
+			$term_ids = wp_get_object_terms( $draft_id, $taxonomy->name, array( 'fields' => 'ids' ) );
+			if ( ! is_wp_error( $term_ids ) ) {
+				wp_set_object_terms( $original_id, array_map( 'intval', $term_ids ), $taxonomy->name );
+			}
+		}
+	}
+
+	/**
+	 * Keep a draft copy from being published by anything but the merge.
+	 *
+	 * Quick Edit, bulk edit, the REST API and scheduling all end in
+	 * wp_insert_post(), so this is the one place that catches them. The draft
+	 * stays a draft and the author is told why on the next admin screen. The
+	 * merge itself never needs it: it updates the ORIGINAL post and then deletes
+	 * the draft.
+	 *
+	 * @param array $data    Slashed post data about to be stored.
+	 * @param array $postarr Raw post array (includes ID on update).
+	 * @return array Post data.
+	 */
+	public function block_draft_copy_publish( $data, $postarr ) {
+		if ( empty( $postarr['ID'] ) || ! in_array( $data['post_status'], array( 'publish', 'future' ), true ) ) {
+			return $data;
+		}
+
+		if ( ! get_post_meta( (int) $postarr['ID'], self::META_DRAFT_OF, true ) ) {
+			return $data;
+		}
+
+		$data['post_status'] = 'draft';
+
+		$user_id = get_current_user_id();
+		if ( $user_id ) {
+			update_user_meta( $user_id, self::USER_META_BLOCKED_NOTICE, (int) $postarr['ID'] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Trash a page's draft copy together with the page.
+	 *
+	 * Otherwise the copy lingers as an orphan under a trashed parent.
+	 *
+	 * @param int $post_id Post being trashed.
+	 */
+	public function trash_draft_with_original( $post_id ) {
+		$draft_id = (int) get_post_meta( $post_id, self::META_HAS_DRAFT, true );
+		if ( ! $draft_id || (int) get_post_meta( $draft_id, self::META_DRAFT_OF, true ) !== (int) $post_id ) {
+			return;
+		}
+		if ( 'draft' === get_post_status( $draft_id ) ) {
+			// Trashing and restoring the page bumps its modified time. Note
+			// whether the draft was still in step with it, so a restore alone
+			// doesn't later read as "the live page has changed".
+			$base = (string) get_post_meta( $draft_id, self::META_BASE_MODIFIED, true );
+			if ( '' !== $base && get_post_field( 'post_modified_gmt', $post_id ) === $base ) {
+				update_post_meta( $draft_id, self::META_BASE_IN_SYNC_AT_TRASH, 1 );
+			}
+			wp_trash_post( $draft_id );
+		}
+	}
+
+	/**
+	 * Restore a page's draft copy when the page is restored from the trash.
+	 *
+	 * @param int $post_id Post that was restored.
+	 */
+	public function untrash_draft_with_original( $post_id ) {
+		$drafts = get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false.
+			array(
+				'post_type'        => 'page',
+				'post_status'      => 'trash',
+				'meta_key'         => self::META_DRAFT_OF, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Narrow lookup by post_parent first.
+				'meta_value'       => (string) $post_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'posts_per_page'   => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => false,
+			)
+		);
+
+		if ( $drafts && wp_untrash_post( $drafts[0] ) ) {
+			update_post_meta( $post_id, self::META_HAS_DRAFT, $drafts[0] );
+			if ( get_post_meta( $drafts[0], self::META_BASE_IN_SYNC_AT_TRASH, true ) ) {
+				update_post_meta( $drafts[0], self::META_BASE_MODIFIED, get_post_field( 'post_modified_gmt', $post_id ) );
+			}
+			delete_post_meta( $drafts[0], self::META_BASE_IN_SYNC_AT_TRASH );
+		}
+	}
+
+	/**
 	 * Clean up draft meta when a post is deleted
 	 *
 	 * @param int $post_id Post ID being deleted.
@@ -549,6 +744,8 @@ class Draft_Mode {
 			self::META_DRAFT_OF,
 			self::META_HAS_DRAFT,
 			self::META_DRAFT_CREATED,
+			self::META_BASE_MODIFIED,
+			self::META_BASE_IN_SYNC_AT_TRASH,
 			'_wp_old_slug',
 			'_wp_old_date',
 		);

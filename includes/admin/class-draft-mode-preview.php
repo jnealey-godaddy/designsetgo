@@ -7,11 +7,9 @@
  * see draft content while navigating the frontend. Regular visitors always see
  * published content.
  *
- * Security note: Draft content is swapped into the post object without additional
- * sanitization (e.g., wp_kses_post) because draft content is created by users with
- * edit_pages capability, who are already trusted to author unfiltered HTML in WordPress.
- * Applying wp_kses_post would break block markup — see PR #166 for background.
- * This preview is only served to logged-in administrators.
+ * Security note: Draft content was already filtered when it was saved (core's post
+ * kses for users without unfiltered_html), so it is swapped in as stored. Preview
+ * is only served to logged-in users who can edit that specific page and its draft.
  *
  * @package DesignSetGo
  * @since 2.0.0
@@ -206,7 +204,7 @@ class Draft_Mode_Preview {
 			$this->draft_map = array();
 			foreach ( $cached as $original_id => $draft_id ) {
 				$draft = get_post( $draft_id );
-				if ( $draft && 'draft' === $draft->post_status ) {
+				if ( $draft && 'draft' === $draft->post_status && $this->can_preview( $original_id, $draft ) ) {
 					$this->draft_map[ $original_id ] = $draft;
 				}
 			}
@@ -215,7 +213,9 @@ class Draft_Mode_Preview {
 
 		$this->draft_map = array();
 
-		// Allow the draft preview query limit to be filtered for larger sites.
+		// This bounds the banner's list and the "is there anything to preview"
+		// check only. The page being rendered is looked up on demand by
+		// swap_draft_content(), so a page past this limit still previews.
 		$posts_per_page = (int) apply_filters( 'designsetgo_preview_draft_limit', 100 );
 
 		// Find all pages that have drafts.
@@ -235,8 +235,12 @@ class Draft_Mode_Preview {
 		foreach ( $pages_with_drafts as $original_id ) {
 			$draft = $this->draft_mode->get_draft( $original_id );
 			if ( $draft ) {
-				$this->draft_map[ $original_id ] = $draft;
-				$cache_data[ $original_id ]      = $draft->ID;
+				// The cache is shared by every user, so it keeps every draft and
+				// the per-user capability filter is applied to the in-memory map.
+				$cache_data[ $original_id ] = $draft->ID;
+				if ( $this->can_preview( $original_id, $draft ) ) {
+					$this->draft_map[ $original_id ] = $draft;
+				}
 			}
 		}
 
@@ -244,6 +248,21 @@ class Draft_Mode_Preview {
 		set_transient( self::TRANSIENT_DRAFT_MAP, $cache_data, 10 * MINUTE_IN_SECONDS );
 
 		return $this->draft_map;
+	}
+
+	/**
+	 * Whether the current user may see this draft in place of its page.
+	 *
+	 * Having edit_pages is not enough: the user must be able to edit this
+	 * specific page and its draft copy, or preview would leak unpublished
+	 * content of pages they cannot touch.
+	 *
+	 * @param int      $original_id Original page ID.
+	 * @param \WP_Post $draft       Draft copy.
+	 * @return bool
+	 */
+	private function can_preview( $original_id, $draft ) {
+		return current_user_can( 'edit_post', $original_id ) && current_user_can( 'edit_post', $draft->ID );
 	}
 
 	/**
@@ -371,20 +390,15 @@ class Draft_Mode_Preview {
 			return $posts;
 		}
 
-		$draft_map = $this->get_draft_map();
-
-		if ( empty( $draft_map ) ) {
-			return $posts;
-		}
-
 		foreach ( $posts as &$post ) {
 			if ( 'page' !== $post->post_type ) {
 				continue;
 			}
 
-			if ( isset( $draft_map[ $post->ID ] ) ) {
-				$draft = $draft_map[ $post->ID ];
-
+			// Looked up per page (not from the capped map) and gated on
+			// edit_post for both the page and its draft.
+			$draft = $this->draft_mode->get_draft( $post->ID );
+			if ( $draft && $this->can_preview( $post->ID, $draft ) ) {
 				// Swap content fields while preserving the original post object.
 				// See class docblock for security rationale re: unfiltered content.
 				$post->post_content = $draft->post_content;
@@ -414,10 +428,10 @@ class Draft_Mode_Preview {
 			$post_id = $post_id->ID;
 		}
 
-		$draft_map = $this->get_draft_map();
+		$draft = $this->draft_mode->get_draft( (int) $post_id );
 
-		if ( isset( $draft_map[ $post_id ] ) ) {
-			$draft_thumbnail = get_post_thumbnail_id( $draft_map[ $post_id ]->ID );
+		if ( $draft && $this->can_preview( (int) $post_id, $draft ) ) {
+			$draft_thumbnail = get_post_thumbnail_id( $draft->ID );
 			if ( $draft_thumbnail ) {
 				return $draft_thumbnail;
 			}

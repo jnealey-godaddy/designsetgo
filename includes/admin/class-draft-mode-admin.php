@@ -34,6 +34,9 @@ class Draft_Mode_Admin {
 	public function __construct( Draft_Mode $draft_mode ) {
 		$this->draft_mode = $draft_mode;
 
+		// Drafts exist even when the feature is off, and so can a blocked publish.
+		add_action( 'admin_notices', array( $this, 'render_blocked_publish_notice' ) );
+
 		if ( ! $this->draft_mode->is_enabled() ) {
 			return;
 		}
@@ -50,6 +53,23 @@ class Draft_Mode_Admin {
 		}
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+	}
+
+	/**
+	 * Explain why a draft copy was kept as a draft instead of being published.
+	 */
+	public function render_blocked_publish_notice() {
+		$user_id = get_current_user_id();
+		if ( ! $user_id || ! get_user_meta( $user_id, Draft_Mode::USER_META_BLOCKED_NOTICE, true ) ) {
+			return;
+		}
+
+		delete_user_meta( $user_id, Draft_Mode::USER_META_BLOCKED_NOTICE );
+
+		printf(
+			'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+			esc_html__( 'A draft copy of a live page cannot be published directly, so it was kept as a draft. Open the draft in the editor and use Publish there to replace the live page with it.', 'designsetgo' )
+		);
 	}
 
 	/**
