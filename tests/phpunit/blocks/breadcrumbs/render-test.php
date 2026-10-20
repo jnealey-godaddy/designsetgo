@@ -456,19 +456,25 @@ class DesignSetGo_Breadcrumbs_Render_Test extends WP_UnitTestCase {
 		$post = self::factory()->post->create( array( 'post_title' => 'Loop Item' ) );
 		$this->go_to( get_category_link( $cat ) );
 
-		$titles = wp_list_pluck(
-			designsetgo_get_breadcrumb_trail(
-				$this->block_with_context(
-					array(
-						'postId'  => $post,
-						'queryId' => 1,
-					)
-				),
-				array( 'showCurrent' => true )
-			),
-			'title'
-		);
+		// A real WP_Block, so context is filtered through block.json's
+		// usesContext exactly as on a live page.
+		$trail = function ( array $available_context ) {
+			$block = new WP_Block( parse_blocks( '<!-- wp:designsetgo/breadcrumbs /-->' )[0], $available_context );
+			return wp_list_pluck( designsetgo_get_breadcrumb_trail( $block, array( 'showCurrent' => true ) ), 'title' );
+		};
 
-		$this->assertContains( 'Loop Item', $titles );
+		foreach ( array( 'queryId', 'designsetgo/queryId' ) as $loop_key ) {
+			$titles = $trail(
+				array(
+					'postId'  => $post,
+					$loop_key => 1,
+				)
+			);
+			$this->assertContains( 'Loop Item', $titles, "Inside a loop ($loop_key) the trail describes the item." );
+		}
+
+		// Outside a loop, render_block() still hands a template block the global
+		// post's ID on an archive; the trail must describe the archive.
+		$this->assertContains( 'News', $trail( array( 'postId' => $post ) ) );
 	}
 }
