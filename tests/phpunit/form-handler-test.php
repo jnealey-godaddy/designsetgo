@@ -273,14 +273,29 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	 * Non-scalar field values are a 400, not a TypeError.
 	 */
 	public function test_submission_with_array_values_returns_error() {
-		$request = new WP_REST_Request( 'POST' );
-		$request->set_param( 'formId', 'any-form' );
+		// A real published form, so the request gets past the form lookup and
+		// would reach the validators (is_email() on an array: a TypeError, i.e.
+		// HTTP 500, before the structural check existed).
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"array-values-form","enableEmail":false} -->'
+					. '<!-- wp:designsetgo/form-email-field {"fieldName":"email","required":true} /-->'
+					. '<!-- /wp:designsetgo/form-builder -->',
+			)
+		);
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_param( 'formId', 'array-values-form' );
 		$request->set_param( 'fields', array( array( 'name' => 'email', 'value' => array( array( 'x' ) ) ) ) );
 		$request->set_param( 'honeypot', array( 'x' ) );
 		$request->set_param( 'timestamp', array( 'x' ) );
 
 		$result = $this->handler->handle_form_submission( $request );
+
 		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'invalid_submission', $result->get_error_code() );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		wp_delete_post( $post_id, true );
 	}
 
 	/**
