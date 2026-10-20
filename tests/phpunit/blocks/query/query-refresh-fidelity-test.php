@@ -171,6 +171,29 @@ class DesignSetGo_Query_Refresh_Fidelity_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'pageContext', $definition );
 	}
 
+	public function test_page_facts_do_not_mint_a_stored_record_per_request() {
+		$atts  = array( 'queryId' => 'qsearch', 'source' => 'current' );
+		$first = RefreshSource::sign( 'qsearch', $atts, '', 0, array( 'inheritedVars' => array( 's' => 'a1' ) ) );
+		$other = RefreshSource::sign( 'qsearch', $atts, '', 0, array( 'inheritedVars' => array( 's' => 'a2' ) ) );
+
+		$decode = static function ( $signed ) {
+			return json_decode( base64_decode( $signed['source'] ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		};
+
+		// One stored record, keyed only on block + viewer + source post.
+		$this->assertSame( $decode( $first )['ref'], $decode( $other )['ref'] );
+		$this->assertArrayNotHasKey( 'pageContext', get_transient( 'dsgo_query_source_' . $decode( $first )['ref'] ) );
+
+		// The facts ride in the signed envelope and come back on verify.
+		$definition = RefreshSource::verify( $other['source'], $other['signature'], 'qsearch' );
+		$this->assertSame( array( 's' => 'a2' ), $definition['pageContext']['inheritedVars'] );
+
+		// Editing them breaks the signature.
+		$forged        = $decode( $other );
+		$forged['ctx'] = array( 'inheritedVars' => array( 's' => 'evil' ) );
+		$this->assertNull( RefreshSource::verify( base64_encode( wp_json_encode( $forged ) ), $other['signature'], 'qsearch' ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+	}
+
 	public function test_offset_is_subtracted_from_totals() {
 		self::factory()->post->create_many( 5, array( 'post_status' => 'publish' ) );
 		$atts = array(

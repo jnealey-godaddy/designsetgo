@@ -116,7 +116,7 @@ class RefreshSource {
 	 * @param int    $source_post_id Post whose content holds the query, or 0.
 	 * @param array  $page_context   Page facts the query reads from its first-paint
 	 *                               request (current post, inherited archive vars).
-	 *                               Stored with the definition, so a refresh
+	 *                               Carried in the signed envelope, so a refresh
 	 *                               replays them and a caller can't supply them.
 	 * @return array{source: string, signature: string}
 	 */
@@ -128,24 +128,24 @@ class RefreshSource {
 			'attributes'   => $attributes,
 			'innerBlocks'  => (string) $inner_blocks,
 		);
-		// Only added when present, so definitions without page facts keep the
-		// references (and stored records) they had before this field existed.
-		if ( ! empty( $page_context['currentPostId'] ) || ! empty( $page_context['inheritedVars'] ) ) {
-			$definition['pageContext'] = $page_context;
-		}
-		$reference = self::reference( $definition );
-		$key       = 'dsgo_query_source_' . $reference;
+		$reference  = self::reference( $definition );
+		$key        = 'dsgo_query_source_' . $reference;
 		self::store( $key, $definition );
-		$source = base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
-			(string) wp_json_encode(
-				array(
-					'v'            => self::VERSION,
-					'queryId'      => $definition['queryId'],
-					'sourcePostId' => $definition['sourcePostId'],
-					'ref'          => $reference,
-				)
-			)
+
+		$envelope = array(
+			'v'            => self::VERSION,
+			'queryId'      => $definition['queryId'],
+			'sourcePostId' => $definition['sourcePostId'],
+			'ref'          => $reference,
 		);
+		// Page facts travel in the signed envelope, never in the stored record:
+		// they vary per request (a search term, an archive date), so keying the
+		// record on them would let anonymous requests mint a 30-day row each.
+		// The signature covers the envelope, so they still can't be forged.
+		if ( ! empty( $page_context['currentPostId'] ) || ! empty( $page_context['inheritedVars'] ) ) {
+			$envelope['ctx'] = $page_context;
+		}
+		$source = base64_encode( (string) wp_json_encode( $envelope ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
 
 		return array(
 			'source'    => $source,
@@ -201,7 +201,8 @@ class RefreshSource {
 			$data['queryId'] !== (string) $query_id ||
 			! is_int( $data['sourcePostId'] ) ||
 			! is_string( $data['ref'] ) ||
-			! preg_match( '/^[a-f0-9]{64}$/D', $data['ref'] )
+			! preg_match( '/^[a-f0-9]{64}$/D', $data['ref'] ) ||
+			! is_array( $data['ctx'] ?? array() )
 		) {
 			return null;
 		}
@@ -214,10 +215,13 @@ class RefreshSource {
 			( $definition['viewerId'] ?? null ) !== get_current_user_id() ||
 			! is_array( $definition['attributes'] ?? null ) ||
 			! is_string( $definition['innerBlocks'] ?? null ) ||
-			! is_array( $definition['pageContext'] ?? array() ) ||
 			! hash_equals( self::reference( $definition ), $data['ref'] )
 		) {
 			return null;
+		}
+
+		if ( ! empty( $data['ctx'] ) ) {
+			$definition['pageContext'] = $data['ctx'];
 		}
 
 		return $definition;
