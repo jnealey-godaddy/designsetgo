@@ -25,7 +25,7 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 	 * @param array    $attributes Block attributes.
 	 * @param string   $content    Inner block content.
 	 * @param WP_Block $block      Block instance.
-	 * @return string|void Password form or rendered block output.
+	 * @return string|void Empty string when nothing renders; otherwise the output is echoed.
 	 */
 	function designsetgo_render_product_showcase_hero( $attributes, $content, $block ) {
 		unset( $content, $block );
@@ -61,7 +61,8 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 
 		// Respect password-protected products.
 		if ( post_password_required( $product_id ) ) {
-			return get_the_password_form( $product_id );
+			echo get_the_password_form( $product_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Core markup.
+			return;
 		}
 
 		// Extract display settings.
@@ -110,6 +111,19 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 		);
 		$content_justify = isset( $align_map[ $vertical_alignment ] ) ? $align_map[ $vertical_alignment ] : 'center';
 
+		// Only the first hero on a page is likely the LCP image; a second
+		// fetchpriority=high just competes with it.
+		static $hero_count = 0;
+		++$hero_count;
+		$image_attrs = array(
+			'class'   => 'dsgo-product-showcase-hero__image',
+			'style'   => 'object-position: ' . esc_attr( $object_position ) . ';',
+			'loading' => 'eager',
+		);
+		if ( 1 === $hero_count ) {
+			$image_attrs['fetchpriority'] = 'high';
+		}
+
 		// Get product image.
 		$image_id   = $product->get_image_id();
 		$image_html = '';
@@ -118,12 +132,7 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 				$image_id,
 				$image_size,
 				false,
-				array(
-					'class'         => 'dsgo-product-showcase-hero__image',
-					'style'         => 'object-position: ' . esc_attr( $object_position ) . ';',
-					'loading'       => 'eager',
-					'fetchpriority' => 'high',
-				)
+				$image_attrs
 			);
 		}
 
@@ -185,10 +194,13 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 
 					<?php if ( $show_stock_status ) : ?>
 						<?php
-						$stock_class = $product->is_in_stock() ? 'instock' : 'outofstock';
-						$stock_text  = $product->is_in_stock()
-							? __( 'In stock', 'designsetgo' )
-							: __( 'Out of stock', 'designsetgo' );
+						// WooCommerce's own availability text (backorder, low stock,
+						// custom wording) rather than a binary in/out of stock.
+						$stock_class  = $product->get_stock_status();
+						$availability = $product->get_availability();
+						$stock_text   = ! empty( $availability['availability'] )
+							? $availability['availability']
+							: ( $product->is_in_stock() ? __( 'In stock', 'designsetgo' ) : __( 'Out of stock', 'designsetgo' ) );
 						?>
 						<div class="dsgo-product-showcase-hero__stock dsgo-product-showcase-hero__stock--<?php echo esc_attr( $stock_class ); ?>">
 							<?php echo esc_html( $stock_text ); ?>

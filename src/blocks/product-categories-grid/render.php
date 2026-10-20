@@ -159,9 +159,13 @@ if ( ! function_exists( 'designsetgo_render_product_categories_grid' ) ) {
 		<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output. ?>>
 			<?php foreach ( $terms as $term ) : ?>
 				<?php
-				$term_id    = absint( $term->term_id );
-				$term_name  = $term->name;
-				$term_count = absint( $term->count );
+				$term_id   = absint( $term->term_id );
+				$term_name = $term->name;
+				// WooCommerce keeps a visibility-aware count (hidden and
+				// out-of-stock-hidden products excluded, children included) in
+				// term meta; the raw term count includes everything published.
+				$woo_count  = 'product_cat' === $term->taxonomy ? get_term_meta( $term_id, 'product_count_product_cat', true ) : '';
+				$term_count = is_numeric( $woo_count ) ? absint( $woo_count ) : absint( $term->count );
 				$term_url   = get_term_link( $term );
 
 				if ( is_wp_error( $term_url ) ) {

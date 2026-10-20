@@ -389,7 +389,7 @@ export default function IconEdit({
 									'designsetgo'
 								)}
 								help={__(
-									'Provide a brief description of what the icon represents (e.g., "Search", "Shopping cart", "Download").',
+									'Describe what the icon means (e.g., "Search", "Shopping cart"). Left empty, the icon is hidden from screen readers unless it links somewhere.',
 									'designsetgo'
 								)}
 								__next40pxDefaultSize

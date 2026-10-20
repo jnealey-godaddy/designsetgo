@@ -74,6 +74,11 @@
 	// CTA area hint
 	.dsgo-card__cta {
 
+		&.dsgo-card__cta--hidden,
+		&.dsgo-card__cta--hidden:empty {
+			display: none;
+		}
+
 		&:empty {
 			min-height: 40px;
 			border: 1px dashed var(--wp--preset--color--contrast-3, #ccc);

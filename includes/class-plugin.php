@@ -798,6 +798,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-dynamic-block-extension-props.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-list-context-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-timeline-context-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-stored-markup-repairs.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';
@@ -887,6 +889,8 @@ class Plugin {
 
 		( new Dynamic_Block_Extension_Props() )->init();
 		( new Icon_List_Context_Styles() )->init();
+		( new Timeline_Context_Styles() )->init();
+		( new Stored_Markup_Repairs() )->init();
 
 		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();

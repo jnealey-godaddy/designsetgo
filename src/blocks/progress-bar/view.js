@@ -80,6 +80,16 @@ export function syncAriaValue(track) {
 }
 
 /**
+ * Whether the visitor asked for reduced motion. The CSS drops the width
+ * transition in that case; this drops the staged start delay.
+ *
+ * @return {boolean} True when prefers-reduced-motion: reduce matches.
+ */
+function prefersReducedMotion() {
+	return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
  * Initialize progress bars with scroll animations
  */
 function initProgressBars() {
@@ -131,13 +141,16 @@ function initProgressBars() {
 				if (!Number.isNaN(fallbackPercentage)) {
 					// Animate to the bound value (if any) or the static
 					// percentage, resolved fresh at animation time.
-					setTimeout(() => {
-						const targetPercent = resolveTargetPercent(
-							fill,
-							fallbackPercentage
-						);
-						fill.style.width = `${targetPercent}%`;
-					}, 100); // Small delay for better visual effect
+					setTimeout(
+						() => {
+							const targetPercent = resolveTargetPercent(
+								fill,
+								fallbackPercentage
+							);
+							fill.style.width = `${targetPercent}%`;
+						},
+						prefersReducedMotion() ? 0 : 100
+					); // Small delay for better visual effect
 				}
 
 				// Unobserve after animation starts (only animate once)

@@ -2,6 +2,7 @@
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
+import classnames from 'classnames';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -106,15 +107,22 @@ export default function CardEdit({
 	// Inner blocks props for CTA area
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'dsgo-card__cta',
+			className: classnames('dsgo-card__cta', {
+				'dsgo-card__cta--hidden': !showCta,
+			}),
 		},
 		{
-			template: [
-				[
-					'designsetgo/icon-button',
-					{ text: __('Learn More', 'designsetgo') },
-				],
-			],
+			// Only a shown CTA gets the starter button. A hidden one stays as
+			// stored, so opening an older card saved with the CTA off doesn't
+			// insert a button and mark the post as changed.
+			template: showCta
+				? [
+						[
+							'designsetgo/icon-button',
+							{ text: __('Learn More', 'designsetgo') },
+						],
+					]
+				: undefined,
 			templateLock: false,
 			allowedBlocks: ['designsetgo/icon-button'],
 		}
@@ -337,7 +345,7 @@ export default function CardEdit({
 				/>
 			)}
 
-			{showCta && <div {...innerBlocksProps} />}
+			<div {...innerBlocksProps} />
 		</div>
 	);
 

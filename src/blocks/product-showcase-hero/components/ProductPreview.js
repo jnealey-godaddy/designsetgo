@@ -22,7 +22,9 @@ function formatPrice(rawPrice, priceData) {
 		return '';
 	}
 
-	const minorUnit = priceData.currency_minor_unit || 2;
+	// 0 is a real minor unit (JPY, KRW): only fall back when it is unset.
+	const parsedUnit = parseInt(priceData.currency_minor_unit, 10);
+	const minorUnit = Number.isNaN(parsedUnit) ? 2 : parsedUnit;
 	const value = (parseInt(rawPrice, 10) / Math.pow(10, minorUnit)).toFixed(
 		minorUnit
 	);
@@ -161,9 +163,10 @@ export default function ProductPreview({ productData, attributes }) {
 						<div
 							className={`dsgo-product-showcase-hero__stock dsgo-product-showcase-hero__stock--${productData.is_in_stock ? 'instock' : 'outofstock'}`}
 						>
-							{productData.is_in_stock
-								? __('In stock', 'designsetgo')
-								: __('Out of stock', 'designsetgo')}
+							{productData.stock_availability?.text ||
+								(productData.is_in_stock
+									? __('In stock', 'designsetgo')
+									: __('Out of stock', 'designsetgo'))}
 						</div>
 					)}
 

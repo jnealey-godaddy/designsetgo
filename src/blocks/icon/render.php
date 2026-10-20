@@ -110,12 +110,16 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 			$wrapper_style .= sprintf( 'transform:rotate(%ddeg);', $rotation );
 		}
 
-		// ARIA: decorative → hidden from AT; otherwise labelled with the custom
-		// label or a humanized icon name (e.g. "circle-check" → "Circle Check").
-		if ( $is_decorative ) {
+		// ARIA: decorative → hidden from AT; otherwise labelled with the
+		// author's label. With no label, a linked icon still needs a name, so
+		// it falls back to a humanized icon name (e.g. "circle-check" →
+		// "Circle Check"). An unlabelled, unlinked icon is hidden instead:
+		// announcing its slug tells a screen-reader user nothing true.
+		$has_link = ! empty( $attributes['linkUrl'] );
+		if ( $is_decorative || ( '' === trim( $aria_label ) && ! $has_link ) ) {
 			$aria = ' role="presentation" aria-hidden="true"';
 		} else {
-			$label = '' !== $aria_label ? $aria_label : ucwords( str_replace( '-', ' ', $icon ) );
+			$label = '' !== trim( $aria_label ) ? $aria_label : ucwords( str_replace( '-', ' ', $icon ) );
 			$aria  = sprintf( ' role="img" aria-label="%s"', esc_attr( $label ) );
 		}
 

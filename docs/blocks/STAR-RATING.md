@@ -32,7 +32,7 @@ The **Star Rating Block** shows a rating as a row of icons — from a fixed valu
 - **Scale** ("Out of"): 1–10 (`maxRating`, default `5`).
 - **Precision**: Whole / Half / Exact (`precision`, default `half`) — controls how far the *drawn* icons round. The printed value and any structured data are never rounded by this setting.
 - **Show value**: prints the numeric rating (`showValue`, default `false`); a nested **Show scale** toggle appends "/5" (`showMax`, default `false`).
-- **Rating count**: **Show rating count** (`showCount`, default `false`) reveals **Number of ratings** (`ratingCount`, default `0`, 0–1000) and **Count format** (`countTemplate`, default `(%s)`, where `%s` is replaced by the count).
+- **Rating count**: **Show rating count** (`showCount`, default `false`) reveals **Number of ratings** (`ratingCount`, default `0`, no upper limit) and **Count format** (`countTemplate`, default `(%s)`, where `%s` is replaced by the count).
 
 ### Style
 
@@ -68,7 +68,7 @@ A bound `rating` disables the Rating slider in the inspector (it becomes preview
 
 When **Schema type** is set, the block's own `render.php` output is unaffected — the JSON-LD is assembled separately, at `wp_head`, by reading the post's *stored* block markup:
 
-- **Aggregate rating** emits an `AggregateRating` node, but only when `ratingCount` is greater than zero.
+- **Aggregate rating** emits an `AggregateRating` node, but only when **Show rating count** is on and `ratingCount` is greater than zero. A count is required for a valid `AggregateRating`, and structured data must match what the page shows, so a hidden count emits nothing.
 - **Review** emits a `Review` node, but only when `schemaAuthor` is filled in.
 - **A bound `rating` or `ratingCount` disqualifies the block from emitting anything.** Structured data is built from the block comment's stored attributes, and Block Bindings never resolve there — only at render time. Publishing whatever number the author last typed as a live claim would be misleading (and, for a bound WooCommerce average, duplicate: WooCommerce already emits its own `Product`/`AggregateRating` node).
 - `worstRating` is always `0` (not schema.org's default of `1`), matching this block's 0-based scale.

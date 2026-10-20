@@ -66,6 +66,8 @@ if ( ! function_exists( 'designsetgo_schema_rating_values' ) ) {
 			'value'  => $value,
 			'max'    => $max,
 			'count'  => $count,
+			// Default mirrors block.json: the count is not shown unless asked.
+			'shown'  => ! empty( $attrs['showCount'] ),
 			'item'   => isset( $attrs['schemaItemName'] ) ? trim( (string) $attrs['schemaItemName'] ) : '',
 			'author' => isset( $attrs['schemaAuthor'] ) ? trim( (string) $attrs['schemaAuthor'] ) : '',
 		);
@@ -136,6 +138,13 @@ if ( ! function_exists( 'designsetgo_schema_build_aggregate_rating' ) ) {
 	 * eligible at all, so a node without one is dead weight in the graph that
 	 * still asserts a rating.
 	 *
+	 * It also emits nothing while "Show count" is off. Google requires
+	 * structured data to describe what visitors can see, and a count that is
+	 * stored but not displayed is exactly that mismatch. Dropping `ratingCount`
+	 * alone is not an option: it (or `reviewCount`) is mandatory, so the node
+	 * without it would be invalid. A Review node, which needs no count, is
+	 * unaffected.
+	 *
 	 * @param array  $block Parsed block.
 	 * @param string $title Page title.
 	 * @return array Schema node, or an empty array to emit nothing.
@@ -143,7 +152,7 @@ if ( ! function_exists( 'designsetgo_schema_build_aggregate_rating' ) ) {
 	function designsetgo_schema_build_aggregate_rating( $block, $title = '' ) {
 		$values = designsetgo_schema_rating_values( (array) $block );
 
-		if ( null === $values || $values['count'] <= 0 ) {
+		if ( null === $values || ! $values['shown'] || $values['count'] <= 0 ) {
 			return array();
 		}
 

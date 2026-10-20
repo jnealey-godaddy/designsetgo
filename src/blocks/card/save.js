@@ -28,7 +28,6 @@ export default function CardSave({ attributes }) {
 		imageObjectFit,
 		imageFocalPoint,
 		badgeText,
-		badgeAriaLabel,
 		badgeStyle,
 		badgeFloatingPosition,
 		badgeInlinePosition,
@@ -66,8 +65,12 @@ export default function CardSave({ attributes }) {
 	});
 
 	// Inner blocks props for CTA area
+	// The CTA area is always rendered so its inner blocks survive the toggle;
+	// `--hidden` hides it (same pattern as title / body / badge).
 	const innerBlocksProps = useInnerBlocksProps.save({
-		className: 'dsgo-card__cta',
+		className: classnames('dsgo-card__cta', {
+			'dsgo-card__cta--hidden': !showCta,
+		}),
 	});
 
 	// Calculate image styles
@@ -134,12 +137,7 @@ export default function CardSave({ attributes }) {
 		);
 
 		return (
-			<span
-				className={badgeClass}
-				style={badgeStyles}
-				role="status"
-				aria-label={badgeAriaLabel ?? __('Badge', 'designsetgo')}
-			>
+			<span className={badgeClass} style={badgeStyles}>
 				{badgeText}
 			</span>
 		);
@@ -235,7 +233,7 @@ export default function CardSave({ attributes }) {
 				/>
 			)}
 
-			{showCta && <div {...innerBlocksProps} />}
+			<div {...innerBlocksProps} />
 		</div>
 	);
 

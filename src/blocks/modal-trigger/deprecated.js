@@ -9,6 +9,8 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
+import metadata from './block.json';
+import saveV5 from './deprecated-save-v5';
 
 /**
  * Every deprecation must land on the CURRENT attribute schema — deprecations do
@@ -675,4 +677,25 @@ const v1 = {
 	},
 };
 
-export default [v4, v3, v2, v1];
+/**
+ * Version 5: Before spacing-preset padding was converted to CSS.
+ *
+ * The justification-wrapper save() wrote the button's padding straight from
+ * `style.spacing.padding`. A preset the author picked is stored as
+ * `var:preset|spacing|40`, which is not CSS, so the browser dropped it and the
+ * button rendered with no padding. The current save() converts it to
+ * `var(--wp--preset--spacing--40)`, the way Icon Button does.
+ *
+ * Markup-only change with an unchanged attribute schema, so no isEligible:
+ * stored HTML with a preset padding no longer matches the current save() and
+ * this frozen copy reproduces it. Blocks whose padding is a plain length
+ * (or unset) are byte-identical under both and stay valid.
+ */
+const v5 = {
+	apiVersion: metadata.apiVersion,
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	save: saveV5,
+};
+
+export default [v5, v4, v3, v2, v1];

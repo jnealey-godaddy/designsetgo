@@ -303,7 +303,8 @@
 	// than themed, so it stays legible regardless of the light/dark theme
 	// variation or surrounding section color underneath it.
 	&__tooltip {
-		position: absolute;
+		// Fixed (placed by view.js) so the scroll wrapper's overflow-x can't clip it.
+		position: fixed;
 		z-index: 100;
 		max-width: 240px;
 		padding: 0.5em 0.75em;

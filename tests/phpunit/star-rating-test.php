@@ -95,6 +95,7 @@ class Star_Rating_Test extends WP_UnitTestCase {
 				'dsgoSchema'  => 'aggregate-rating',
 				'rating'      => 4.4,
 				'ratingCount' => 128,
+				'showCount'   => true,
 			)
 		);
 
@@ -110,6 +111,28 @@ class Star_Rating_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A stored but hidden count is not a claim about the page.
+	 *
+	 * Structured data has to match what visitors can see, and ratingCount (or
+	 * reviewCount) is mandatory for an AggregateRating, so with "Show count"
+	 * off there is no valid node to emit. A Review needs no count and stays.
+	 */
+	public function test_aggregate_rating_needs_the_count_to_be_shown() {
+		$block = $this->parse_block(
+			array(
+				'dsgoSchema'   => 'aggregate-rating',
+				'rating'       => 4.4,
+				'ratingCount'  => 128,
+				'showCount'    => false,
+				'schemaAuthor' => 'Jordan Rivera',
+			)
+		);
+
+		$this->assertSame( array(), designsetgo_schema_build_aggregate_rating( $block, 'Widget Pro' ) );
+		$this->assertSame( 'Review', designsetgo_schema_build_review( $block, 'Widget Pro' )['@type'] );
+	}
+
+	/**
 	 * The displayed value may be snapped for the icons; the node is not.
 	 */
 	public function test_aggregate_rating_reports_the_exact_value() {
@@ -119,6 +142,7 @@ class Star_Rating_Test extends WP_UnitTestCase {
 				'rating'      => 4.3,
 				'precision'   => 'half',
 				'ratingCount' => 9,
+				'showCount'   => true,
 			)
 		);
 
