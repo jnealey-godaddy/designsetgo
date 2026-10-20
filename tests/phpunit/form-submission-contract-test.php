@@ -71,7 +71,7 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 		$request->set_param( 'formId', $form_id );
 		$request->set_param( 'fields', $fields );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 
 		return $this->handler->handle_form_submission( $request );
 	}
@@ -381,7 +381,7 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 		$request->set_param( 'fields', $fields );
 		$request->set_param( 'sourcePostId', $post_id );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		$result = $this->handler->handle_form_submission( $request );
 		$this->assertWPError( $result, 'Naming the page must not bypass its password either.' );
 		$this->assertSame( 'unknown_form', $result->get_error_code() );
@@ -513,7 +513,7 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 		$saved_post    = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$saved_referer = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
-		$_POST                   = wp_slash( array_merge( array( '_wpnonce' => wp_create_nonce( 'designsetgo_form_submit' ) ), $post ) );
+		$_POST                   = wp_slash( array_merge( array( '_wpnonce' => wp_create_nonce( 'designsetgo_form_submit' ), 'dsg_timestamp' => (string) ( ( time() - 60 ) * 1000 ) ), $post ) );
 		$_SERVER['HTTP_REFERER'] = home_url( '/contact/' );
 
 		$throw = static function ( $location ) {

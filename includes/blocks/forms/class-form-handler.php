@@ -225,6 +225,11 @@ class Form_Handler {
 						'type'     => 'string',
 						'default'  => '',
 					),
+					'submittedAt'     => array(
+						'required' => false,
+						'type'     => 'string',
+						'default'  => '',
+					),
 					'sourcePostId'    => array(
 						'required'          => false,
 						'type'              => 'integer',
@@ -302,6 +307,16 @@ class Form_Handler {
 		$timestamp     = $request->get_param( 'timestamp' );
 		$form_settings = $this->get_form_settings();
 
+		// Throttle by IP before anything touches the database: every attempt
+		// counts, including unknown-form and failed ones, so unique form IDs
+		// can't force a content scan per request.
+		if ( $form_settings['enable_rate_limiting'] ) {
+			$attempt_check = $this->security->reserve_attempt();
+			if ( is_wp_error( $attempt_check ) ) {
+				return $attempt_check;
+			}
+		}
+
 		// These reach string-typed checks below. A client can send any JSON
 		// type, and an array would be a TypeError (HTTP 500) rather than an
 		// answer. A non-scalar honeypot is treated as filled (a real browser
@@ -330,13 +345,24 @@ class Form_Handler {
 		// can consume resources. A form ID is an untrusted client value: accepting
 		// an unknown one would let callers bypass its field schema and per-form
 		// controls entirely.
-		$form_definition = $this->get_form_definition( $form_id, $this->get_source_post_id( $request ) );
+		$unknown_form_error = new WP_Error(
+			'unknown_form',
+			__( 'This form is no longer available.', 'designsetgo' ),
+			array( 'status' => 404 )
+		);
+		// Only a site-wide miss is cached. A form looked up through its source
+		// post can be hidden from one visitor (a password-protected page) and
+		// visible to the next, so that miss must not lock the form for others.
+		$source_post_id = $this->get_source_post_id( $request );
+		if ( ! $source_post_id && $this->security->is_unknown_form_cached( $form_id ) ) {
+			return $unknown_form_error;
+		}
+		$form_definition = $this->get_form_definition( $form_id, $source_post_id );
 		if ( null === $form_definition ) {
-			return new WP_Error(
-				'unknown_form',
-				__( 'This form is no longer available.', 'designsetgo' ),
-				array( 'status' => 404 )
-			);
+			if ( ! $source_post_id ) {
+				$this->security->cache_unknown_form( $form_id );
+			}
+			return $unknown_form_error;
 		}
 
 		$block_attrs        = $form_definition['attributes'];
@@ -353,7 +379,9 @@ class Form_Handler {
 		}
 
 		// Time-based spam check.
-		$timing_check = $this->security->check_submission_timing( $timestamp, $form_id );
+		$submitted_at = $request->get_param( 'submittedAt' );
+		$submitted_at = is_scalar( $submitted_at ) ? (string) $submitted_at : '';
+		$timing_check = $this->security->check_submission_timing( $timestamp, $form_id, $submitted_at );
 		if ( is_wp_error( $timing_check ) ) {
 			return $timing_check;
 		}
@@ -512,6 +540,21 @@ class Form_Handler {
 			}
 		}
 
+		// Reserve the rate-limit slot before the write, not after it: parallel
+		// requests would otherwise all pass the earlier check and all store.
+		if ( $form_settings['enable_rate_limiting'] ) {
+			$rate_limit_check = $this->security->check_rate_limit( $form_id, $rate_limit_count );
+			if ( is_wp_error( $rate_limit_check ) ) {
+				return $rate_limit_check;
+			}
+			$global_rate_limit_check = $this->security->check_global_rate_limit();
+			if ( is_wp_error( $global_rate_limit_check ) ) {
+				return $global_rate_limit_check;
+			}
+			$this->security->increment_rate_limit( $form_id, $rate_limit_window );
+			$this->security->increment_global_rate_limit();
+		}
+
 		// Store submission.
 		$submission_id = $this->store_submission(
 			$form_id,
@@ -529,12 +572,6 @@ class Form_Handler {
 
 		// Send email notification if enabled (settings looked up server-side from block attributes).
 		$this->send_email_notification( $form_id, $sanitized_fields, $submission_id, $block_attrs );
-
-		// Increment rate limit counter ONLY after successful submission.
-		if ( $form_settings['enable_rate_limiting'] ) {
-			$this->security->increment_rate_limit( $form_id, $rate_limit_window );
-			$this->security->increment_global_rate_limit();
-		}
 
 		// Trigger action hook for email notifications, integrations, etc.
 		// The fourth argument is the form's server-resolved block attributes.
@@ -633,6 +670,7 @@ class Form_Handler {
 		$request->set_param( 'fields', isset( $data['fields'] ) ? $data['fields'] : array() );
 		$request->set_param( 'honeypot', isset( $data['honeypot'] ) ? $data['honeypot'] : '' );
 		$request->set_param( 'timestamp', isset( $data['timestamp'] ) ? $data['timestamp'] : '' );
+		$request->set_param( 'submittedAt', isset( $data['submittedAt'] ) ? $data['submittedAt'] : '' );
 		$request->set_param( 'sourcePostId', isset( $data['sourcePostId'] ) ? absint( $data['sourcePostId'] ) : 0 );
 		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? sanitize_text_field( $data['turnstile_token'] ) : '' );
 
@@ -720,7 +758,7 @@ class Form_Handler {
 			}
 		}
 
-		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce' );
+		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_submitted_at', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce' );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		foreach ( $_POST as $key => $value ) {
@@ -753,6 +791,10 @@ class Form_Handler {
 		$request->set_param( 'fields', $fields );
 		$request->set_param( 'honeypot', isset( $_POST['dsg_website'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_website'] ) ) : '' );
 		$request->set_param( 'timestamp', isset( $_POST['dsg_timestamp'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_timestamp'] ) ) : '' );
+		// Posted only by the script's native-POST fallback, on the same browser
+		// clock as its dsg_timestamp. A visitor without JavaScript has neither,
+		// and the server-rendered timestamp is measured against server time.
+		$request->set_param( 'submittedAt', isset( $_POST['dsg_submitted_at'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_submitted_at'] ) ) : '' );
 		$request->set_param( 'turnstile_token', isset( $_POST['dsg_turnstile_token'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_turnstile_token'] ) ) : '' );
 
 		$result = $this->handle_form_submission( $request );

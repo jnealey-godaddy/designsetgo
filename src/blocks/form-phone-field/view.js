@@ -18,9 +18,11 @@ import COUNTRY_CODES from './country-codes';
  * @param {string}  value      Raw input.
  * @param {boolean} [complete] True once the visitor is done typing: drops a
  *                             trailing dash that mid-typing would keep.
+ * @param {boolean} [withPlus] Prefix "+". False when the country-code select
+ *                             is shown: the field then holds the national number.
  * @return {string} Formatted value.
  */
-export function formatInternational(value, complete = false) {
+export function formatInternational(value, complete = false, withPlus = true) {
 	let digits = 0;
 	let out = '';
 	for (const ch of value) {
@@ -36,7 +38,7 @@ export function formatInternational(value, complete = false) {
 	if (complete) {
 		out = out.replace(/-$/, '');
 	}
-	return out ? `+${out}` : '';
+	return out && withPlus ? `+${out}` : out;
 }
 
 /**
@@ -45,9 +47,15 @@ export function formatInternational(value, complete = false) {
  * @param {string}  value      Raw input.
  * @param {string}  format     'us', 'international' or 'any'.
  * @param {boolean} [complete] True once the visitor is done typing.
+ * @param {boolean} [withPlus] Whether international output gets a leading "+".
  * @return {string} Formatted value.
  */
-export function formatPhoneNumber(value, format, complete = false) {
+export function formatPhoneNumber(
+	value,
+	format,
+	complete = false,
+	withPlus = true
+) {
 	// Remove all non-numeric characters
 	const cleaned = value.replace(/\D/g, '');
 
@@ -65,7 +73,7 @@ export function formatPhoneNumber(value, format, complete = false) {
 		}
 		return `(${national.slice(0, 3)}) ${national.slice(3, 6)}-${national.slice(6, 10)}`;
 	} else if (format === 'international') {
-		return formatInternational(value, complete);
+		return formatInternational(value, complete, withPlus);
 	}
 	// Any format: just add spaces for readability
 	if (cleaned.length <= 3) {
@@ -120,6 +128,8 @@ function initPhoneFields() {
 		}
 
 		const phoneFormat = input.dataset.phoneFormat || 'any';
+		// With the country-code select shown, the field holds the national number.
+		const withPlus = !wrapper.querySelector('select');
 
 		// Handle input event for auto-formatting
 		input.addEventListener('input', function (e) {
@@ -128,7 +138,12 @@ function initPhoneFields() {
 			const oldLength = oldValue.length;
 
 			// Format the value
-			const formattedValue = formatPhoneNumber(oldValue, phoneFormat);
+			const formattedValue = formatPhoneNumber(
+				oldValue,
+				phoneFormat,
+				false,
+				withPlus
+			);
 			const newLength = formattedValue.length;
 
 			// Update the input value
@@ -152,7 +167,8 @@ function initPhoneFields() {
 			const formattedValue = formatPhoneNumber(
 				pastedText,
 				phoneFormat,
-				true
+				true,
+				withPlus
 			);
 			e.target.value = formattedValue;
 		});
@@ -163,7 +179,8 @@ function initPhoneFields() {
 			e.target.value = formatPhoneNumber(
 				e.target.value,
 				phoneFormat,
-				true
+				true,
+				withPlus
 			);
 		});
 	});

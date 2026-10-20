@@ -187,11 +187,8 @@ describe('multi-step form submission', () => {
 			expect(message.style.display).toBe('block');
 			expect(message.getAttribute('tabindex')).toBe('-1');
 			expect(document.activeElement).toBe(message);
-			expect(
-				message
-					.querySelector('.screen-reader-text')
-					.getAttribute('aria-hidden')
-			).toBe('true');
+			// The message is announced once, by its own live region.
+			expect(message.querySelector('.screen-reader-text')).toBeNull();
 			expect(seen).toEqual([{ stepsShown: [], focused: true }]);
 		});
 

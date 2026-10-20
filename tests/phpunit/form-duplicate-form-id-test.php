@@ -114,7 +114,7 @@ class Test_Form_Duplicate_Form_Id extends WP_UnitTestCase {
 			)
 		);
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		if ( $source_post_id ) {
 			$request->set_param( 'sourcePostId', $source_post_id );
 		}

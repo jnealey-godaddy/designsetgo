@@ -51,17 +51,24 @@ class Form_Security {
 	/**
 	 * Check time-based spam detection.
 	 *
-	 * @param string $timestamp Submission timestamp.
-	 * @param string $form_id   Form identifier.
-	 * @return true|WP_Error True if valid, WP_Error if too fast.
+	 * A timestamp is required: every real client (view.js, the no-JS form's
+	 * server-rendered field) sends one, so an absent one is a script skipping
+	 * the check. When the client also reports when it submitted, elapsed time
+	 * is measured entirely on the client's clock, so a visitor whose clock is
+	 * off from the server's is not rejected as "too fast". Without it (no-JS
+	 * forms) the server's clock stands in for the submit time.
+	 *
+	 * @param string $timestamp    Form-ready timestamp in milliseconds.
+	 * @param string $form_id      Form identifier.
+	 * @param string $submitted_at Optional submit time in milliseconds, same clock as $timestamp.
+	 * @return true|WP_Error True if valid, WP_Error if too fast or missing.
 	 */
-	public function check_submission_timing( string $timestamp, string $form_id ) {
-		if ( empty( $timestamp ) ) {
-			return true;
-		}
+	public function check_submission_timing( string $timestamp, string $form_id, string $submitted_at = '' ) {
+		$ready_ms = is_numeric( $timestamp ) ? (int) $timestamp : 0;
+		$now_ms   = ( '' !== $submitted_at && is_numeric( $submitted_at ) ) ? (int) $submitted_at : time() * 1000;
+		$elapsed  = $now_ms - $ready_ms;
 
-		$elapsed = ( time() * 1000 ) - intval( $timestamp );
-		if ( $elapsed < 3000 ) {
+		if ( $ready_ms <= 0 || $elapsed < 3000 ) {
 			do_action( 'designsetgo_form_spam_detected', $form_id, 'too_fast', $this->get_client_ip(), array( 'elapsed_ms' => $elapsed ) );
 
 			return new WP_Error(
@@ -72,6 +79,57 @@ class Form_Security {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Count a submission attempt against the visitor's IP, before any lookup.
+	 *
+	 * Counts every attempt, including unknown-form and failed ones, so a client
+	 * can't use unknown IDs to force a database scan per request. The cap is
+	 * well above the success limits below; real visitors never meet it.
+	 *
+	 * @return true|WP_Error True if allowed, WP_Error if the IP is over the cap.
+	 */
+	public function reserve_attempt() {
+		$ip_address = $this->get_client_ip();
+		$key        = 'dsgo_form_attempt_ip_' . md5( $ip_address );
+		$count      = (int) get_transient( $key );
+		$max        = (int) apply_filters( 'designsetgo_form_attempt_limit_count', 60, $ip_address );
+		$window     = (int) apply_filters( 'designsetgo_form_attempt_limit_window', 60, $ip_address );
+
+		if ( $count >= $max ) {
+			do_action( 'designsetgo_form_global_rate_limit_exceeded', $ip_address, $count, $max );
+
+			return new WP_Error(
+				'global_rate_limit',
+				__( 'Too many submissions. Please try again later.', 'designsetgo' ),
+				array( 'status' => 429 )
+			);
+		}
+
+		set_transient( $key, $count + 1, $window );
+
+		return true;
+	}
+
+	/**
+	 * Whether a form ID was recently found not to exist.
+	 *
+	 * @param string $form_id Form identifier.
+	 * @return bool
+	 */
+	public function is_unknown_form_cached( string $form_id ): bool {
+		return false !== get_transient( 'dsgo_form_unknown_' . md5( $form_id ) );
+	}
+
+	/**
+	 * Remember briefly that a form ID doesn't exist, so repeats skip the lookup.
+	 *
+	 * @param string $form_id Form identifier.
+	 * @return void
+	 */
+	public function cache_unknown_form( string $form_id ): void {
+		set_transient( 'dsgo_form_unknown_' . md5( $form_id ), 1, 30 );
 	}
 
 	/**

@@ -57,3 +57,20 @@ describe('formatPhoneNumber', () => {
 		).toBe('+44-20-7946-0958');
 	});
 });
+
+describe('national number (country-code select shown)', () => {
+	test('does not force a leading "+"', () => {
+		expect(formatInternational('20 7946 0958', true, false)).toBe(
+			'20-7946-0958'
+		);
+		expect(
+			formatPhoneNumber('20 7946 0958', 'international', true, false)
+		).toBe('20-7946-0958');
+	});
+
+	test('still forces "+" by default', () => {
+		expect(formatPhoneNumber('20 7946 0958', 'international', true)).toBe(
+			'+20-7946-0958'
+		);
+	});
+});

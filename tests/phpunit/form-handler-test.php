@@ -444,12 +444,52 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$this->assertEquals( 30, $settings['retention_days'] );
 	}
 
+	public function test_timing_requires_a_timestamp() {
+		$result = $this->security->check_submission_timing( '', 'f' );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'too_fast', $result->get_error_code() );
+	}
+
+	public function test_timing_is_measured_on_the_client_clock_when_submit_time_is_sent() {
+		// Client clock is an hour ahead of the server; five seconds elapsed on it.
+		$ready = ( time() + HOUR_IN_SECONDS ) * 1000;
+		$this->assertTrue( $this->security->check_submission_timing( (string) $ready, 'f', (string) ( $ready + 5000 ) ) );
+
+		$fast = $this->security->check_submission_timing( (string) $ready, 'f', (string) ( $ready + 500 ) );
+		$this->assertInstanceOf( WP_Error::class, $fast );
+	}
+
+	public function test_unknown_form_ids_are_throttled_and_negative_cached() {
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.77';
+		delete_transient( 'dsgo_form_attempt_ip_' . md5( '203.0.113.77' ) );
+		add_filter( 'designsetgo_form_attempt_limit_count', array( $this, 'tiny_attempt_cap' ) );
+
+		$codes = array();
+		for ( $i = 0; $i < 4; $i++ ) {
+			$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+			$request->set_param( 'formId', 'no-such-form-' . $i );
+			$request->set_param( 'fields', array() );
+			$request->set_param( 'honeypot', '' );
+			$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
+			$codes[] = $this->handler->handle_form_submission( $request )->get_error_code();
+		}
+
+		remove_filter( 'designsetgo_form_attempt_limit_count', array( $this, 'tiny_attempt_cap' ) );
+		delete_transient( 'dsgo_form_attempt_ip_' . md5( '203.0.113.77' ) );
+		$this->assertSame( array( 'unknown_form', 'unknown_form', 'unknown_form', 'global_rate_limit' ), $codes );
+		$this->assertTrue( $this->security->is_unknown_form_cached( 'no-such-form-0' ) );
+	}
+
+	public function tiny_attempt_cap() {
+		return 3;
+	}
+
 	public function test_submission_rejects_an_unknown_form_id() {
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
 		$request->set_param( 'formId', 'not-a-published-form' );
 		$request->set_param( 'fields', array() );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 
 		$result = $this->handler->handle_form_submission( $request );
 
@@ -470,7 +510,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$request->set_param( 'formId', 'required-email-form' );
 		$request->set_param( 'fields', array() );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 
 		$result = $this->handler->handle_form_submission( $request );
 
@@ -669,6 +709,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$request->set_body_params(
 			array(
 				'formId'       => $form_id,
+				'timestamp'    => (string) ( ( time() - 60 ) * 1000 ),
 				'fields'       => array(
 					array(
 						'name'  => 'test',
@@ -754,8 +795,9 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
 		$request->set_body_params(
 			array(
-				'formId' => $form_id,
-				'fields' => array(
+				'formId'    => $form_id,
+				'timestamp' => (string) ( ( time() - 60 ) * 1000 ),
+				'fields'    => array(
 					array(
 						'name'  => 'email',
 						'value' => 'not-an-email',
@@ -876,8 +918,9 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
 		$request->set_body_params(
 			array(
-				'formId' => $form_id,
-				'fields' => array(
+				'formId'    => $form_id,
+				'timestamp' => (string) ( ( time() - 60 ) * 1000 ),
+				'fields'    => array(
 					array(
 						'name'  => 'pick',
 						'value' => 'c', // Not in the option list.

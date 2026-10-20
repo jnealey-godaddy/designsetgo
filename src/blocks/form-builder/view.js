@@ -455,6 +455,20 @@ function initFormBuilder() {
 			}
 			typeMapField.value = JSON.stringify(typeMap);
 
+			// dsg_timestamp holds this browser's clock (set at init), so send
+			// the submit time from the same clock; the server would otherwise
+			// compare it with its own time and reject a fast-running clock.
+			let submittedAtField = formElement.querySelector(
+				'input[name="dsg_submitted_at"]'
+			);
+			if (!submittedAtField) {
+				submittedAtField = document.createElement('input');
+				submittedAtField.type = 'hidden';
+				submittedAtField.name = 'dsg_submitted_at';
+				formElement.appendChild(submittedAtField);
+			}
+			submittedAtField.value = String(Date.now());
+
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
@@ -585,7 +599,10 @@ function initFormBuilder() {
 					formId,
 					fields,
 					honeypot: honeypot || '',
-					timestamp: timestamp || Date.now(),
+					timestamp: timestamp || '',
+					// Same clock as `timestamp`, so a visitor whose clock is off
+					// from the server's isn't rejected as "too fast".
+					submittedAt: String(Date.now()),
 					// Form IDs can repeat across pages; this picks the copy on this page.
 					sourcePostId: parseInt(designsetgoForm.postId, 10) || 0,
 					// Include Turnstile token if available (graceful degradation: empty if failed)
@@ -793,11 +810,6 @@ function initFormBuilder() {
 							if (!messageContainer.hasAttribute('tabindex')) {
 								messageContainer.setAttribute('tabindex', '-1');
 							}
-							// Focus reads the message itself, so silence the
-							// duplicate announcement copy inside it.
-							messageContainer
-								.querySelector('.screen-reader-text')
-								?.setAttribute('aria-hidden', 'true');
 							messageContainer.focus({ preventScroll: true });
 							revealMessage();
 						}, 0);
@@ -819,7 +831,10 @@ function initFormBuilder() {
 					messageContainer,
 					error.message ||
 						errorMessage ||
-						'An error occurred. Please try again.',
+						__(
+							'An error occurred. Please try again.',
+							'designsetgo'
+						),
 					'error'
 				);
 
@@ -853,17 +868,13 @@ function initFormBuilder() {
 	 * @param {string}      type      Message type: 'success' or 'error'
 	 */
 	function showMessage(container, message, type) {
-		container.textContent = message;
+		// The container is itself the live region (status, or alert for
+		// errors), so it announces the text once. Shown before the text is
+		// set, so the region is in the accessibility tree when it changes.
 		container.className = `dsgo-form__message dsgo-form__message--${type}`;
 		container.style.display = 'block';
 		container.setAttribute('role', type === 'error' ? 'alert' : 'status');
-
-		// Announce to screen readers
-		const announcement = document.createElement('span');
-		announcement.className = 'screen-reader-text';
-		announcement.textContent = message;
-		announcement.setAttribute('aria-live', 'polite');
-		container.appendChild(announcement);
+		container.textContent = message;
 	}
 
 	/**
