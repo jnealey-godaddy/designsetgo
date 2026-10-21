@@ -47,14 +47,19 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 
 		$field_id = 'field-' . $field_name;
 
-		// Resolve the HTML pattern from the phone format.
+		// Resolve the HTML pattern from the phone format. Both accept what the
+		// view script's auto-formatter produces and common manual entry; keep them
+		// in step with the `tel` check in class-form-handler.php.
 		$pattern = '';
 		switch ( $phone_format ) {
 			case 'us':
-				$pattern = '[0-9]{3}-[0-9]{3}-[0-9]{4}';
+				$pattern = '(?:\+?1[\s.\-]?)?(?:\([0-9]{3}\)|[0-9]{3})[\s.\-]?[0-9]{3}[\s.\-]?[0-9]{4}';
 				break;
 			case 'international':
-				$pattern = '\+[0-9]{1,3}[0-9\s\-]{4,14}';
+				// The "+" is only required when no country-code select supplies it.
+				$pattern = $show_country_code
+					? '(?=(?:[^0-9]*[0-9]){4,15}[^0-9]*$)[0-9\s.\-]+'
+					: '(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)\+[0-9\s.\-]+';
 				break;
 		}
 
@@ -67,7 +72,7 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 					$field_placeholder = '555-123-4567';
 					break;
 				case 'international':
-					$field_placeholder = '+1 555 123 4567';
+					$field_placeholder = $show_country_code ? '555-123-4567' : '+1-555-123-4567';
 					break;
 				default:
 					$field_placeholder = '';
@@ -80,7 +85,7 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 			// Options are intentionally empty here — view.js hydrates this <select> at
 			// runtime from the shared COUNTRY_CODES constant. The form already requires
 			// JS for auto-formatting, so the no-JS experience is an accepted trade-off.
-			$phone_wrapper .= '<select name="' . esc_attr( $field_name . '_country_code' ) . '" class="dsgo-form-field__country-code" data-dsgo-country-code="' . esc_attr( $country_code ) . '" style="min-width: 85px; flex-shrink: 0;" aria-label="Country Code"></select>';
+			$phone_wrapper .= '<select name="' . esc_attr( $field_name . '_country_code' ) . '" class="dsgo-form-field__country-code" data-dsgo-country-code="' . esc_attr( $country_code ) . '" style="min-width: 85px; flex-shrink: 0;" aria-label="' . esc_attr__( 'Country Code', 'designsetgo' ) . '"></select>';
 		}
 
 		$input = '<input type="tel" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_name ) . '" class="dsgo-form-field__input"';

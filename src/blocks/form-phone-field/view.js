@@ -8,6 +8,82 @@
 
 import COUNTRY_CODES from './country-codes';
 
+/**
+ * Format an international number as typed: a leading "+", the visitor's own
+ * digit groups joined by dashes ("+44 20 7946 0958" → "+44-20-7946-0958").
+ * Country codes and national groupings vary too much to impose one, so each
+ * run of spaces, dots, dashes or parentheses becomes a single dash. Digits
+ * are capped at 15 (E.164).
+ *
+ * @param {string}  value      Raw input.
+ * @param {boolean} [complete] True once the visitor is done typing: drops a
+ *                             trailing dash that mid-typing would keep.
+ * @param {boolean} [withPlus] Prefix "+". False when the country-code select
+ *                             is shown: the field then holds the national number.
+ * @return {string} Formatted value.
+ */
+export function formatInternational(value, complete = false, withPlus = true) {
+	let digits = 0;
+	let out = '';
+	for (const ch of value) {
+		if (ch >= '0' && ch <= '9') {
+			if (digits < 15) {
+				digits++;
+				out += ch;
+			}
+		} else if (/[\s.\-()]/.test(ch) && out && !out.endsWith('-')) {
+			out += '-';
+		}
+	}
+	if (complete) {
+		out = out.replace(/-$/, '');
+	}
+	return out && withPlus ? `+${out}` : out;
+}
+
+/**
+ * Format a phone number for the field's format.
+ *
+ * @param {string}  value      Raw input.
+ * @param {string}  format     'us', 'international' or 'any'.
+ * @param {boolean} [complete] True once the visitor is done typing.
+ * @param {boolean} [withPlus] Whether international output gets a leading "+".
+ * @return {string} Formatted value.
+ */
+export function formatPhoneNumber(
+	value,
+	format,
+	complete = false,
+	withPlus = true
+) {
+	// Remove all non-numeric characters
+	const cleaned = value.replace(/\D/g, '');
+
+	if (format === 'us') {
+		// US format: (555) 123-4567. A pasted "+1" / "1" country code
+		// is dropped so it doesn't shift the area code.
+		const national =
+			cleaned.length > 10 && cleaned.startsWith('1')
+				? cleaned.slice(1)
+				: cleaned;
+		if (national.length <= 3) {
+			return national;
+		} else if (national.length <= 6) {
+			return `(${national.slice(0, 3)}) ${national.slice(3)}`;
+		}
+		return `(${national.slice(0, 3)}) ${national.slice(3, 6)}-${national.slice(6, 10)}`;
+	} else if (format === 'international') {
+		return formatInternational(value, complete, withPlus);
+	}
+	// Any format: just add spaces for readability
+	if (cleaned.length <= 3) {
+		return cleaned;
+	} else if (cleaned.length <= 6) {
+		return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
+	}
+	return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
+}
+
 function initPhoneFields() {
 	// Populate country-code selects rendered with data-dsgo-country-code.
 	const codeSelects = document.querySelectorAll(
@@ -52,39 +128,8 @@ function initPhoneFields() {
 		}
 
 		const phoneFormat = input.dataset.phoneFormat || 'any';
-
-		// Format phone number based on format type
-		function formatPhoneNumber(value, format) {
-			// Remove all non-numeric characters
-			const cleaned = value.replace(/\D/g, '');
-
-			if (format === 'us') {
-				// US format: (555) 123-4567
-				if (cleaned.length <= 3) {
-					return cleaned;
-				} else if (cleaned.length <= 6) {
-					return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-				}
-				return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
-			} else if (format === 'international') {
-				// International format: +1 555 123 4567
-				if (cleaned.length <= 3) {
-					return cleaned;
-				} else if (cleaned.length <= 6) {
-					return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
-				} else if (cleaned.length <= 9) {
-					return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
-				}
-				return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
-			}
-			// Any format: just add spaces for readability
-			if (cleaned.length <= 3) {
-				return cleaned;
-			} else if (cleaned.length <= 6) {
-				return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
-			}
-			return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
-		}
+		// With the country-code select shown, the field holds the national number.
+		const withPlus = !wrapper.querySelector('select');
 
 		// Handle input event for auto-formatting
 		input.addEventListener('input', function (e) {
@@ -93,7 +138,12 @@ function initPhoneFields() {
 			const oldLength = oldValue.length;
 
 			// Format the value
-			const formattedValue = formatPhoneNumber(oldValue, phoneFormat);
+			const formattedValue = formatPhoneNumber(
+				oldValue,
+				phoneFormat,
+				false,
+				withPlus
+			);
 			const newLength = formattedValue.length;
 
 			// Update the input value
@@ -114,8 +164,24 @@ function initPhoneFields() {
 			}
 			e.preventDefault();
 			const pastedText = clipboard.getData('text');
-			const formattedValue = formatPhoneNumber(pastedText, phoneFormat);
+			const formattedValue = formatPhoneNumber(
+				pastedText,
+				phoneFormat,
+				true,
+				withPlus
+			);
 			e.target.value = formattedValue;
+		});
+
+		// Typing keeps a trailing separator so the next group can follow it;
+		// tidy it once the visitor moves on.
+		input.addEventListener('blur', function (e) {
+			e.target.value = formatPhoneNumber(
+				e.target.value,
+				phoneFormat,
+				true,
+				withPlus
+			);
 		});
 	});
 }

@@ -72,6 +72,14 @@ jest.mock('@wordpress/data', () => ({
 				getEntityRecords: () => [],
 			};
 		}),
+	// useUniqueBlockId reads the registry once on mount to spot duplicated
+	// blocks; nothing here was just inserted.
+	useRegistry: () => ({
+		select: () => ({
+			wasBlockJustInserted: () => false,
+			getBlockParents: () => [],
+		}),
+	}),
 	useDispatch: () => ({
 		insertBlocks: jest.fn(),
 		replaceBlocks: jest.fn(),

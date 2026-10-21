@@ -18,7 +18,7 @@ import {
 	publishDraft,
 	discardDraft,
 } from '../api';
-import { clearDirtyState } from '../utils';
+import { clearDirtyState, didSaveSucceed, isConflictError } from '../utils';
 
 /**
  * Custom hook for Draft Mode panel state and actions
@@ -34,6 +34,7 @@ export function useDraftModePanel() {
 	const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 	const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 	const [showCreateConfirm, setShowCreateConfirm] = useState(false);
+	const [showConflictConfirm, setShowConflictConfirm] = useState(false);
 
 	// Get current post data from the editor store.
 	const {
@@ -167,8 +168,9 @@ export function useDraftModePanel() {
 	};
 
 	// Confirm and execute publish.
-	const confirmPublishDraft = async () => {
+	const confirmPublishDraft = async (force = false) => {
 		setShowPublishConfirm(false);
+		setShowConflictConfirm(false);
 		setIsActionLoading(true);
 		setError(null);
 
@@ -176,9 +178,20 @@ export function useDraftModePanel() {
 			// Save any pending changes first.
 			if (hasEdits) {
 				await savePost();
+
+				// savePost() resolves even when the request failed; merging
+				// then would publish the previously saved content.
+				if (!didSaveSucceed()) {
+					throw new Error(
+						__(
+							'Saving the draft failed, so it was not published. Please try again.',
+							'designsetgo'
+						)
+					);
+				}
 			}
 
-			const result = await publishDraft(postId);
+			const result = await publishDraft(postId, force === true);
 			if (result.success && result.edit_url) {
 				// Clear dirty state before navigating to prevent "Leave site?" warning.
 				clearDirtyState();
@@ -194,6 +207,14 @@ export function useDraftModePanel() {
 				setIsActionLoading(false);
 			}
 		} catch (err) {
+			// The live page changed after the draft was created: let the author
+			// choose to overwrite it.
+			if (isConflictError(err)) {
+				setShowConflictConfirm(true);
+				setIsActionLoading(false);
+				return;
+			}
+
 			// Categorize error types for better user feedback.
 			let errorMessage = __('Failed to publish changes.', 'designsetgo');
 
@@ -295,6 +316,8 @@ export function useDraftModePanel() {
 		showPublishConfirm,
 		showDiscardConfirm,
 		showCreateConfirm,
+		showConflictConfirm,
+		setShowConflictConfirm,
 		setShowPublishConfirm,
 		setShowDiscardConfirm,
 		setShowCreateConfirm,

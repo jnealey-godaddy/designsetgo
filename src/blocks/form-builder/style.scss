@@ -87,6 +87,16 @@
 	gap: var(--dsgo-form-field-spacing);
 	width: 100%;
 
+
+	// The honeypot's saved inline `left:-9999px` lands in the scrollable
+	// overflow of a right-to-left page, giving it a ~10,000px horizontal
+	// scrollbar. A fixed box off the viewport never widens the page in either
+	// direction. !important because the position is an inline style in
+	// stored markup.
+	input[name="dsg_website"] {
+		position: fixed !important;
+	}
+
 	// Form fields container
 	&__fields {
 		display: flex;

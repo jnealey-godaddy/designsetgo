@@ -8,6 +8,8 @@ import Edit from './edit';
 import Save from './save';
 import deprecated from './deprecated';
 import { ICON_COLOR } from '../shared/constants';
+import './style.scss';
+import './editor.scss';
 
 registerBlockType(metadata.name, {
 	...metadata,

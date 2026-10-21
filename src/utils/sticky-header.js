@@ -53,10 +53,11 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 		textScrollColor: '',
 	};
 
-	// Early exit if sticky header is disabled
-	if (!settings.enable) {
-		return;
-	}
+	// With the global setting off the script still loads when a template part
+	// opts in on its own (per-header controls). In that mode only headers
+	// carrying the per-part class are managed, and each one's own classes decide
+	// what it does; nothing is inferred from the global options.
+	const globalEnabled = !!settings.enable;
 
 	// Default selector — used when the admin-provided customSelector is empty
 	// or invalid (a typo would otherwise throw DOMException and kill all JS).
@@ -69,7 +70,12 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 	const defaultSelector =
 		'body:not(.block-editor-page) .wp-block-template-part:not(footer):first-of-type, body:not(.block-editor-page) header.wp-block-template-part, body:not(.block-editor-page) .wp-block-template-part:not(footer):has(.wp-block-navigation), body:not(.block-editor-page) .wp-block-template-part:not(footer):has(.is-position-sticky)';
 
-	const selector = settings.customSelector || defaultSelector;
+	const perPartSelector =
+		'body:not(.block-editor-page) .wp-block-template-part.dsgo-sticky-header-enabled';
+
+	const selector = globalEnabled
+		? settings.customSelector || defaultSelector
+		: perPartSelector;
 
 	/**
 	 * Run document.querySelectorAll without letting an invalid selector throw.
@@ -387,10 +393,14 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 			return;
 		}
 
+		// The admin bar only occupies space at the top of the viewport while
+		// it is fixed; at 600px and below core makes it absolute, so it scrolls
+		// away and the sticky header must stick to the very top.
 		const adminBar = document.getElementById('wpadminbar');
-		const adminBarHeight = adminBar
-			? adminBar.getBoundingClientRect().height
-			: 0;
+		const adminBarHeight =
+			adminBar && window.getComputedStyle(adminBar).position === 'fixed'
+				? adminBar.getBoundingClientRect().height
+				: 0;
 		const topBarHeight =
 			container.children[0].getBoundingClientRect().height;
 		header.style.top = `${adminBarHeight - topBarHeight}px`;
@@ -592,16 +602,24 @@ import { applyOverlayMenuColors } from './overlay-menu-colors';
 		// Overlay header uses position:fixed via CSS — no position swap needed.
 		// The dsgo-scrolled class (toggled above) triggers the background transition.
 
-		// Handle hide on scroll down
-		if (settings.hideOnScrollDown && scrollY > settings.scrollThreshold) {
-			if (scrollY > lastScrollY) {
-				// Scrolling down
-				header.classList.add('dsgo-scroll-down');
-				header.classList.remove('dsgo-scroll-up');
+		// Handle hide on scroll down. Gated on the header's own class, which
+		// carries both the per-header control and (via
+		// applyConfigurationClasses) the global setting.
+		if (header.classList.contains('dsgo-sticky-hide-on-scroll-down')) {
+			if (scrollY > settings.scrollThreshold) {
+				if (scrollY > lastScrollY) {
+					// Scrolling down
+					header.classList.add('dsgo-scroll-down');
+					header.classList.remove('dsgo-scroll-up');
+				} else {
+					// Scrolling up (or a refresh, which resolves to visible)
+					header.classList.add('dsgo-scroll-up');
+					header.classList.remove('dsgo-scroll-down');
+				}
 			} else {
-				// Scrolling up
-				header.classList.add('dsgo-scroll-up');
-				header.classList.remove('dsgo-scroll-down');
+				// Back at the top (a jump or Home key skips the "scrolling
+				// up" frames): never leave the header hidden.
+				header.classList.remove('dsgo-scroll-down', 'dsgo-scroll-up');
 			}
 		}
 	}

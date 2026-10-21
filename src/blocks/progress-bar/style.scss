@@ -138,3 +138,29 @@
 		background-position: 0 0;
 	}
 }
+
+// Reduced motion: stop the striped animation and the width transition that
+// save() writes inline (hence !important). The fill still reaches its value;
+// it just doesn't travel there. view.js skips its start delay to match.
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-progress-bar__fill {
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+// An animate-on-scroll bar is saved at width: 0% and filled in by view.js, so
+// without JS it would stay empty. Show its saved value instead, where the
+// browser can read it from data-percentage (typed attr(), Chromium 133+; other
+// browsers keep the empty fill, and the value is still exposed through
+// aria-valuenow and the label).
+@supports (width: calc(attr(data-percentage type(#{'<number>'})) * 1%)) {
+
+	@media (scripting: none) {
+
+		.dsgo-progress-bar--animate .dsgo-progress-bar__fill {
+			width: calc(attr(data-percentage type(#{'<number>'})) * 1%) !important;
+		}
+	}
+}

@@ -93,12 +93,18 @@ export function useBreadcrumbData() {
 		if (postType !== 'post' || categoryIds.length === 0 || !allCategories) {
 			return EMPTY_ARRAY;
 		}
-		const firstCategoryId = categoryIds[0];
-		const category = allCategories.find(
-			(cat) => cat.id === firstCategoryId
-		);
-		if (category) {
-			return [{ title: category.name, id: category.id }];
+		// Same rule as the PHP trail: the lowest term ID, then its ancestors.
+		const firstCategoryId = Math.min(...categoryIds);
+		const chain = [];
+		let current = allCategories.find((cat) => cat.id === firstCategoryId);
+		while (current && !chain.some((c) => c.id === current.id)) {
+			chain.unshift({ title: current.name, id: current.id });
+			current = current.parent
+				? allCategories.find((cat) => cat.id === current.parent)
+				: null;
+		}
+		if (chain.length > 0) {
+			return chain;
 		}
 		return EMPTY_ARRAY;
 	}, [postType, categoryIds, allCategories]);

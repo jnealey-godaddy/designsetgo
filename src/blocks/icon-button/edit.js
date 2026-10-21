@@ -40,6 +40,7 @@ import {
 	Popover,
 	ToggleControl,
 	TextControl,
+	Notice,
 } from '@wordpress/components';
 import clsx from 'clsx';
 import { DsgoInspectorPanel } from '../../components/shared';
@@ -435,6 +436,14 @@ export default function IconButtonEdit({
 						onDeselect={() => setAttributes({ ariaLabel: '' })}
 						isShownByDefault
 					>
+						{isIconOnly && !ariaLabel && (
+							<Notice status="warning" isDismissible={false}>
+								{__(
+									'This button has no text, so screen readers cannot name it. Add an accessible label.',
+									'designsetgo'
+								)}
+							</Notice>
+						)}
 						<TextControl
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom

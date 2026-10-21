@@ -30,9 +30,10 @@ const CLICK_SLOP = 5;
  * @param {Object}      handlers        Callbacks.
  * @param {Function}    handlers.onNext Advance one slide.
  * @param {Function}    handlers.onPrev Go back one slide.
+ * @param {Function}    handlers.isRtl  Whether the slider currently reads right to left.
  * @return {Function} Teardown that removes the listeners.
  */
-export function initSwipe(track, { onNext, onPrev }) {
+export function initSwipe(track, { onNext, onPrev, isRtl = () => false }) {
 	let startX = 0;
 	let startY = 0;
 
@@ -50,7 +51,8 @@ export function initSwipe(track, { onNext, onPrev }) {
 		if (Math.abs(dx) <= THRESHOLD || Math.abs(dx) <= Math.abs(dy)) {
 			return;
 		}
-		if (dx > 0) {
+		// A finger moving left (dx > 0) advances in LTR; RTL mirrors it.
+		if (dx > 0 !== isRtl()) {
 			onNext();
 		} else {
 			onPrev();
@@ -81,11 +83,12 @@ export function initSwipe(track, { onNext, onPrev }) {
  * @param {Function}    handlers.onNext    Advance one slide.
  * @param {Function}    handlers.onPrev    Go back one slide.
  * @param {Function}    handlers.onCancel  Settle back on the current slide.
+ * @param {Function}    handlers.isRtl     Whether the slider currently reads right to left.
  * @return {Function} Teardown that removes the listeners.
  */
 export function initDrag(
 	track,
-	{ getOffset, setOffset, onNext, onPrev, onCancel }
+	{ getOffset, setOffset, onNext, onPrev, onCancel, isRtl = () => false }
 ) {
 	let isDragging = false;
 	let startX = 0;
@@ -129,7 +132,8 @@ export function initDrag(
 
 		if (Math.abs(delta) <= THRESHOLD) {
 			onCancel();
-		} else if (delta < 0) {
+		} else if (delta < 0 !== isRtl()) {
+			// Dragging content left advances in LTR; RTL mirrors it.
 			onNext();
 		} else {
 			onPrev();

@@ -110,6 +110,45 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
+= Unreleased =
+
+* **Fix:** Keyboard users can use modals again: focus moves into the modal, and Tab no longer closes it.
+* **Fix:** Opening a page in the editor no longer removes padding from Sections inside other Sections.
+* **Fix:** Icon List colour, background, size and icon position now show on your site, not only in the editor. Existing lists update without re-saving.
+* **Fix:** Hide on desktop, tablet or mobile and Max Width now work on blocks WordPress builds on the server, such as Latest Posts and Search.
+* **Fix:** Dynamic Query: Load more no longer repeats posts after a filter change. "Exclude current post", archive results and shop price and rating filters stay applied when results update. Offsets no longer leave empty pages, category counts include subcategories, and focus stays on the filter you used.
+* **Fix:** A malformed filter link no longer shows an error page in place of your page.
+* **Fix:** Forms: US and international phone numbers pass validation (international numbers use dashes). A blank number field is no longer saved as 0, and {page_url} in emails is the form's page. "Too many submissions" shows on the form instead of reloading it, and the security check resets after a failed submission.
+* **Fix:** Closing and quickly reopening an Accordion item no longer leaves it empty. A Counter ending at 0 shows 0, and its prefix and suffix show when reduced motion is on.
+* **Fix:** A duplicated accordion item, tab, hotspot or counter gets its own ID, so screen readers announce the right panel.
+* **Fix:** Breadcrumbs show a visible focus outline, hide draft and private parent pages, point the right way on right-to-left sites, and appear on archive, search and 404 pages.
+* **Fix:** Six logo and trust-bar patterns, large Blobs and bordered accordions no longer make pages scroll sideways on phones.
+* **Fix:** Convert & Deactivate converts every page and keeps quotes and special characters intact.
+* **Fix:** Privacy exports and erasures include all of a person's form submissions, not only recent ones.
+* **Fix:** llms.txt is no longer rewritten on every save, updates when its settings change, and pages no longer answer some apps and bots with "Not Acceptable".
+* **Fix:** Settings saved in part (for example through the API) keep their other defaults.
+* **Fix:** Uninstalling DesignSetGo removes all of its data, on every site of a multisite network.
+* **Fix:** The Dynamic Image block's editor styling loads again.
+* **Fix:** Draft Mode: creating a draft no longer breaks blocks (no more "Attempt Block Recovery" in the draft). A draft copy can't be published as a second live page by Quick Edit or scheduling. Publishing warns you if the live page changed since the draft was made, and carries over template, slug, parent, order and category changes.
+* **Fix:** Sliders work on right-to-left sites, autoplaying sliders have a pause button, and scroll-driven sliders become normal sliders when reduced motion is on.
+* **Fix:** Pages with a form or slider no longer scroll sideways on right-to-left sites.
+* **Fix:** Sticky header settings chosen for an individual header (shadow, shrink, hide on scroll, background) now apply on your site, and a header hidden while scrolling reappears when you jump back to the top.
+* **Fix:** Blocks animated "On Hover" or "On Click" are visible before you interact with them, and animated blocks show when printing.
+* **Fix:** Timeline marker shapes and colours now show on your site. Existing timelines update without re-saving.
+* **Fix:** Countdown Timer adds hidden units to the next one shown, so hiding Days shows 77 hours instead of 5.
+* **Fix:** Table of Contents lists every heading, including ones that skip a level, supports non-Latin headings, and no longer jumps to the top of the page when it has nothing to list.
+* **Fix:** Card: turning off the button area no longer deletes its buttons, and badges are read as their text. Modal Trigger padding from the spacing presets now applies. Existing pages update without re-saving.
+* **Fix:** A Group or Section with a click interaction no longer blocks typing a space in fields inside it.
+* **Fix:** Forms: with the country code dropdown shown, phone numbers are saved without an extra "+". Success messages are read once by screen readers, and visitors whose clock is off can still submit.
+* **Fix:** Dynamic Query: random order no longer repeats posts when you load more, and a sort option no longer hides posts missing the sorted field. Filter counts stay available while the index rebuilds and update when a category is deleted.
+* **Fix:** Image Accordion panels read their heading and caption to screen readers, and hover works on touch-screen laptops. Scroll Marquee no longer stops the page scrolling. A map whose address can't be found shows a message instead of a pin in New York.
+* **Fix:** Moving Text Path text has a pause button and stops while off screen. Progress bars and Reveal on Hover respect reduced motion and keyboard focus. Sticky Sections stack correctly after rotating a phone and with more than 20 sections.
+* **Fix:** Comparison Table tooltips open on tap and are no longer cut off when the table scrolls, Text Reveal keeps links readable by screen readers, and icons without a label are no longer announced by their name.
+* **Fix:** The settings screen shows an error with a Retry button if settings fail to load, instead of a form that can't save.
+* **Improved:** Structured data from a Star Rating block set to Aggregate rating now only appears when the rating count is shown, and the count can go above 1,000.
+* **Improved:** Custom CSS no longer allows `@import`. It only ever worked in the first block on a page; load fonts and stylesheets through your theme instead.
+* **Security:** The form endpoint limits how often one visitor can submit, including to forms that don't exist, and parallel submissions can no longer get around a form's limit.
+
 = 2.11.0 - 2026-10-14 =
 
 * **Security:** Form webhooks to a link-local or carrier-grade NAT address (169.254.x.x, or 100.64.x.x to 100.127.x.x) are blocked, and the way to allow one depends on your WordPress version. Current WordPress releases (7.1, and 6.7.6, 6.8.7, 6.9.6 and 7.0.3 or later) block these addresses themselves, and WordPress's `http_request_host_is_external` filter allows them. On older versions DesignSetGo blocks them instead, and only the `designsetgo_form_webhook_allow_reserved_host` filter allows them.
@@ -184,79 +223,11 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **Fix:** More blocks added by an AI assistant come out valid the first time you open them, so you no longer see "Attempt Recovery". This covers images, lists, quotes, headings, captions, icon buttons, modals, cards, counters, form colors and grid ordering.
 * **New:** AI and agent tooling - a `designsetgo/add-blocks` ability adds several top-level blocks in one step.
 
-= 2.7.5 - 2026-09-10 =
-
-* **Fix:** On some hosts, DesignSetGo couldn't create the database table that powers Dynamic Query filters, and it tried again on every admin page. That slowed wp-admin down enough for WordPress updates to time out. The table now installs on those hosts, and if it ever can't, DesignSetGo waits a day before trying again instead of retrying on every page.
-* **New:** If DesignSetGo can't create that table, administrators now see a notice explaining why, with a **Retry now** link. You can dismiss it. It stays on DesignSetGo's own admin pages until the problem is fixed.
-* **Fix:** Shape dividers, SVG patterns, expanding backgrounds and text reveal effects now work on blocks added by an AI assistant. The editor used to flag those blocks as invalid.
-
-= 2.7.4 - 2026-09-10 =
-
-* **Fix:** Dynamic Query — filters, sort, search, Load more and infinite scroll now work for visitors who aren't logged in. On 2.7.3 the request behind them required a login, so for everyone else clicking did nothing.
-* **Fix:** Dynamic Query — Load more keeps the active filters, search and sort. It used to fetch the next page of the unfiltered results and add it under the filtered ones.
-* **Fix:** Dynamic Query — accordions, counters, flip cards, maps, modals and other interactive blocks inside results added by Load more or infinite scroll now start up. Only the first page's items used to work.
-* **Fix:** Dynamic Query — the request behind filters and Load more now only renders a query the site itself put on the page, instead of whatever query settings the browser sent. Grouping by a protected custom field (one whose name starts with an underscore) no longer prints that field's values as headings, and a query on a password-protected page stays locked until the password is entered.
-* **Fix:** Dynamic Query's editor preview now requires permission to edit posts. Any logged-in account, a subscriber or a store customer included, could use it to list content that isn't public.
-* **Fix:** Dynamic Query — a user directory no longer lets visitors search or sort people by email address, matching WordPress's own rules. People who can manage users still can.
-* **Fix:** Dynamic Query filter counts update straight away when a post loses the last category, tag or field value a filter counts. The cached count used to keep including it.
-* **Fix:** Form Builder enforces required fields on the server, so a submission that skips the browser's own check is refused instead of being stored with the field empty. Submissions for a form that doesn't exist on the site are refused, and fields that aren't part of the form are ignored rather than stored. Forms on private pages and in previews no longer accept submissions.
-* **Improved:** Form Builder — one visitor's IP address can now send at most 20 submissions a minute across all forms on the site, on top of each form's own limit. Adjust it with the `designsetgo_form_global_rate_limit_count` and `designsetgo_form_global_rate_limit_window` filters.
-* **Fix:** Tabs — a Tabs block placed inside another one keeps its own panels. The outer block counted the inner block's panels as its own and showed or hid them as you switched tabs.
-* **Fix:** Scroll Accordion — an accordion removed from the page, for example when filters replace a Dynamic Query's results, stops listening for scroll and resize. It kept measuring elements that were no longer there on every scroll.
-* **Fix:** Map — an address containing quotation marks no longer sends the map to New York. The quotes reached the geocoder as stray `u0022` text, so the lookup failed and the map fell back to its default location.
-* **Improved:** Pages that don't use Grid, Row, Icon or Pill no longer carry those blocks' CSS inline in the page head.
-* **Fix:** More blocks added by an AI assistant now come out valid. A Section that isn't width-constrained no longer gets an inner max-width, Row and Grid keep their own padding and gap (including zero) instead of reverting to the defaults, Row honours vertical alignment including space-between, Grid honours a minimum column width and matched row heights, and Card keeps its border colour.
-* **New:** AI and agent tooling — a `designsetgo/get-design-context` ability returns the theme's resolved settings, global styles and block style variations, so an assistant can build with the site's own palette, fonts and spacing instead of guessing. It is read-only.
-
-= 2.7.3 - 2026-09-04 =
-
-* **Fix:** Blocks added by an AI assistant now come out valid. When a block was built through the plugin's Abilities API rather than typed into the editor, the markup it produced did not always match what the editor writes, so opening the page showed "Attempt Recovery" or silently rewrote content the author never touched. Every block is now checked against its own editor output, including at its plain defaults.
-* **Fix:** Section, Row and Grid keep their hover and overlay colours when built this way — the five custom properties behind them were dropped entirely.
-* **Fix:** Modal now uses the label you gave it for screen readers instead of always announcing "Modal".
-* **Fix:** Form Builder no longer writes email notification settings — recipient, subject, from and reply-to addresses — into the page's public markup.
-* **Fix:** Icon Button and Modal Trigger apply padding, colour, typography, border and shadow to the button itself rather than duplicating it on the wrapper.
-* **Fix:** Counter Group honours its own column counts, Grid honours its HTML element setting, and Tabs keeps its colour settings.
-* **Fix:** Alignment set on a block built this way is now carried into the markup, for blocks that align left/centre/right as well as those offering wide and full.
-
-= 2.7.2 - 2026-08-26 =
-
-* **Fix:** Advanced Heading — the typing effect no longer hides the last letter of each word. It also now types one character at a time, so short words no longer appear in twelve tiny slivers.
-* **Fix:** Advanced Heading — the typing, clip, and blinds effects no longer shave the tops and tails off letters. Descenders on g, j, p, q, y and accented capitals were being cut.
-* **Fix:** Text Path — turning on Motion now animates in the editor, not only on the published page. The frontend was always animating; the editor just never previewed it, which made the setting look broken.
-* **Fix:** Advanced Heading — segments no longer run together in the editor. Plain segments were missing the spacing the published page gets, so the editor showed them squished while the frontend looked correct.
-
-= 2.7.1 - 2026-08-26 =
-
-* **Fix:** The Chart block works again. On 2.7.0, inserting a Chart showed "Error loading block" instead of the chart — the block's preview is drawn on the server, and the request that draws it was being rejected. Charts already saved on a page were unaffected; only the editor preview failed.
-* **Fix:** Chart y-axis labels stay inside the chart. Longer labels — anything past about seven characters, which includes any formatted currency — were painted outside the block's own area, over whatever sat to the left of them. The space reserved for them is now measured from the labels themselves.
-* **New:** Chart — value prefix, suffix, and thousands grouping. Put a $ in front of every value or a % after it, and turn on grouping to read 1,234,567 instead of 1234567. These apply to the value labels, the y-axis, and the data table screen readers use, so the axis matches the bars. Donut slices keep showing their share of the total.
-
-= 2.7.0 - 2026-08-25 =
-
-* **New:** Chart — bar, line, and donut charts drawn as plain SVG, with a colour control per bar or slice. Type the data in by hand or read it from a post meta field. No charting library is loaded, and every chart also emits a screen-reader data table so the numbers are readable without the picture.
-* **New:** Star Rating — show a rating as stars, either a fixed value or pulled from post meta, ACF, or a product's WooCommerce average rating. Ships with a Reviews pattern, and can feed its value into review structured data.
-* **New:** Hotspot — place interactive markers over an image, each with its own tooltip. Fully keyboard accessible.
-* **New:** Text Path — flow a line of text along a wave, arc, circle, oval, spiral, straight line, or an SVG path of your own, with controls for arc size, rotation, word spacing, and padding, plus an optional motion mode that travels the text along the path.
-* **New:** Animated Headline — Advanced Heading gains two headline modes. Rotating cycles a list of phrases through one of nine effects (typing, clip, flip, swirl, blinds, drop-in, wave, slide, slide-down), forward or in reverse, with duration, delay, and loop controls. Highlighted draws a hand-drawn mark behind or through a phrase — circle, curly, underline, double underline, zigzag, diagonal, strikethrough, or an X.
-* **New:** Interactions — a new extension on every block. Bind a trigger (click, hover, scroll into view, exit intent, keypress) to an action on any other block: toggle a class, set an attribute, scroll to it, open or close a modal, show or hide something, play or pause media, focus a form field, or copy to clipboard. Edited in a modal with a point-and-click target picker on the canvas.
-* **New:** Schema.org markup — opt an Accordion into FAQ or How-to structured data, and a Star Rating into Review or Aggregate rating. Nothing is emitted unless you deliberately choose a type, and password-protected content is never exposed.
-* **New:** Off-canvas panel — Modal gains a panel mode that slides in from any edge, available as its own block variation, with a size control. It keeps the modal's focus trap, Escape handling, scroll lock, and triggers.
-* **New:** Deeper animations — four additions to the Animations extension: stagger a container's children, scroll-linked animation that tracks the scroll position rather than firing once, SVG path drawing, and per-word or per-character text reveal with fade and rise. All CSS-driven, no animation library, and every one is fully disabled under "reduce motion".
-* **New:** WooCommerce — Dynamic Query gains product controls (catalog visibility, featured, on sale, stock status) and reads the URL parameters WooCommerce's own filter blocks emit, so Woo's filter UI can drive a DesignSetGo loop. Six new binding sources expose raw product values — price, regular price, discount percent, stock quantity, average rating, and Woo's formatted price — for text and for dynamic CSS, so a stock bar or a discount badge is just a bound value.
-* **New:** Map — a keyless Google Maps option that needs no API key at all, and loads no JavaScript on the page. The existing keyed Google and OpenStreetMap options are unchanged, and privacy mode still holds the map back until the visitor clicks Load Map.
-* **New:** Loop Carousel — Slider and Scroll Slides now work properly as Dynamic Query layouts. Load more and filters work inside a carousel; infinite scroll, which cannot work inside a fixed-height viewport, degrades to a Load more button, and the editor says so up front with a one-click switch instead of leaving readers stranded on page one.
-* **Fix:** Slider — a batch of fixes that apply to any slider, not just query-driven ones: responsive slides-per-view was read and then ignored; a multi-slide slider scrolled past its own last slide; asking for more slides per view than there were slides broke the block; dragging snapped back to the first slide; a vertical scroll changed slides; autoplay stopped after one tick, and kept running in background tabs and under "reduce motion"; keyboard focus could land on an off-screen slide; a duration entered in milliseconds froze the slider; and every page containing a slider was excluded from the browser's back/forward cache.
-* **Fix:** One click on Load more no longer fetches and appends the next page twice — eight new posts could arrive as twelve items.
-* **Fix:** A Loop Carousel placed inside another query's template previewed the outer query's posts in the editor while the frontend correctly showed the inner one's.
-* **Improved:** WordPress 7.1 support. 7.1 lets you set per-viewport (mobile/tablet) style values on any block; those values now land on the same element as the desktop value for Pill, Scroll Marquee, Icon, Icon Button, and Modal Trigger, instead of a mobile background smearing across the content column or a mobile margin doubling up. This also corrects where theme.json styles for those blocks apply. Tested up to WordPress 7.1.
-* **Improved:** AI and agent tooling — the Abilities API discovery endpoints now describe the plugin accurately. Categories, block groupings, and the WooCommerce binding group were all reported wrongly, so filtering returned partial or empty results; all 20 abilities now also declare whether they read or write, and the documentation covers all of them.
-* **Fix:** Advanced Heading and Hotspot editing is smoother on long pages, duplicating a Text Path no longer breaks the original's shape, and hotspot tooltips sit on their markers instead of drifting away from them.
-* **Fix:** Translations — removed a JavaScript translation catalog whose files were keyed so that WordPress could never load them, and regenerated the translation template.
-
-= Earlier releases (2.6.3 and earlier) =
+= Earlier releases (2.7.5 and earlier) =
 
 For the full version history, see [CHANGELOG.md](https://github.com/jnealey-godaddy/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights:
 
+* **2.7.x** — Chart, Star Rating, Hotspot and Text Path blocks, Animated Headline modes for Advanced Heading, the Interactions extension, Schema.org markup for Accordion and Star Rating, an off-canvas panel for Modal, deeper animations, WooCommerce product queries, a keyless Google Maps option, Loop Carousel layouts for Dynamic Query, and WordPress 7.1 support.
 * **2.6.x** — Theme animation defaults (set an entrance animation once per block type), sticky and overlay headers that follow your theme's colors and survive AJAX page updates, size tokens for Section shape dividers, Grid columns that wrap instead of overflowing, and forms that work from cached pages and from footers, template parts and widgets.
 * **2.5.1** — Six layered Section shape dividers and a Content Clearance control.
 * **2.5.0** — Grid "Align Rows" option, a Button Style control for the Form Builder submit button, a Modal overlay color that follows your theme, working Cloudflare Turnstile tokens, and fixes for "Attempt Recovery" prompts on translated and AI-generated sites.

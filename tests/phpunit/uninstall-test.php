@@ -41,6 +41,19 @@ class Test_Uninstall extends WP_UnitTestCase {
 		set_transient( 'dsgo_has_blocks_123', true, DAY_IN_SECONDS );
 		set_transient( 'dsgo_form_submissions_count', 5, DAY_IN_SECONDS );
 
+		// Newly covered data.
+		update_option( 'designsetgo_db_version', '1' );
+		update_option( 'dsgo_query_filters', array( 'a' => 1 ) );
+		update_option( 'dsgo_last_draft_created', time() );
+		update_option( 'designsetgo_llms_public_exports_repaired', 1 );
+		set_transient( 'designsetgo_llms_txt_cache', 'x', HOUR_IN_SECONDS );
+		set_transient( 'dsgo_pattern_files', 'x', HOUR_IN_SECONDS );
+		set_transient( 'dsgo_draft_map', 'x', HOUR_IN_SECONDS );
+		update_post_meta( $post_id, '_designsetgo_exclude_llms', 1 );
+		update_post_meta( $post_id, 'dsgo_overlay_header', 1 );
+		update_post_meta( $post_id, '_dsgo_draft_of', 1 );
+		wp_schedule_single_event( time() + 600, 'designsetgo_query_filter_backfill', array( 1 ) );
+
 		// Cron job.
 		wp_schedule_event( time(), 'daily', 'designsetgo_cleanup_old_submissions' );
 	}
@@ -116,6 +129,19 @@ class Test_Uninstall extends WP_UnitTestCase {
 			)
 		);
 		$this->assertSame( 0, $transient_count, 'Plugin transients should be deleted from options table' );
+
+		foreach ( array( 'designsetgo_db_version', 'dsgo_query_filters', 'dsgo_last_draft_created', 'designsetgo_llms_public_exports_repaired' ) as $option ) {
+			$this->assertFalse( get_option( $option ), "$option should be deleted" );
+		}
+		$leftover = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_%dsgo\\_%' OR option_name LIKE '\\_transient\\_%designsetgo\\_%'"
+		);
+		$this->assertSame( 0, $leftover, 'All plugin transients should be deleted' );
+		$meta_left = (int) $wpdb->get_var(
+			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key IN ('_designsetgo_exclude_llms','dsgo_overlay_header','_dsgo_draft_of')"
+		);
+		$this->assertSame( 0, $meta_left, 'Plugin post meta should be deleted' );
+		$this->assertFalse( wp_next_scheduled( 'designsetgo_query_filter_backfill', array( 1 ) ) );
 
 		// Cron cleared.
 		$this->assertFalse( wp_next_scheduled( 'designsetgo_cleanup_old_submissions' ), 'Cron job should be unscheduled' );

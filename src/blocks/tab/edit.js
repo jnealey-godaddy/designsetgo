@@ -22,7 +22,7 @@ import {
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import { IconPicker } from '../icon/components/IconPicker';
-import { useIconDefaults } from '../../hooks';
+import { useIconDefaults, useUniqueBlockId } from '../../hooks';
 
 export default function Edit({ attributes, setAttributes, clientId, context }) {
 	const { uniqueId, title, icon, iconPosition, iconStyle, strokeWidth } =
@@ -36,12 +36,12 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 	const activeTab = context['designsetgo/tabs/activeTab'] || 0;
 	const tabStyle = context['designsetgo/tabs/tabStyle'] || 'default';
 
-	// Generate unique ID on mount
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({ uniqueId: clientId.substring(0, 8) });
-		}
-	}, [uniqueId, clientId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'uniqueId',
+		value: uniqueId,
+		setAttributes,
+	});
 
 	// Generate anchor from title if not set
 	useEffect(() => {

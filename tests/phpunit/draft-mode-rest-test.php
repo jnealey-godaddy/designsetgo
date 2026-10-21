@@ -550,6 +550,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_filters_script_tags() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		$malicious_content = '<!-- wp:paragraph -->
 <p>Hello</p>
@@ -572,7 +573,6 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 
 		// Verify script tag is removed.
 		$this->assertStringNotContainsString( '<script', $draft->post_content, 'Script tags should be filtered from content' );
-		$this->assertStringNotContainsString( 'alert(', $draft->post_content, 'Script content should be filtered' );
 		// But legitimate content should be preserved.
 		$this->assertStringContainsString( '<p>Hello</p>', $draft->post_content, 'Legitimate content should be preserved' );
 		$this->assertStringContainsString( '<p>World</p>', $draft->post_content, 'Legitimate content should be preserved' );
@@ -587,6 +587,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_filters_onclick_handlers() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		$malicious_content = '<!-- wp:paragraph -->
 <p onclick="alert(\'XSS\')">Click me</p>
@@ -619,6 +620,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_filters_onerror_handlers() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		$malicious_content = '<!-- wp:image -->
 <figure class="wp-block-image"><img src="invalid.jpg" onerror="alert(\'XSS\')" alt="Test" /></figure>
@@ -651,6 +653,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_filters_javascript_urls() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		$malicious_content = '<!-- wp:paragraph -->
 <p><a href="javascript:alert(\'XSS\')">Click me</a></p>
@@ -682,6 +685,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_filters_svg_onload_handlers() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		$malicious_content = '<!-- wp:designsetgo/section -->
 <div class="wp-block-designsetgo-section"><svg onload="alert(\'XSS\')" viewBox="0 0 100 100"><path d="M0,0 L100,100"></path></svg></div>
@@ -700,10 +704,8 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 
 		// Verify onload is removed.
 		$this->assertStringNotContainsString( 'onload', $draft->post_content, 'onload handler should be filtered from SVG' );
-		// But legitimate SVG content should be preserved.
-		$this->assertStringContainsString( '<svg', $draft->post_content, 'SVG element should be preserved' );
-		$this->assertStringContainsString( '<path', $draft->post_content, 'SVG path should be preserved' );
-		$this->assertStringContainsString( 'viewBox', $draft->post_content, 'SVG viewBox should be preserved' );
+		// The wrapper block markup survives (core kses decides about the SVG itself).
+		$this->assertStringContainsString( 'wp-block-designsetgo-section', $draft->post_content );
 	}
 
 	/**
@@ -715,6 +717,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	 */
 	public function test_create_draft_preserves_flex_while_filtering_xss() {
 		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
 
 		// Content with both legitimate flex styling and XSS attempt.
 		$mixed_content = '<!-- wp:designsetgo/row -->
@@ -734,9 +737,8 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 
 		// Security: onclick should be removed.
 		$this->assertStringNotContainsString( 'onclick', $draft->post_content, 'onclick should be filtered' );
-		// Functionality: display:flex should be preserved.
-		$this->assertStringContainsString( 'display:flex', $draft->post_content, 'display:flex should be preserved' );
-		$this->assertStringContainsString( 'justify-content:center', $draft->post_content, 'Other flex properties should be preserved' );
+		// The block wrapper survives; which style properties do is core's call.
+		$this->assertStringContainsString( 'dsgo-flex__inner', $draft->post_content );
 	}
 
 	/**
@@ -768,92 +770,69 @@ breaks' );
 	}
 
 	/**
-	 * Test sanitize_block_content method directly.
-	 *
-	 * Unit test for the static sanitization method.
-	 *
-	 * @ticket DSGO-SECURITY
+	 * Make the current user lack unfiltered_html, as on multisite or with
+	 * DISALLOW_UNFILTERED_HTML, and re-run kses setup so core's post kses applies.
 	 */
-	public function test_sanitize_block_content_method() {
-		// Test script removal.
-		$result = Draft_Mode_REST::sanitize_block_content( '<p>Hello</p><script>alert("XSS")</script>' );
-		$this->assertStringNotContainsString( '<script', $result );
-		$this->assertStringContainsString( '<p>Hello</p>', $result );
-
-		// Test event handler removal.
-		$result = Draft_Mode_REST::sanitize_block_content( '<div onclick="evil()">Test</div>' );
-		$this->assertStringNotContainsString( 'onclick', $result );
-		$this->assertStringContainsString( '<div', $result );
-		$this->assertStringContainsString( 'Test', $result );
-
-		// Test SVG preservation.
-		$result = Draft_Mode_REST::sanitize_block_content( '<svg viewBox="0 0 100 100"><path d="M0,0"></path></svg>' );
-		$this->assertStringContainsString( '<svg', $result );
-		$this->assertStringContainsString( '<path', $result );
-		$this->assertStringContainsString( 'viewBox', $result );
-
-		// Test style with flex preservation.
-		$result = Draft_Mode_REST::sanitize_block_content( '<div style="display:flex;gap:10px">Test</div>' );
-		$this->assertStringContainsString( 'display:flex', $result );
-
-		// Test tabindex preservation.
-		$result = Draft_Mode_REST::sanitize_block_content( '<div tabindex="0" role="button">Test</div>' );
-		$this->assertStringContainsString( 'tabindex="0"', $result );
-		$this->assertStringContainsString( 'role="button"', $result );
-
-		// Test non-string input.
-		$result = Draft_Mode_REST::sanitize_block_content( null );
-		$this->assertEquals( '', $result );
-
-		$result = Draft_Mode_REST::sanitize_block_content( 123 );
-		$this->assertEquals( '', $result );
+	private function deny_unfiltered_html(): void {
+		add_filter(
+			'map_meta_cap',
+			static function ( $caps, $cap ) {
+				return 'unfiltered_html' === $cap ? array( 'do_not_allow' ) : $caps;
+			},
+			10,
+			2
+		);
+		kses_init();
 	}
 
 	/**
-	 * Test sanitize_block_content preserves block comments with nested JSON.
-	 *
-	 * Block comments often contain deeply nested JSON for style attributes.
-	 * The preservation regex must handle nested braces correctly or wp_kses
-	 * strips the comments, corrupting block content into a classic block.
-	 *
-	 * @ticket DSGO-DRAFT-NESTED-JSON
+	 * Markup the blocks' save() emits must survive create-draft untouched
+	 * (aria-modal, aria-valuenow, aria-roledescription, aria-atomic, ...).
+	 * A private allowlist used to strip these and leave invalid blocks.
 	 */
-	public function test_sanitize_block_content_nested_json_block_comments() {
-		// Block comment with deeply nested JSON (style > spacing > padding).
-		$content = '<!-- wp:designsetgo/section {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","right":"var:preset|spacing|30"}}}} -->'
-			. "\n" . '<div class="wp-block-designsetgo-section alignfull dsgo-stack">Test</div>'
-			. "\n" . '<!-- /wp:designsetgo/section -->';
+	public function test_create_draft_preserves_block_aria_attributes() {
+		wp_set_current_user( $this->admin_id );
 
-		$result = Draft_Mode_REST::sanitize_block_content( $content );
+		$content = '<!-- wp:designsetgo/modal -->
+<div class="wp-block-designsetgo-modal"><div class="dsgo-modal" role="dialog" aria-modal="true" aria-labelledby="m1" tabindex="-1">Hi</div></div>
+<!-- /wp:designsetgo/modal -->
+<!-- wp:designsetgo/progress-bar -->
+<div class="wp-block-designsetgo-progress-bar" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"><span class="dsgo-sr" aria-atomic="true"></span></div>
+<!-- /wp:designsetgo/progress-bar -->
+<!-- wp:designsetgo/slider -->
+<div class="wp-block-designsetgo-slider" role="region" aria-roledescription="carousel"><input type="text" aria-hidden="true" tabindex="-1" name="hp" /></div>
+<!-- /wp:designsetgo/slider -->';
 
-		$this->assertStringContainsString(
-			'<!-- wp:designsetgo/section {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","right":"var:preset|spacing|30"}}}} -->',
-			$result,
-			'Block comment with nested JSON braces must be preserved'
-		);
-		$this->assertStringContainsString( '<!-- /wp:designsetgo/section -->', $result );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request->set_param( 'post_id', $this->page_id );
+		$request->set_param( 'content', $content );
 
-		// Block comment with 4+ levels of nesting.
-		$deep_content = '<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}}} -->'
-			. "\n" . '<p>Hello</p>'
-			. "\n" . '<!-- /wp:paragraph -->';
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
 
-		$deep_result = Draft_Mode_REST::sanitize_block_content( $deep_content );
+		$draft = get_post( $response->get_data()['draft_id'] );
+		$this->assertSame( $content, $draft->post_content, 'Draft content must be stored exactly as sent for an unfiltered_html user' );
+	}
 
-		$this->assertStringContainsString(
-			'<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}}} -->',
-			$deep_result,
-			'Block comment with 4+ levels of nested JSON must be preserved'
-		);
-		$this->assertStringContainsString(
-			'<!-- /wp:paragraph -->',
-			$deep_result,
-			'Closing block comment for deeply nested paragraph must be preserved'
-		);
-		$this->assertStringContainsString(
-			'<p>Hello</p>',
-			$deep_result,
-			'Inner HTML content for deeply nested paragraph must be preserved'
-		);
+	/**
+	 * Without unfiltered_html the draft gets core's post kses, exactly as a normal save.
+	 */
+	public function test_create_draft_applies_core_kses_without_unfiltered_html() {
+		wp_set_current_user( $this->editor_id );
+		$this->deny_unfiltered_html();
+
+		$content = '<!-- wp:paragraph --><p onmouseover="x()">Hi<script>evil()</script></p><!-- /wp:paragraph -->';
+
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request->set_param( 'post_id', $this->page_id );
+		$request->set_param( 'content', $content );
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$draft = get_post( $response->get_data()['draft_id'] );
+		$this->assertStringNotContainsString( 'onmouseover', $draft->post_content );
+		$this->assertStringNotContainsString( '<script', $draft->post_content );
+		$this->assertStringContainsString( 'wp:paragraph', $draft->post_content );
 	}
 }

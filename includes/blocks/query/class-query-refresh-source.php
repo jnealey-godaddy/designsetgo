@@ -114,9 +114,13 @@ class RefreshSource {
 	 * @param array  $attributes     Query block attributes.
 	 * @param string $inner_blocks   Serialized inner blocks.
 	 * @param int    $source_post_id Post whose content holds the query, or 0.
+	 * @param array  $page_context   Page facts the query reads from its first-paint
+	 *                               request (current post, inherited archive vars).
+	 *                               Carried in the signed envelope, so a refresh
+	 *                               replays them and a caller can't supply them.
 	 * @return array{source: string, signature: string}
 	 */
-	public static function sign( $query_id, array $attributes, $inner_blocks, $source_post_id ) {
+	public static function sign( $query_id, array $attributes, $inner_blocks, $source_post_id, array $page_context = array() ) {
 		$definition = array(
 			'queryId'      => (string) $query_id,
 			'sourcePostId' => absint( $source_post_id ),
@@ -126,19 +130,22 @@ class RefreshSource {
 		);
 		$reference  = self::reference( $definition );
 		$key        = 'dsgo_query_source_' . $reference;
-		// Reuse one record and renew its TTL for every freshly rendered page.
-		// WordPress skips unchanged option values; only expiry needs updating.
-		set_transient( $key, $definition, self::LIFETIME );
-		$source = base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
-			(string) wp_json_encode(
-				array(
-					'v'            => self::VERSION,
-					'queryId'      => $definition['queryId'],
-					'sourcePostId' => $definition['sourcePostId'],
-					'ref'          => $reference,
-				)
-			)
+		self::store( $key, $definition );
+
+		$envelope = array(
+			'v'            => self::VERSION,
+			'queryId'      => $definition['queryId'],
+			'sourcePostId' => $definition['sourcePostId'],
+			'ref'          => $reference,
 		);
+		// Page facts travel in the signed envelope, never in the stored record:
+		// they vary per request (a search term, an archive date), so keying the
+		// record on them would let anonymous requests mint a 30-day row each.
+		// The signature covers the envelope, so they still can't be forged.
+		if ( ! empty( $page_context['currentPostId'] ) || ! empty( $page_context['inheritedVars'] ) ) {
+			$envelope['ctx'] = $page_context;
+		}
+		$source = base64_encode( (string) wp_json_encode( $envelope ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
 
 		return array(
 			'source'    => $source,
@@ -147,12 +154,35 @@ class RefreshSource {
 	}
 
 	/**
+	 * Persist a definition, avoiding a database write on every page view.
+	 *
+	 * Without a persistent object cache a transient lives in wp_options, so an
+	 * unconditional set_transient() is two option writes per Query per view.
+	 * An unchanged record is only rewritten once half its lifetime has elapsed,
+	 * which keeps it comfortably ahead of any page cache that holds the key.
+	 *
+	 * @param string $key        Transient key.
+	 * @param array  $definition Definition to store.
+	 * @return void
+	 */
+	private static function store( $key, array $definition ) {
+		if ( ! wp_using_ext_object_cache() && get_transient( $key ) === $definition ) {
+			$expires = (int) get_option( '_transient_timeout_' . $key, 0 );
+			if ( $expires - time() > self::LIFETIME / 2 ) {
+				return;
+			}
+		}
+
+		set_transient( $key, $definition, self::LIFETIME );
+	}
+
+	/**
 	 * Verify and decode a signed source.
 	 *
 	 * @param mixed  $source    Encoded source from the request.
 	 * @param mixed  $signature Signature from the request.
 	 * @param string $query_id  Query ID the request names.
-	 * @return array{queryId: string, sourcePostId: int, attributes: array, innerBlocks: string}|null Definition, or null when it doesn't verify.
+	 * @return array{queryId: string, sourcePostId: int, attributes: array, innerBlocks: string, pageContext?: array}|null Definition, or null when it doesn't verify.
 	 */
 	public static function verify( $source, $signature, $query_id ) {
 		if ( ! is_string( $source ) || '' === $source || ! is_string( $signature ) ) {
@@ -171,7 +201,8 @@ class RefreshSource {
 			$data['queryId'] !== (string) $query_id ||
 			! is_int( $data['sourcePostId'] ) ||
 			! is_string( $data['ref'] ) ||
-			! preg_match( '/^[a-f0-9]{64}$/D', $data['ref'] )
+			! preg_match( '/^[a-f0-9]{64}$/D', $data['ref'] ) ||
+			! is_array( $data['ctx'] ?? array() )
 		) {
 			return null;
 		}
@@ -187,6 +218,10 @@ class RefreshSource {
 			! hash_equals( self::reference( $definition ), $data['ref'] )
 		) {
 			return null;
+		}
+
+		if ( ! empty( $data['ctx'] ) ) {
+			$definition['pageContext'] = $data['ctx'];
 		}
 
 		return $definition;

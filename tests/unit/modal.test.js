@@ -6,7 +6,7 @@
  * @package
  */
 
-/* global Document */
+/* global Document, KeyboardEvent */
 
 // Import modal functionality
 import '../../src/blocks/modal/view.js';
@@ -289,6 +289,18 @@ describe('DSGModal - Core Functionality', () => {
 	});
 
 	describe('Focus Trap', () => {
+		// jsdom has no layout; treat every element as rendered.
+		beforeEach(() => {
+			jest.spyOn(
+				window.HTMLElement.prototype,
+				'getClientRects'
+			).mockImplementation(() => [{}]);
+		});
+
+		afterEach(() => {
+			jest.restoreAllMocks();
+		});
+
 		test('should trap focus within modal', () => {
 			const modal = createMockModal();
 			const content = modal.querySelector('.dsgo-modal__content');
@@ -755,5 +767,60 @@ describe('Gallery Navigation', () => {
 			expect(instance1.isOpen).toBe(true);
 			done();
 		}, 400);
+	});
+});
+
+describe('DSGModal - focus trap', () => {
+	let rectsSpy;
+
+	beforeEach(() => {
+		// jsdom has no layout: treat every element as rendered once shown.
+		rectsSpy = jest
+			.spyOn(window.HTMLElement.prototype, 'getClientRects')
+			.mockImplementation(function () {
+				return this.closest('.dsgo-modal-hidden') ? [] : [{}];
+			});
+	});
+
+	afterEach(() => {
+		rectsSpy.mockRestore();
+		cleanupModals();
+	});
+
+	test('open() computes focusables after display and Tab does not close', () => {
+		const modal = createMockModal({ animationType: 'none' });
+		const instance = new window.DSGModal(modal);
+		modal.classList.add('dsgo-modal-hidden');
+		instance.updateFocusableElements(); // hidden: empty list gets cached
+
+		modal.classList.remove('dsgo-modal-hidden');
+		instance.open();
+
+		expect(instance.focusableElements.length).toBeGreaterThan(0);
+		expect(document.activeElement).toBe(instance.focusableElements[0]);
+
+		document.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+		);
+		expect(instance.isOpen).toBe(true);
+	});
+
+	test('Tab with focus outside the list moves to the first element', () => {
+		const modal = createMockModal({ animationType: 'none' });
+		const instance = new window.DSGModal(modal);
+		instance.open();
+
+		instance.content.setAttribute('tabindex', '-1');
+		instance.content.focus();
+
+		const event = new KeyboardEvent('keydown', {
+			key: 'Tab',
+			bubbles: true,
+			cancelable: true,
+		});
+		document.dispatchEvent(event);
+
+		expect(event.defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(instance.focusableElements[0]);
 	});
 });

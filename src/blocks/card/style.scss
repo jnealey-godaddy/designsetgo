@@ -127,7 +127,8 @@
 .dsgo-card__title--hidden,
 .dsgo-card__subtitle--hidden,
 .dsgo-card__body--hidden,
-.dsgo-card__badge--hidden {
+.dsgo-card__badge--hidden,
+.dsgo-card .dsgo-card__cta--hidden {
 	display: none;
 }
 

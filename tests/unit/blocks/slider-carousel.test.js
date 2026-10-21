@@ -9,7 +9,7 @@
  * @package
  */
 
-/* global Document, KeyboardEvent, TouchEvent, MouseEvent */
+/* global Document, KeyboardEvent, TouchEvent, MouseEvent, HTMLElement */
 
 const SLIDE_WIDTH = 100;
 /** Wide enough that slidesPerView (rather than its tablet/mobile twin) applies. */
@@ -588,5 +588,221 @@ describe('slides per view is measured, not predicted', () => {
 		expect(trackOf(slider).style.transform).toBe(
 			`translateX(-${SLIDE_WIDTH * 3}px)`
 		);
+	});
+});
+
+describe('right-to-left sliders', () => {
+	// jsdom does not resolve `direction` in getComputedStyle; report the inline
+	// value the fixture sets, as a browser would for the cascaded one.
+	beforeEach(() => {
+		jest.spyOn(window, 'getComputedStyle').mockImplementation((el) => ({
+			direction: el.style?.direction || 'ltr',
+			gap: '0px',
+		}));
+	});
+
+	function createRtlSlider(options = {}) {
+		const slider = createSlider(options);
+		slider.style.direction = 'rtl';
+		return slider;
+	}
+
+	test('translates the track toward positive x so later slides come into view', () => {
+		const slider = createRtlSlider({ slideCount: 4 });
+		requireAndInit();
+
+		pressKey(slider, 'ArrowLeft'); // RTL: Left is forward.
+		expect(trackOf(slider).style.transform).toBe(
+			`translateX(${SLIDE_WIDTH}px)`
+		);
+
+		pressKey(slider, 'ArrowRight'); // Back to the first slide.
+		expect(trackOf(slider).style.transform).toBe('translateX(0px)');
+	});
+
+	test('mouse drag direction is mirrored', () => {
+		const slider = createRtlSlider({
+			slideCount: 4,
+			dataAttributes: { draggable: 'true' },
+		});
+		requireAndInit();
+		const events = [];
+		slider.addEventListener('dsgo-slider-change', (e) =>
+			events.push(e.detail)
+		);
+
+		const track = trackOf(slider);
+		track.dispatchEvent(
+			new MouseEvent('mousedown', { clientX: 300, bubbles: true })
+		);
+		document.dispatchEvent(
+			new MouseEvent('mousemove', { clientX: 400, bubbles: true })
+		);
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+		jest.advanceTimersByTime(600);
+
+		// Content dragged right reveals the slide on the left: the next one.
+		expect(events[events.length - 1].currentIndex).toBe(1);
+	});
+
+	test('looped clones land on the matching real slide', () => {
+		// cloneNode does not carry the per-element offsetWidth stub.
+		Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+			configurable: true,
+			get() {
+				return this.classList.contains('dsgo-slide') ? SLIDE_WIDTH : 0;
+			},
+		});
+		const slider = createRtlSlider({
+			slideCount: 3,
+			dataAttributes: { loop: 'true' },
+		});
+		requireAndInit();
+
+		pressKey(slider, 'ArrowRight'); // RTL backward, into the before-clones.
+		const real = slider.querySelectorAll(
+			'.dsgo-slide:not(.dsgo-slide--clone)'
+		);
+		expect(real.length).toBe(3);
+		// After the jump the track rests on a real slide: 1 clone + 2 = index 3.
+		expect(trackOf(slider).style.transform).toBe(
+			`translateX(${SLIDE_WIDTH * 3}px)`
+		);
+		delete HTMLElement.prototype.offsetWidth;
+	});
+
+	test('mirrors the arrow chevrons', () => {
+		const ltr = createSlider({ dataAttributes: { showArrows: 'true' } });
+		const rtl = createRtlSlider({ dataAttributes: { showArrows: 'true' } });
+		requireAndInit();
+		const pathOf = (s) =>
+			s.querySelector('.dsgo-slider__arrow--prev path').getAttribute('d');
+		expect(pathOf(rtl)).not.toBe(pathOf(ltr));
+	});
+});
+
+describe('loop clones', () => {
+	test('are inert as well as aria-hidden', () => {
+		const slider = createSlider({
+			slideCount: 3,
+			dataAttributes: { loop: 'true' },
+		});
+		requireAndInit();
+		const clones = slider.querySelectorAll('.dsgo-slide--clone');
+		expect(clones.length).toBeGreaterThan(0);
+		clones.forEach((clone) => {
+			expect(clone.getAttribute('aria-hidden')).toBe('true');
+			expect(clone.hasAttribute('inert')).toBe(true);
+		});
+	});
+});
+
+describe('runtime semantics', () => {
+	test('swaps aria-roledescription to carousel', () => {
+		const slider = createSlider();
+		slider.setAttribute('aria-roledescription', 'slider');
+		requireAndInit();
+		expect(slider.getAttribute('aria-roledescription')).toBe('carousel');
+	});
+});
+
+describe('autoplay controls', () => {
+	beforeEach(() => {
+		window.IntersectionObserver = class {
+			constructor(cb) {
+				this.cb = cb;
+			}
+			observe(el) {
+				this.cb([{ target: el, isIntersecting: true }]);
+			}
+			disconnect() {}
+		};
+	});
+	afterEach(() => {
+		delete window.IntersectionObserver;
+	});
+
+	const autoplayAttrs = {
+		autoplay: 'true',
+		autoplayInterval: '1000',
+	};
+
+	test('renders a pause button that stops and resumes autoplay', () => {
+		const slider = createSlider({
+			slideCount: 4,
+			dataAttributes: autoplayAttrs,
+		});
+		requireAndInit();
+		const events = [];
+		slider.addEventListener('dsgo-slider-change', (e) =>
+			events.push(e.detail)
+		);
+
+		const button = slider.querySelector('.dsgo-slider__autoplay-toggle');
+		expect(button).not.toBeNull();
+		expect(button.getAttribute('aria-label')).toBe('Pause autoplay');
+
+		button.click();
+		expect(button.getAttribute('aria-label')).toBe('Start autoplay');
+		jest.advanceTimersByTime(5000);
+		expect(events.length).toBe(0);
+
+		button.click();
+		expect(button.getAttribute('aria-label')).toBe('Pause autoplay');
+		jest.advanceTimersByTime(1100);
+		expect(events.length).toBe(1);
+	});
+
+	test('no button when autoplay is off', () => {
+		const slider = createSlider();
+		requireAndInit();
+		expect(
+			slider.querySelector('.dsgo-slider__autoplay-toggle')
+		).toBeNull();
+	});
+
+	test('stops on the last slide when not looping', () => {
+		const slider = createSlider({
+			slideCount: 3,
+			dataAttributes: autoplayAttrs,
+		});
+		requireAndInit();
+		const events = [];
+		slider.addEventListener('dsgo-slider-change', (e) =>
+			events.push(e.detail)
+		);
+
+		jest.advanceTimersByTime(10000);
+		expect(events.length).toBe(2); // 0 -> 1 -> 2, then it stops.
+		const button = slider.querySelector('.dsgo-slider__autoplay-toggle');
+		expect(button.getAttribute('aria-label')).toBe('Start autoplay');
+
+		button.click(); // Restarts from the beginning.
+		expect(events[events.length - 1].currentIndex).toBe(0);
+	});
+});
+
+describe('scroll-driven mode with reduced motion', () => {
+	test('falls back to a navigable slider without a pin spacer', () => {
+		window.matchMedia = jest.fn().mockImplementation((query) => ({
+			matches: true,
+			media: query,
+			addEventListener: jest.fn(),
+			removeEventListener: jest.fn(),
+		}));
+		const slider = createSlider({
+			slideCount: 3,
+			dataAttributes: { scrollDriven: 'true' },
+		});
+		slider.classList.add('dsgo-slider--scroll-driven');
+		requireAndInit();
+
+		expect(document.querySelector('.dsgo-slider-pin-spacer')).toBeNull();
+		expect(slider.classList.contains('dsgo-slider--scroll-driven')).toBe(
+			false
+		);
+		expect(
+			slider.querySelector('.dsgo-slider__arrow--next')
+		).not.toBeNull();
 	});
 });

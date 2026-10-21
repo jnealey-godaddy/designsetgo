@@ -67,7 +67,7 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 			<ol class="dsgo-breadcrumbs__list">
 				<?php foreach ( $trail as $index => $item ) : ?>
 					<li class="<?php echo esc_attr( 'dsgo-breadcrumbs__item' . ( ! empty( $item['is_current'] ) ? ' dsgo-breadcrumbs__item--current' : '' ) ); ?>">
-						<?php if ( empty( $item['is_current'] ) || ! empty( $attributes['linkCurrent'] ) ) : ?>
+						<?php if ( ! empty( $item['url'] ) && ( empty( $item['is_current'] ) || ! empty( $attributes['linkCurrent'] ) ) ) : ?>
 							<a href="<?php echo esc_url( $item['url'] ); ?>" class="dsgo-breadcrumbs__link"<?php echo ! empty( $item['is_current'] ) ? ' aria-current="page"' : ''; ?>>
 								<?php echo esc_html( $item['title'] ); ?>
 							</a>
@@ -94,7 +94,7 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs_schema' ) ) {
 	 * Print the BreadcrumbList JSON-LD for the page being viewed.
 	 *
 	 * Rendered server-side so crawlers that don't run JavaScript still see it.
-	 * Only a trail for the queried post describes this page — a breadcrumbs
+	 * Only a trail for the queried post (or, on an archive, the archive itself) describes this page — a breadcrumbs
 	 * block inside a Query loop describes its item, not the page — and only
 	 * the first one prints, so a header and a footer copy don't both emit it.
 	 *
@@ -104,7 +104,17 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs_schema' ) ) {
 	function designsetgo_render_breadcrumbs_schema( array $trail, $block ) {
 		$post_id = isset( $block->context['postId'] ) ? (int) $block->context['postId'] : 0;
 
-		if ( did_action( 'designsetgo_breadcrumbs_schema_printed' ) || ! is_singular() || get_queried_object_id() !== $post_id ) {
+		if ( did_action( 'designsetgo_breadcrumbs_schema_printed' ) ) {
+			return;
+		}
+
+		// Singular: the trail must be for the queried post. Archives and the
+		// posts index: the trail describes the requested page itself.
+		$describes_page = is_singular()
+			? get_queried_object_id() === $post_id
+			: designsetgo_breadcrumb_is_page_level_view( $block ) && ( is_archive() || ( is_home() && ! is_front_page() ) );
+
+		if ( ! $describes_page ) {
 			return;
 		}
 

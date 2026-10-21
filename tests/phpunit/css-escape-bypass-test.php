@@ -316,4 +316,33 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'color:#ff0000', $html );
 	}
+
+	/**
+	 * Safe CSS that merely uses escapes must come back as written.
+	 */
+	public function test_safe_escaped_css_is_returned_unchanged() {
+		$css = '.md\\:flex { content: "a\\"b"; }';
+		$this->assertSame( $css, CSS_Sanitizer::sanitize( $css ) );
+	}
+
+	/**
+	 * Escaped dangerous CSS is still caught and returned decoded and blocked.
+	 */
+	public function test_unsafe_escaped_css_is_still_blocked() {
+		$out = CSS_Sanitizer::sanitize( 'a { background: \\75rl(javascript:alert(1)); }' );
+		$this->assertStringNotContainsString( 'javascript', $out );
+	}
+
+	/**
+	 * Only the standalone "selector" placeholder is replaced.
+	 */
+	public function test_sanitize_for_block_replaces_only_the_placeholder() {
+		$out = CSS_Sanitizer::sanitize_for_block(
+			'selector { color: red; } selector .selector-x, [data-selector] { margin: 0; }',
+			'.blk'
+		);
+		$this->assertStringContainsString( '.blk { color: red; }', $out );
+		$this->assertStringContainsString( '.blk .selector-x', $out );
+		$this->assertStringContainsString( '[data-selector]', $out );
+	}
 }

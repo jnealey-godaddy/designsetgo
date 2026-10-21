@@ -47,7 +47,8 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 		// Search (term name LIKE).
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			$args['name__like'] = $search;
@@ -97,9 +98,10 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 			++$item_index;
 		}
 
-		$state = array(
-			'totalItems' => $total_terms,
-			'totalPages' => $per_page > 0 ? (int) ceil( $total_terms / $per_page ) : 0,
+		$totals = designsetgo_query_paginate_totals( $total_terms, (int) $atts['offset'], $per_page );
+		$state  = array(
+			'totalItems' => $totals['totalItems'],
+			'totalPages' => $totals['totalPages'],
 			'page'       => $page,
 		);
 		designsetgo_query_set_last_state( $query_id, $state );

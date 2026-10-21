@@ -34,14 +34,20 @@ export function parseDurationMs(value, fallback = 500) {
 /**
  * Read the slider's configuration off its data attributes.
  *
- * @param {HTMLElement} slider The `.dsgo-slider` root element.
+ * @param {HTMLElement} slider                     The `.dsgo-slider` root element.
+ * @param {Object}      options                    Parse options.
+ * @param {boolean}     options.ignoreScrollDriven Treat a scroll-driven slider as an
+ *                                                 ordinary paged one (reduced motion):
+ *                                                 the pinned spacer would otherwise
+ *                                                 leave every slide but the first
+ *                                                 unreachable.
  * @return {Object} Parsed configuration.
  */
-export function parseSliderConfig(slider) {
+export function parseSliderConfig(slider, { ignoreScrollDriven = false } = {}) {
 	const data = slider.dataset;
 	const effect = data.effect || 'slide';
 	const forcesSingleSlide = SINGLE_SLIDE_EFFECTS.includes(effect);
-	const scrollDriven = data.scrollDriven === 'true';
+	const scrollDriven = !ignoreScrollDriven && data.scrollDriven === 'true';
 	const perView = (key) =>
 		forcesSingleSlide ? 1 : parseFloat(data[key]) || 1;
 
@@ -64,7 +70,14 @@ export function parseSliderConfig(slider) {
 		swipeable: data.swipeable === 'true',
 		freeMode: data.freeMode === 'true',
 		centeredSlides: data.centeredSlides === 'true',
-		showArrows: scrollDriven ? false : data.showArrows === 'true',
+		// A scroll-driven slider that fell back to paged navigation must still
+		// be navigable, whatever chrome the author hid for the pinned mode.
+		showArrows: scrollDriven
+			? false
+			: data.showArrows === 'true' ||
+				(ignoreScrollDriven &&
+					data.scrollDriven === 'true' &&
+					data.showDots !== 'true'),
 		showDots: scrollDriven ? false : data.showDots === 'true',
 		mobileBreakpoint: parseInt(data.mobileBreakpoint, 10) || 768,
 		tabletBreakpoint: parseInt(data.tabletBreakpoint, 10) || 1024,

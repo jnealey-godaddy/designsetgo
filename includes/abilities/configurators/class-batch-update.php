@@ -228,6 +228,16 @@ class Batch_Update extends Abstract_Ability {
 			$total_updated += $result['updated'];
 		}
 
+		// Nothing matched: leave the post alone (no new revision, no modified date).
+		if ( 0 === $total_updated ) {
+			return array(
+				'success'           => true,
+				'post_id'           => $post_id,
+				'total_updated'     => 0,
+				'operation_results' => $operation_results,
+			);
+		}
+
 		// Serialize and update post.
 		$content = serialize_blocks( $blocks );
 
@@ -266,13 +276,9 @@ class Batch_Update extends Abstract_Ability {
 		$updated = 0;
 
 		foreach ( $blocks as &$block ) {
-			// Check if this block matches.
-			if ( $block['blockName'] === $block_name ) {
-				// Check filter if provided.
-				if ( $filter && ! $this->block_matches_filter( $block, $filter ) ) {
-					continue;
-				}
-
+			// Check if this block matches. A block that fails the filter is simply
+			// not updated: its inner blocks are still searched below.
+			if ( $block['blockName'] === $block_name && ( ! $filter || $this->block_matches_filter( $block, $filter ) ) ) {
 				$synced = Layout_Updater::apply( $block, $attributes );
 				if ( is_wp_error( $synced ) ) {
 					return $synced;
@@ -309,14 +315,59 @@ class Batch_Update extends Abstract_Ability {
 	 * @return bool True if block matches filter.
 	 */
 	private function block_matches_filter( array $block, array $filter ): bool {
-		$attrs = $block['attrs'] ?? array();
+		// Attributes at their block.json default are not stored in the comment, so
+		// compare against the defaults merged under the stored values.
+		$attrs = array_merge( $this->get_attribute_defaults( (string) $block['blockName'] ), $block['attrs'] ?? array() );
 
 		foreach ( $filter as $key => $value ) {
-			if ( ! isset( $attrs[ $key ] ) || $attrs[ $key ] !== $value ) {
+			if ( ! array_key_exists( $key, $attrs ) || ! $this->values_match( $attrs[ $key ], $value ) ) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * Default values of a registered block's attributes.
+	 *
+	 * @param string $block_name Block name.
+	 * @return array<string, mixed> Attribute => default, for attributes that declare one.
+	 */
+	private function get_attribute_defaults( string $block_name ): array {
+		$type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		if ( ! $type || empty( $type->attributes ) ) {
+			return array();
+		}
+
+		$defaults = array();
+		foreach ( $type->attributes as $name => $definition ) {
+			if ( is_array( $definition ) && array_key_exists( 'default', $definition ) ) {
+				$defaults[ $name ] = $definition['default'];
+			}
+		}
+
+		return $defaults;
+	}
+
+	/**
+	 * Compare a stored attribute value with a filter value.
+	 *
+	 * Strict, except that numbers and numeric strings match each other
+	 * ("3" vs 3), which is how callers and stored JSON routinely differ.
+	 *
+	 * @param mixed $actual   Stored (or default) value.
+	 * @param mixed $expected Filter value.
+	 * @return bool
+	 */
+	private function values_match( $actual, $expected ): bool {
+		if ( $actual === $expected ) {
+			return true;
+		}
+		if ( is_numeric( $actual ) && is_numeric( $expected ) ) {
+			return (float) $actual === (float) $expected;
+		}
+
+		return false;
 	}
 }

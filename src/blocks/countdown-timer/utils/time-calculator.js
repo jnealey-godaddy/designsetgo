@@ -3,6 +3,13 @@
  */
 import { resolveTargetTimestamp } from './timezone';
 
+const UNIT_MS = [
+	['days', 86400000],
+	['hours', 3600000],
+	['minutes', 60000],
+	['seconds', 1000],
+];
+
 /**
  * Calculate the time remaining until a target date/time.
  *
@@ -23,12 +30,18 @@ import { resolveTargetTimestamp } from './timezone';
  *                                     empty or unusable. Null when unknown,
  *                                     which reads the wall clock in the
  *                                     browser's zone (see resolveTargetTimestamp).
+ * @param {Object}      [show]         - Which units are displayed
+ *                                     ({days, hours, minutes, seconds}; a
+ *                                     missing key means shown). A hidden unit
+ *                                     rolls up into the next smaller visible
+ *                                     one (3d 5h with Days off is 77 hours).
  * @return {Object} Object containing days, hours, minutes, seconds, and isComplete flag
  */
 export function calculateTimeRemaining(
 	targetDateTime,
 	timezone = '',
-	siteTimezone = null
+	siteTimezone = null,
+	show = {}
 ) {
 	if (!targetDateTime) {
 		return {
@@ -72,15 +85,18 @@ export function calculateTimeRemaining(
 			};
 		}
 
-		// Calculate time units
-		const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-		const hours = Math.floor(
-			(difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-		);
-		const minutes = Math.floor(
-			(difference % (1000 * 60 * 60)) / (1000 * 60)
-		);
-		const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+		// Largest to smallest; a hidden unit's time falls through to the
+		// next visible one instead of being dropped.
+		const result = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+		let remaining = difference;
+		UNIT_MS.forEach(([unit, ms]) => {
+			if (show?.[unit] === false) {
+				return;
+			}
+			result[unit] = Math.floor(remaining / ms);
+			remaining -= result[unit] * ms;
+		});
+		const { days, hours, minutes, seconds } = result;
 
 		return {
 			days,

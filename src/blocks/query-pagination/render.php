@@ -78,6 +78,11 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 			return;
 		}
 
+		// The page this Query actually rendered, so a first paint on a later
+		// page makes Load more / infinite scroll request the NEXT page, not
+		// page 2 again.
+		$rendered_page = isset( $state['page'] ) ? max( 1, (int) $state['page'] ) : designsetgo_query_current_page( $query_id );
+
 		// Infinite scroll: emit the sentinel + hidden fallback button.
 		if ( 'infinite' === $pagination_kind ) {
 			$auto_pause      = isset( $attributes['autoPauseAfter'] ) ? (int) $attributes['autoPauseAfter'] : 3;
@@ -90,10 +95,10 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 				array(
 					'queryId'       => $query_id,
 					'autoLoadCount' => 0,
-					'page'          => 1,
+					'page'          => $rendered_page,
 					'busy'          => false,
 					'restUrl'       => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'nonce'         => function_exists( 'designsetgo_query_rest_nonce' ) ? designsetgo_query_rest_nonce() : ( is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '' ), // Visitors get none: a stale one on a cached page is rejected by core.
 				),
 				JSON_HEX_APOS
 			);
@@ -151,10 +156,10 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 			$lm_context = wp_json_encode(
 				array(
 					'queryId' => $query_id,
-					'page'    => 1,
+					'page'    => $rendered_page,
 					'busy'    => false,
 					'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
-					'nonce'   => wp_create_nonce( 'wp_rest' ),
+					'nonce'   => function_exists( 'designsetgo_query_rest_nonce' ) ? designsetgo_query_rest_nonce() : ( is_user_logged_in() ? wp_create_nonce( 'wp_rest' ) : '' ), // Visitors get none: a stale one on a cached page is rejected by core.
 				),
 				JSON_HEX_APOS
 			);

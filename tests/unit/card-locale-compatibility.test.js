@@ -149,8 +149,16 @@ it('migrates hidden legacy text without invalidating its English image label', (
 			'"title":"Alex Morgan"',
 			'"showTitle":false,"title":"Alex Morgan"'
 		)
-		.replace('<h3 class="dsgo-card__title">Alex Morgan</h3>', '');
+		.replace('<h3 class="dsgo-card__title">Alex Morgan</h3>', '')
+		// Content saved in that era had no CTA element for a card with its CTA
+		// off (the current save() always writes one, hidden).
+		.replace(
+			'<div class="dsgo-card__cta dsgo-card__cta--hidden"></div>',
+			''
+		);
 	const [block] = parse(html);
+	// The CTA element is missing, so this opens through a deprecation.
+	expect(console).toHaveInformed();
 	expect(block.isValid).toBe(true);
 	expect(block.attributes.title).toBe('Alex Morgan');
 	expect(block.attributes.showTitle).toBe(false);

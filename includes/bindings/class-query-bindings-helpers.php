@@ -145,7 +145,13 @@ if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) :
 		// $args['__dsgo_post_id']. Honour that first so the wrapper
 		// doesn't fall through to get_the_ID(), which returns 0 in a
 		// REST context and would cause every scalar source to return null.
-		if ( ! empty( $args['__dsgo_post_id'] ) ) {
+		//
+		// Only for those block-less callers. When core is resolving a real
+		// binding it passes a WP_Block, and `$args` then comes straight from the
+		// block's stored metadata - post content an author controls - so a
+		// `__dsgo_post_id` there is untrusted and would point the binding at any
+		// post. The wrapper above overwrites the arg after its own resolution.
+		if ( ! ( $block instanceof \WP_Block ) && ! empty( $args['__dsgo_post_id'] ) ) {
 			return (int) $args['__dsgo_post_id'];
 		}
 

@@ -11,3 +11,4 @@ export { useBlockColors } from './useBlockColors';
 export { default as useTablistKeyboard } from './useTablistKeyboard';
 export { useIconDefaults } from './useIconDefaults';
 export { useFixedOrientation } from './useFixedOrientation';
+export { useWasJustInserted, wasJustInserted } from './useWasJustInserted';

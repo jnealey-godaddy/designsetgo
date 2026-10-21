@@ -16,6 +16,7 @@ import { __ } from '@wordpress/i18n';
 import { isValidImageUrl } from '../../utils/is-valid-image-url';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import metadata from './block.json';
+import saveV2 from './deprecated-save-v2';
 
 /**
  * V1 deprecation: before title / subtitle / bodyText / badgeText became sourced
@@ -325,4 +326,37 @@ const v1 = {
 	},
 };
 
-export default [v1];
+/**
+ * V2 deprecation: save() before the CTA area was always rendered and before the
+ * badge lost its live-region role.
+ *
+ * - With "Show CTA" off the CTA <div> was left out of the markup, so its inner
+ *   blocks were not serialized and were lost on the next load. The current
+ *   save() always writes the <div> and hides it with `dsgo-card__cta--hidden`.
+ * - The badge carried role="status" and a default aria-label of "Badge", so a
+ *   screen reader announced "Badge" instead of the badge text and treated it as
+ *   a live region. The current save() writes a plain <span>.
+ *
+ * Markup-only change, attribute schema unchanged, so no isEligible: stored HTML
+ * no longer matches the current save() and this frozen copy reproduces it.
+ * migrate() drops `badgeAriaLabel`, which is sourced from the old aria-label
+ * and would otherwise be carried forward as stale state.
+ */
+const v2 = {
+	apiVersion: metadata.apiVersion,
+	supports: metadata.supports,
+	attributes: metadata.attributes,
+	migrate(attributes) {
+		const { badgeAriaLabel, ...rest } = attributes;
+		return rest;
+	},
+	save: saveV2,
+};
+
+// v1 BEFORE v2: both can match an invalid block, and only v1 carries the text of
+// a field that was hidden when it was saved (v1 kept it as a comment attribute
+// with no element; v2 sources it from an element that isn't there, so it would
+// reset to ''). v1's save() cannot match content written under v2 (v2 hides a
+// field with a `--hidden` element, which v1 never wrote), so v2 content still
+// falls through to v2.
+export default [v1, v2];

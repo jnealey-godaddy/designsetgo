@@ -5,7 +5,37 @@
  */
 
 import { renderHook } from '@testing-library/react';
+import { RegistryProvider } from '@wordpress/data';
 import { useUniqueBlockId } from '../../../src/hooks/useUniqueBlockId';
+import { wasJustInserted } from '../../../src/hooks/useWasJustInserted';
+
+jest.mock('../../../src/hooks/useWasJustInserted', () => ({
+	wasJustInserted: jest.fn(() => false),
+}));
+
+/**
+ * A registry whose block-editor store holds the given blocks.
+ *
+ * @param {Array<{clientId: string, name: string, attributes: Object}>} blocks
+ */
+function registryWith(blocks) {
+	const byId = Object.fromEntries(blocks.map((b) => [b.clientId, b]));
+	const selectors = {
+		getBlockName: (id) => byId[id]?.name,
+		getBlockAttributes: (id) => byId[id]?.attributes,
+		getClientIdsWithDescendants: () => Object.keys(byId),
+	};
+	return { select: () => selectors };
+}
+
+function renderWithBlocks(blocks, props) {
+	const registry = registryWith(blocks);
+	return renderHook(() => useUniqueBlockId(props), {
+		wrapper: ({ children }) => (
+			<RegistryProvider value={registry}>{children}</RegistryProvider>
+		),
+	});
+}
 
 describe('useUniqueBlockId', () => {
 	test('seeds attribute with clientId substring when empty', () => {
@@ -107,5 +137,60 @@ describe('useUniqueBlockId', () => {
 		setAttributes.mockClear();
 		rerender({ clientId: 'bbbbbbbb22222222', value: 'aaaaaaaa' });
 		expect(setAttributes).not.toHaveBeenCalled();
+	});
+
+	describe('duplicated blocks', () => {
+		const original = {
+			clientId: 'original11111111',
+			name: 'designsetgo/accordion-item',
+			attributes: { uniqueId: 'accordion-item-abc' },
+		};
+		const copy = {
+			clientId: 'copy222222222222',
+			name: 'designsetgo/accordion-item',
+			attributes: { uniqueId: 'accordion-item-abc' },
+		};
+		const props = (setAttributes) => ({
+			clientId: copy.clientId,
+			attributeName: 'uniqueId',
+			value: 'accordion-item-abc',
+			setAttributes,
+			prefix: 'accordion-item-',
+		});
+
+		afterEach(() => wasJustInserted.mockReset());
+
+		test('re-seeds a just-inserted copy whose id another block holds', () => {
+			wasJustInserted.mockReturnValue(true);
+			const setAttributes = jest.fn();
+			renderWithBlocks([original, copy], props(setAttributes));
+			expect(setAttributes).toHaveBeenCalledWith({
+				uniqueId: 'accordion-item-copy2222',
+			});
+		});
+
+		test('leaves duplicates loaded with the post alone', () => {
+			wasJustInserted.mockReturnValue(false);
+			const setAttributes = jest.fn();
+			renderWithBlocks([original, copy], props(setAttributes));
+			expect(setAttributes).not.toHaveBeenCalled();
+		});
+
+		test('keeps the id of a just-inserted block that is unique', () => {
+			wasJustInserted.mockReturnValue(true);
+			const setAttributes = jest.fn();
+			renderWithBlocks([copy], props(setAttributes));
+			expect(setAttributes).not.toHaveBeenCalled();
+		});
+
+		test('ignores the same id on a different block type', () => {
+			wasJustInserted.mockReturnValue(true);
+			const setAttributes = jest.fn();
+			renderWithBlocks(
+				[{ ...original, name: 'designsetgo/counter' }, copy],
+				props(setAttributes)
+			);
+			expect(setAttributes).not.toHaveBeenCalled();
+		});
 	});
 });

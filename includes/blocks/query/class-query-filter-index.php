@@ -260,6 +260,43 @@ class FilterIndex {
 	}
 
 	/**
+	 * Deletes index rows that point at a deleted term.
+	 *
+	 * Core's wp_delete_term() detaches posts without firing set_object_terms, so
+	 * the per-post hooks never see it and the rows would keep counting a term
+	 * that no longer exists.
+	 *
+	 * @param int    $term_id  Deleted term ID.
+	 * @param string $taxonomy Taxonomy the term belonged to.
+	 * @return void
+	 */
+	public static function remove_term_values( int $term_id, string $taxonomy ): void {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$removed = false;
+		foreach ( FilterRegistry::all() as $filter_key => $config ) {
+			if ( 'taxonomy' !== ( $config['type'] ?? '' ) || ( $config['source'] ?? '' ) !== $taxonomy ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
+			$wpdb->delete(
+				self::table_name(),
+				array(
+					'filter_key'   => (string) $filter_key,
+					'filter_value' => (string) $term_id,
+				),
+				array( '%s', '%s' )
+			);
+			$removed = true;
+		}
+		if ( $removed ) {
+			self::bump_counts_cache();
+		}
+	}
+
+	/**
 	 * Deletes all index rows for a given object.
 	 *
 	 * Scoped by both object_id and object_type to avoid cross-type collisions
@@ -325,11 +362,21 @@ class FilterIndex {
 		// Exclude self-filter from intersection — OR semantics within a group.
 		unset( $active_filters[ $key ] );
 
+		// The index stores each post's directly-assigned terms, but the query a
+		// filter drives matches a term's descendants too (include_children).
+		// Count and intersect the same way, or a parent term reads lower than
+		// the results it returns. Resolved at read time so existing indexes
+		// stay correct without a rebuild.
+		$families = self::option_families( $key, $string_values );
+		foreach ( $active_filters as $f_key => $f_values ) {
+			$active_filters[ $f_key ] = self::expand_with_descendants( (string) $f_key, array_map( 'strval', (array) $f_values ) );
+		}
+
 		// Cache lookup. Key is (epoch, filter_key, option_values, active_filters, post_type).
 		// The epoch is bumped on every index write, so cached entries remain valid
 		// until the next reindex/remove/rebuild. Skipped in tests where the
 		// per-request table_exists cache can race with the drop-table teardown.
-		$cache_key = self::build_counts_cache_key( $key, $string_values, $active_filters, $post_type );
+		$cache_key = self::build_counts_cache_key( $key, $string_values, $active_filters, $post_type, $families );
 		$cached    = wp_cache_get( $cache_key, self::CACHE_GROUP );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -373,29 +420,113 @@ class FilterIndex {
 			}
 		}
 
-		$value_placeholders = implode( ',', array_fill( 0, count( $string_values ), '%s' ) );
-		$sql                = "SELECT filter_value, COUNT(DISTINCT object_id) AS cnt
+		// Options with no descendants share one grouped query; an option whose
+		// family spans several terms needs its own DISTINCT count so a post in
+		// two child terms still counts once.
+		$simple = array();
+		$nested = array();
+		foreach ( $string_values as $value ) {
+			if ( count( $families[ $value ] ) > 1 ) {
+				$nested[ $value ] = $families[ $value ];
+			} else {
+				$simple[] = $value;
+			}
+		}
+
+		if ( ! empty( $simple ) ) {
+			$value_placeholders = implode( ',', array_fill( 0, count( $simple ), '%s' ) );
+			$sql                = "SELECT filter_value, COUNT(DISTINCT object_id) AS cnt
             FROM {$table}
             WHERE filter_key = %s AND filter_value IN ({$value_placeholders}){$post_type_sql}
             {$intersect_sql}
             GROUP BY filter_value";
 
-		$params = array_merge( array( $key ), $string_values, $post_type_params, $intersect_params );
+			$params = array_merge( array( $key ), $simple, $post_type_params, $intersect_params );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table query; cached via wp_cache_get/set above. Placeholders built programmatically and passed through $wpdb->prepare().
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table query; cached via wp_cache_get/set above. Placeholders built programmatically and passed through $wpdb->prepare().
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 
-		if ( is_array( $rows ) ) {
-			foreach ( $rows as $row ) {
-				if ( array_key_exists( $row->filter_value, $counts ) ) {
-					$counts[ $row->filter_value ] = (int) $row->cnt;
+			if ( is_array( $rows ) ) {
+				foreach ( $rows as $row ) {
+					if ( array_key_exists( $row->filter_value, $counts ) ) {
+						$counts[ $row->filter_value ] = (int) $row->cnt;
+					}
 				}
 			}
+		}
+
+		foreach ( $nested as $value => $family ) {
+			$value_placeholders = implode( ',', array_fill( 0, count( $family ), '%s' ) );
+			$sql                = "SELECT COUNT(DISTINCT object_id)
+            FROM {$table}
+            WHERE filter_key = %s AND filter_value IN ({$value_placeholders}){$post_type_sql}
+            {$intersect_sql}";
+
+			$params = array_merge( array( $key ), $family, $post_type_params, $intersect_params );
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table query; cached via wp_cache_get/set above. Placeholders built programmatically and passed through $wpdb->prepare().
+			$counts[ (string) $value ] = (int) $wpdb->get_var( $wpdb->prepare( $sql, $params ) );
 		}
 
 		wp_cache_set( $cache_key, $counts, self::CACHE_GROUP, self::CACHE_TTL ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- CACHE_TTL = 300 seconds (VIP minimum)
 
 		return $counts;
+	}
+
+	/**
+	 * The taxonomy a taxonomy-type filter indexes, when it is hierarchical.
+	 *
+	 * @param string $filter_key Filter key.
+	 * @return string Taxonomy name, or '' for meta filters and flat taxonomies.
+	 */
+	private static function hierarchical_taxonomy( string $filter_key ): string {
+		$config = FilterRegistry::get( $filter_key );
+		if ( ! $config || 'taxonomy' !== ( $config['type'] ?? '' ) || empty( $config['source'] ) ) {
+			return '';
+		}
+		$taxonomy = (string) $config['source'];
+
+		return is_taxonomy_hierarchical( $taxonomy ) ? $taxonomy : '';
+	}
+
+	/**
+	 * Map each option value to the term IDs it counts: itself plus descendants.
+	 *
+	 * @param string   $filter_key Filter key.
+	 * @param string[] $values     Option values (term IDs for taxonomy filters).
+	 * @return array<string, string[]> Value => IDs; always contains the value itself.
+	 */
+	private static function option_families( string $filter_key, array $values ): array {
+		$taxonomy = self::hierarchical_taxonomy( $filter_key );
+		$families = array();
+		foreach ( $values as $value ) {
+			$family = array( (string) $value );
+			if ( '' !== $taxonomy && ctype_digit( (string) $value ) ) {
+				$children = get_term_children( (int) $value, $taxonomy );
+				if ( is_array( $children ) ) {
+					$family = array_merge( $family, array_map( 'strval', $children ) );
+				}
+			}
+			$families[ (string) $value ] = array_values( array_unique( $family ) );
+		}
+
+		return $families;
+	}
+
+	/**
+	 * Add descendants to a list of selected values (an active filter group).
+	 *
+	 * @param string   $filter_key Filter key.
+	 * @param string[] $values     Selected values.
+	 * @return string[] Values plus their descendants.
+	 */
+	private static function expand_with_descendants( string $filter_key, array $values ): array {
+		$expanded = array();
+		foreach ( self::option_families( sanitize_key( $filter_key ), $values ) as $family ) {
+			$expanded = array_merge( $expanded, $family );
+		}
+
+		return array_values( array_unique( $expanded ) );
 	}
 
 	/**
@@ -407,9 +538,10 @@ class FilterIndex {
 	 * @param array  $string_values  Sorted, unique option values.
 	 * @param array  $active_filters Active filter state (minus self-filter).
 	 * @param string $post_type      Post-type scope or empty string for all.
+	 * @param array  $families       Option value => term IDs it counts (itself and descendants).
 	 * @return string
 	 */
-	private static function build_counts_cache_key( string $filter_key, array $string_values, array $active_filters, string $post_type = '' ): string {
+	private static function build_counts_cache_key( string $filter_key, array $string_values, array $active_filters, string $post_type = '', array $families = array() ): string {
 		$epoch = self::get_counts_epoch();
 		// Sort values and active filters for stable key regardless of input order.
 		sort( $string_values );
@@ -422,7 +554,7 @@ class FilterIndex {
 			}
 		}
 		return 'cfo:' . $epoch . ':' . md5(
-			$filter_key . '|' . wp_json_encode( $string_values ) . '|' . wp_json_encode( $active_filters ) . '|pt=' . $post_type
+			$filter_key . '|' . wp_json_encode( $string_values ) . '|' . wp_json_encode( $active_filters ) . '|pt=' . $post_type . '|fam=' . wp_json_encode( $families )
 		);
 	}
 

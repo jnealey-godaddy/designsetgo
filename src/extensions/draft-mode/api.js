@@ -44,13 +44,15 @@ export async function createDraft(postId, overrides = {}) {
 /**
  * Publish (merge) a draft into the original
  *
- * @param {number} draftId - The draft post ID.
+ * @param {number}  draftId - The draft post ID.
+ * @param {boolean} force   - Publish even if the live page changed after the draft was created.
  * @return {Promise<Object>} Result with original_id.
  */
-export async function publishDraft(draftId) {
+export async function publishDraft(draftId, force = false) {
 	return apiFetch({
 		path: `/designsetgo/v1/draft-mode/${draftId}/publish`,
 		method: 'POST',
+		data: { force },
 	});
 }
 

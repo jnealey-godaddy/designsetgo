@@ -52,3 +52,30 @@ describe('block-animations frontend: visual review capture', () => {
 		).toBe('true');
 	});
 });
+
+describe('block-animations frontend: unreachable elements', () => {
+	it('flags elements that sit wholly inside the observer dead band', async () => {
+		const { isUnreachableByObserver } = await import(
+			'../../../src/extensions/block-animations/frontend'
+		);
+		const mk = (top, height) => {
+			const el = document.createElement('div');
+			el.getBoundingClientRect = () => ({ top, height });
+			return el;
+		};
+		Object.defineProperty(document.documentElement, 'scrollHeight', {
+			configurable: true,
+			value: 2000,
+		});
+		window.scrollY = 0;
+
+		// 40px tall at the top of the page, offset 100: never reaches the band.
+		expect(isUnreachableByObserver(mk(10, 40), 100)).toBe(true);
+		// Starts in the last 100px of the document.
+		expect(isUnreachableByObserver(mk(1950, 40), 100)).toBe(true);
+		// Ordinary elements are left to the observer.
+		expect(isUnreachableByObserver(mk(10, 400), 100)).toBe(false);
+		expect(isUnreachableByObserver(mk(800, 100), 100)).toBe(false);
+		expect(isUnreachableByObserver(mk(10, 40), 0)).toBe(false);
+	});
+});

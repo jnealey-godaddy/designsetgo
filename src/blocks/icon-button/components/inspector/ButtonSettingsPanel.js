@@ -299,6 +299,7 @@ export const ButtonSettingsPanel = ({
 						// limitation of static placeholders); the empty field
 						// always means "inherit the themed default".
 						placeholder="8px"
+						min={0}
 						onChange={(value) => setAttributes({ iconGap: value })}
 						units={[
 							{ value: 'px', label: 'px' },

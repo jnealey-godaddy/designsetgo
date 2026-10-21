@@ -18,6 +18,7 @@ import {
 	disconnectSentinelObservers as dsgoDisconnectSentinelObservers,
 	stampFeedPositions as dsgoStampFeedPositions,
 	announceResultCount as dsgoAnnounceResultCount,
+	swapRegionContent as dsgoSwapRegionContent,
 	collectParams as dsgoCollectParamsShared,
 	itemContainerSelector as dsgoItemContainerSelector,
 	extractRenderedItems as dsgoExtractRenderedItems,
@@ -191,7 +192,20 @@ function dsgoDelegatedRefresh(ctx, url) {
 }
 
 /**
+ * Parsed contexts for markup whose Interactivity directives are dead (a
+ * region swapped in by a refresh). Keyed by the `data-wp-context` element so
+ * mutable state (`page`, `busy`, `autoLoadCount`) survives between clicks
+ * instead of being re-parsed from the attribute, and lost, every time.
+ *
+ * @type {WeakMap<Element, {raw: string, ctx: Object}>}
+ */
+const dsgoDomContexts = new WeakMap();
+
+/**
  * Read the IAPI context encoded in a filter form's data-wp-context attribute.
+ *
+ * The same object is returned for the same element until its attribute
+ * changes, so callers may mutate it to carry state across events.
  *
  * @param {HTMLElement} el Descendant of the interactive form.
  * @return {Object|null}   Parsed context object, or null if missing/malformed.
@@ -201,8 +215,17 @@ function dsgoGetContextFromDom(el) {
 	if (!form) {
 		return null;
 	}
+	const raw = form.getAttribute('data-wp-context') || '';
+	const cached = dsgoDomContexts.get(form);
+	if (cached && cached.raw === raw) {
+		return cached.ctx;
+	}
 	try {
-		return JSON.parse(form.getAttribute('data-wp-context') || '');
+		const ctx = JSON.parse(raw);
+		if (ctx && typeof ctx === 'object') {
+			dsgoDomContexts.set(form, { raw, ctx });
+		}
+		return ctx;
 	} catch {
 		return null;
 	}
@@ -223,6 +246,31 @@ function dsgoGetQueryContainer(queryId, el) {
 	// page can't collide even when another query shares the same queryId.
 	const region = el?.closest(`[data-dsgo-query-region="${queryId}"]`);
 	return region?.querySelector(selector) || doc.querySelector(selector);
+}
+
+/**
+ * A random-order Query's shuffle seed, from its region.
+ *
+ * On first paint the Interactivity API merges the region's context (which
+ * holds the seed) into the pagination and filter contexts. After a swap the
+ * delegated handlers read only an element's own context, so fall back to the
+ * region, whose outer element and context survive every swap.
+ *
+ * @param {Object}           ctx Context of the control that was used.
+ * @param {HTMLElement|null} el  The control, to find its own region.
+ * @return {number|undefined} Seed, or undefined for a non-random Query.
+ */
+function dsgoQuerySeed(ctx, el) {
+	if (ctx?.seed) {
+		return ctx.seed;
+	}
+	const selector = `[data-dsgo-query-region="${ctx?.queryId}"]`;
+	const region = el?.closest?.(selector) || document.querySelector(selector);
+	try {
+		return JSON.parse(region?.getAttribute('data-wp-context') || '{}').seed;
+	} catch {
+		return undefined;
+	}
 }
 
 async function dsgoLoadMorePlain(ctx, button) {
@@ -267,6 +315,8 @@ async function dsgoLoadMorePlain(ctx, button) {
 			params: dsgoCollectParams(new URL(window.location.href)),
 			currentUrl: window.location.href,
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// Continue a random-order Query's shuffle rather than re-rolling it.
+			seed: dsgoQuerySeed(ctx, button),
 		});
 		const res = await fetch(request.url, request.init);
 
@@ -703,6 +753,9 @@ function* dsgoQueryRefresh(ctx, url) {
 			params: dsgoCollectParams(url),
 			currentUrl: url.toString(),
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// The region's context (and its seed) outlives this swap, so keep
+			// the shuffle Load more will continue.
+			seed: dsgoQuerySeed(ctx, null),
 		});
 		const res = yield fetch(request.url, request.init);
 
@@ -741,7 +794,7 @@ function* dsgoQueryRefresh(ctx, url) {
 			dsgoDisconnectSentinelObservers(region);
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
-			region.innerHTML = newRegion.innerHTML;
+			dsgoSwapRegionContent(region, newRegion, queryId);
 			dsgoInitInfiniteObservers(region);
 			// The swap replaced every element inside the region, including any
 			// block with a frontend runtime (a slider host, counters, maps).
@@ -825,6 +878,9 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			params: dsgoCollectParams(url),
 			currentUrl: url.toString(),
 			multiQuery: dsgoPageQueryIds(document).length > 1,
+			// The region's context (and its seed) outlives this swap, so keep
+			// the shuffle Load more will continue.
+			seed: dsgoQuerySeed(ctx, null),
 		});
 		const res = await fetch(request.url, request.init);
 
@@ -858,7 +914,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			dsgoDisconnectSentinelObservers(region);
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
-			region.innerHTML = newRegion.innerHTML;
+			dsgoSwapRegionContent(region, newRegion, queryId);
 			dsgoInitInfiniteObservers(region);
 			// The swap replaced every element inside the region, including any
 			// block with a frontend runtime (a slider host, counters, maps).

@@ -15,6 +15,7 @@ import {
 	PublishConfirmModal,
 	DiscardConfirmModal,
 	CreateConfirmModal,
+	ConflictConfirmModal,
 } from './components/DraftModeModals';
 import {
 	IsDraftView,
@@ -41,6 +42,8 @@ export default function DraftModePanel() {
 		showPublishConfirm,
 		showDiscardConfirm,
 		showCreateConfirm,
+		showConflictConfirm,
+		setShowConflictConfirm,
 		setShowPublishConfirm,
 		setShowDiscardConfirm,
 		setShowCreateConfirm,
@@ -141,8 +144,14 @@ export default function DraftModePanel() {
 			{/* Confirmation modals */}
 			<PublishConfirmModal
 				isOpen={showPublishConfirm}
-				onConfirm={confirmPublishDraft}
+				onConfirm={() => confirmPublishDraft(false)}
 				onCancel={() => setShowPublishConfirm(false)}
+			/>
+
+			<ConflictConfirmModal
+				isOpen={showConflictConfirm}
+				onConfirm={() => confirmPublishDraft(true)}
+				onCancel={() => setShowConflictConfirm(false)}
 			/>
 
 			<DiscardConfirmModal

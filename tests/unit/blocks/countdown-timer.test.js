@@ -255,8 +255,9 @@ describe('Countdown Timer - Frontend', () => {
 				targetDatetime: pastDate,
 			});
 
-			const observer = loadView();
-			simulateIntersection(observer, timer);
+			// An already-passed timer resolves at init, without waiting to be
+			// scrolled near.
+			loadView();
 
 			expect(getUnitNumber(timer, 'days')).toBe('00');
 			expect(getUnitNumber(timer, 'hours')).toBe('00');
@@ -274,8 +275,9 @@ describe('Countdown Timer - Frontend', () => {
 				completionMessage: 'Event has ended!',
 			});
 
-			const observer = loadView();
-			simulateIntersection(observer, timer);
+			// An already-passed timer resolves at init, without waiting to be
+			// scrolled near.
+			loadView();
 
 			const messageEl = timer.querySelector(
 				'.dsgo-countdown-timer__completion-message'
@@ -296,8 +298,9 @@ describe('Countdown Timer - Frontend', () => {
 				completionAction: 'hide',
 			});
 
-			const observer = loadView();
-			simulateIntersection(observer, timer);
+			// An already-passed timer resolves at init, without waiting to be
+			// scrolled near.
+			loadView();
 
 			expect(timer.style.display).toBe('none');
 		});

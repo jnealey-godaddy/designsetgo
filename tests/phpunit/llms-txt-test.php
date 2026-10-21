@@ -1181,8 +1181,8 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * An Accept that lists only unsupported types returns 'none' so the
-	 * handler can emit 406.
+	 * An Accept that lists only unsupported types returns 'none'. The handler
+	 * ignores it and lets WordPress render the page normally (never a 406).
 	 */
 	public function test_negotiation_unsupported_only_is_none() {
 		$this->assertSame( 'none', Negotiation_Handler::preferred_type( 'application/pdf' ) );

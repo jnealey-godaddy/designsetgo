@@ -59,9 +59,9 @@ class Interactions {
 			return $block_content;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $block_content );
+		$processor = Dynamic_Block_Extension_Props::root_processor( $block_content );
 
-		if ( ! $processor->next_tag() ) {
+		if ( null === $processor ) {
 			return $block_content;
 		}
 

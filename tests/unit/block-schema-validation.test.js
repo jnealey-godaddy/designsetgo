@@ -400,5 +400,12 @@ describe('Block Schema Validation', () => {
 				expect(config.style).toBe('file:./style-index.css');
 			}
 		);
+
+		it.each(withBothStylesheets.map((b) => [b.dir, b.config]))(
+			'%s points "editorStyle" at the combined index.css (the build emits no editor.css)',
+			(dir, config) => {
+				expect(config.editorStyle).toBe('file:./index.css');
+			}
+		);
 	});
 });

@@ -134,8 +134,10 @@ class Animation_Defaults_Injector {
 			return $block_content;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $block_content );
-		if ( ! $processor->next_tag() ) {
+		// Same single-root guard as the extension-props mirror: a block that
+		// prints sibling elements has no one element to animate.
+		$processor = Dynamic_Block_Extension_Props::root_processor( $block_content );
+		if ( null === $processor ) {
 			return $block_content;
 		}
 

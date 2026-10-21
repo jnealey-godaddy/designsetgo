@@ -85,7 +85,12 @@ export default function Edit(props) {
 
 	// State for live countdown preview in editor
 	const [currentTime, setCurrentTime] = useState(
-		calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
+		calculateTimeRemaining(targetDateTime, timezone, siteTimezone, {
+			days: showDays,
+			hours: showHours,
+			minutes: showMinutes,
+			seconds: showSeconds,
+		})
 	);
 
 	// Set default date to 7 days from now on first load
@@ -116,12 +121,25 @@ export default function Edit(props) {
 
 		const interval = setInterval(() => {
 			setCurrentTime(
-				calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
+				calculateTimeRemaining(targetDateTime, timezone, siteTimezone, {
+					days: showDays,
+					hours: showHours,
+					minutes: showMinutes,
+					seconds: showSeconds,
+				})
 			);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [targetDateTime, timezone, siteTimezone]);
+	}, [
+		targetDateTime,
+		timezone,
+		siteTimezone,
+		showDays,
+		showHours,
+		showMinutes,
+		showSeconds,
+	]);
 
 	// Build unit styles - use accent-2 if available, otherwise currentColor
 	const unitStyle = {

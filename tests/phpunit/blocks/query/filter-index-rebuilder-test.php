@@ -79,7 +79,7 @@ class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 		$this->assertSame( 5, (int) $wpdb->get_var( 'SELECT COUNT(DISTINCT object_id) FROM ' . FilterIndex::table_name() ) );
 	}
 
-	public function test_rebuild_all_truncates_before_repopulating() {
+	public function test_rebuild_all_prunes_stale_rows_without_truncating() {
 		FilterIndex::install();
 		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
@@ -99,6 +99,24 @@ class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 			999999
 		) );
 		$this->assertSame( 0, $count, 'Stale row must be removed by rebuild_all.' );
+	}
+
+	public function test_deleting_a_term_purges_its_index_rows() {
+		FilterIndex::install();
+		\DesignSetGo\Blocks\Query\FilterIndexHooks::register_hooks();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$cat  = $this->factory->category->create();
+		$post = $this->factory->post->create( array( 'post_status' => 'publish', 'post_category' => array( $cat ) ) );
+		FilterIndex::reindex_object( 'post', $post );
+
+		global $wpdb;
+		$count = fn() => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . FilterIndex::table_name() . ' WHERE filter_key = %s AND filter_value = %s', 'category', (string) $cat ) );
+		$this->assertSame( 1, $count() );
+
+		wp_delete_term( $cat, 'category' );
+
+		$this->assertSame( 0, $count() );
 	}
 
 	public function test_rebuild_all_status_option_records_completion() {

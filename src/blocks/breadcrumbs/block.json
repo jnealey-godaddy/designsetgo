@@ -16,7 +16,10 @@
 	"icon": "arrow-right-alt2",
 	"usesContext": [
 		"postId",
-		"postType"
+		"postType",
+		"queryId",
+		"designsetgo/queryId",
+		"designsetgo/currentItemId"
 	],
 	"attributes": {
 		"showHome": {

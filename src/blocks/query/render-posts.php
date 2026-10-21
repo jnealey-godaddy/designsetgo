@@ -243,57 +243,72 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( $use_groups && ! empty( $collected_ids ) ) {
 			require_once __DIR__ . '/render-helpers.php';
 			$groups = designsetgo_query_partition_items( $collected_ids, $atts['groupBy'] );
-			foreach ( $groups as $group ) {
-				// Render group header block(s) with group context.
-				$header_html_out = '';
-				foreach ( $group_header_blocks as $hb ) {
-					$header_block     = new WP_Block(
-						$hb,
-						array(
-							'designsetgo/queryId'    => sanitize_key( (string) ( $context['query_id'] ?? '' ) ),
-							'designsetgo/groupLabel' => (string) $group['label'],
-							'designsetgo/groupValue' => (string) $group['value'],
-						)
-					);
-					$header_html_out .= $header_block->render();
-				}
-				// Render items in this group.
-				// Pass both the flat cross-group index (designsetgo/itemIndex) and a
-				// per-group zero-based index (designsetgo/groupItemIndex) so authors
-				// can target either in custom bindings or visibility rules.
-				$group_items_html = '';
-				$group_item_index = 0;
-				foreach ( $group['ids'] as $gid ) {
-					$post_obj = get_post( $gid );
-					if ( ! $post_obj ) {
-						continue;
+			try {
+				foreach ( $groups as $group ) {
+					// Render group header block(s) with group context.
+					$header_html_out = '';
+					foreach ( $group_header_blocks as $hb ) {
+						$header_block     = new WP_Block(
+							$hb,
+							array(
+								'designsetgo/queryId'    => sanitize_key( (string) ( $context['query_id'] ?? '' ) ),
+								'designsetgo/groupLabel' => (string) $group['label'],
+								'designsetgo/groupValue' => (string) $group['value'],
+							)
+						);
+						$header_html_out .= $header_block->render();
 					}
-					$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
-					$group_items_html .= designsetgo_query_render_item(
-						$item_template_html,
-						array(
-							'postId'                     => (int) $gid,
-							'postType'                   => $post_obj->post_type,
-							'index'                      => $item_index,
-							'designsetgo/itemIndex'      => $item_index,
-							'designsetgo/groupItemIndex' => $group_item_index,
-						),
-						$atts['itemTagName']
+					// Render items in this group.
+					// Pass both the flat cross-group index (designsetgo/itemIndex) and a
+					// per-group zero-based index (designsetgo/groupItemIndex) so authors
+					// can target either in custom bindings or visibility rules.
+					$group_items_html = '';
+					$group_item_index = 0;
+					foreach ( $group['ids'] as $gid ) {
+						$post_obj = get_post( $gid );
+						if ( ! $post_obj ) {
+							continue;
+						}
+						// Core blocks in the item template read the global post, so it
+						// must be this item, not the page the loop sits on.
+						// setup_postdata() fills the other globals but not $post.
+						$post = $post_obj; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+						setup_postdata( $post );
+						$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
+						$group_items_html .= designsetgo_query_render_item(
+							$item_template_html,
+							array(
+								'postId'                => (int) $gid,
+								'postType'              => $post_obj->post_type,
+								'index'                 => $item_index,
+								'designsetgo/itemIndex' => $item_index,
+								'designsetgo/groupItemIndex' => $group_item_index,
+							),
+							$atts['itemTagName']
+						);
+						++$group_item_index;
+					}
+					$items_html .= sprintf(
+						'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
+						esc_attr( (string) $group['value'] ),
+						$header_html_out,     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output.
+						$group_items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from designsetgo_query_render_item().
 					);
-					++$group_item_index;
 				}
-				$items_html .= sprintf(
-					'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
-					esc_attr( (string) $group['value'] ),
-					$header_html_out,     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output.
-					$group_items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from designsetgo_query_render_item().
-				);
+			} finally {
+				wp_reset_postdata();
+				$post = $saved_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 			}
 		}
 
-		$state = array(
-			'totalItems' => (int) $query->found_posts,
-			'totalPages' => (int) $query->max_num_pages,
+		$totals = designsetgo_query_paginate_totals(
+			$query->found_posts,
+			(int) $atts['offset'],
+			(int) ( $args['posts_per_page'] ?? 0 )
+		);
+		$state  = array(
+			'totalItems' => $totals['totalItems'],
+			'totalPages' => $totals['totalPages'],
 			'page'       => max( 1, (int) $context['page'] ),
 		);
 		designsetgo_query_set_last_state( $query_id, $state );
@@ -364,7 +379,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		// Search — attribute-bound OR URL-bound via bindSearchTo.
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			$args['s'] = $search;
@@ -374,12 +390,13 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args['author__in'] = array_map( 'absint', $atts['author'] );
 		}
 
-		if ( ! empty( $atts['excludeCurrent'] ) && is_singular() ) {
-			$current_id = get_queried_object_id();
-			if ( $current_id ) {
-				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
-				$args['post__not_in'] = array( $current_id );
-			}
+		// The page's facts come from the request on first paint and from the
+		// signed definition on a REST refresh — see designsetgo_query_request_context().
+		$page_context = designsetgo_query_request_context();
+
+		if ( ! empty( $atts['excludeCurrent'] ) && $page_context['currentPostId'] ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
+			$args['post__not_in'] = array( $page_context['currentPostId'] );
 		}
 
 		// Tax query (supports nested AND/OR groups).
@@ -474,12 +491,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		}
 
 		// Current source: inherit a narrow subset of query vars from the outer archive.
-		if ( 'current' === $atts['source'] && isset( $GLOBALS['wp_query'] ) && $GLOBALS['wp_query']->query_vars ) {
-			$inherited = array_intersect_key(
-				$GLOBALS['wp_query']->query_vars,
-				array_flip( array( 'post_type', 'category_name', 'tag', 'author_name', 'year', 'monthnum', 's' ) )
-			);
-			$args      = array_merge( $args, $inherited );
+		if ( 'current' === $atts['source'] && ! empty( $page_context['inheritedVars'] ) ) {
+			$args = array_merge( $args, $page_context['inheritedVars'] );
 		}
 
 		// URL-param-driven filters (Task 14).
@@ -502,7 +515,8 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 		// Direct ?q= support: override search when bindSearchTo is not set or empty.
 		if ( isset( $params['q'] ) && '' === (string) $atts['bindSearchTo'] ) {
-			$q_val = is_array( $params['q'] ) ? implode( ' ', $params['q'] ) : (string) $params['q'];
+			$q_raw = designsetgo_query_scalar_param( $params['q'] );
+			$q_val = is_array( $q_raw ) ? implode( ' ', $q_raw ) : $q_raw;
 			$q_val = sanitize_text_field( $q_val );
 			if ( '' !== $q_val ) {
 				$args['s'] = $q_val;
@@ -518,8 +532,16 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {
 				continue;
 			}
-			$terms = is_array( $value ) ? $value : array( $value );
-			$terms = array_filter( array_map( 'sanitize_title', $terms ) );
+			// `filter_x=a,b` is the documented slug[,slug] form (the filter
+			// control ticks both); split it like the control does, or the pair
+			// collapses into one slug "ab".
+			$terms = array();
+			foreach ( is_array( $value ) ? $value : array( $value ) as $raw_term ) {
+				if ( is_scalar( $raw_term ) ) {
+					$terms = array_merge( $terms, explode( ',', (string) $raw_term ) );
+				}
+			}
+			$terms = array_unique( array_filter( array_map( 'sanitize_title', $terms ) ) );
 			if ( empty( $terms ) ) {
 				continue;
 			}
@@ -561,13 +583,61 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$sort_by         = sanitize_key( $parts[0] );
 			$sort_dir        = isset( $parts[1] ) && 'ASC' === strtoupper( $parts[1] ) ? 'ASC' : 'DESC';
 			$allowed_orderby = array( 'date', 'title', 'menu_order', 'rand', 'comment_count', 'meta_value', 'meta_value_num' );
-			if ( in_array( $sort_by, $allowed_orderby, true ) ) {
+			$is_meta_sort    = in_array( $sort_by, array( 'meta_value', 'meta_value_num' ), true );
+			// Sort options carry no meta key, so a meta sort needs one from the
+			// block; without it the option can't be honoured and is ignored
+			// rather than silently falling back to date.
+			$meta_key = isset( $args['meta_key'] ) ? $args['meta_key'] : sanitize_text_field( (string) $atts['orderByMetaKey'] );
+			if ( in_array( $sort_by, $allowed_orderby, true ) && ( ! $is_meta_sort || '' !== $meta_key ) ) {
 				$args['orderby'] = $sort_by;
 				$args['order']   = $sort_dir;
+				if ( $is_meta_sort ) {
+					$args['meta_key'] = $meta_key; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				} else {
+					// A leftover meta_key would drop every post that lacks it.
+					unset( $args['meta_key'] );
+				}
+			}
+		}
+
+		// Random order re-rolls on every request, so offset pagination would
+		// repeat and skip posts. Each first paint picks a fresh seed, which the
+		// region hands back with Load more / infinite scroll so later pages
+		// continue the same shuffle.
+		if ( 'rand' === $args['orderby'] ) {
+			$query_key = (string) ( $context['query_id'] ?? '' );
+			$requested = isset( $GLOBALS['designsetgo_query_requested_rand_seeds'] ) ? (array) $GLOBALS['designsetgo_query_requested_rand_seeds'] : array();
+			$seed      = isset( $context['rand_seed'] ) ? absint( $context['rand_seed'] ) : absint( $requested[ $query_key ] ?? 0 );
+			if ( $seed < 1 ) {
+				$seed = wp_rand( 1, 2147483647 );
+			}
+			$seed = (int) apply_filters( 'designsetgo_query_rand_seed', $seed, $atts, $context );
+
+			$GLOBALS['designsetgo_query_rand_seeds'][ $query_key ] = $seed;
+			$args['dsgo_rand_seed']                                = $seed;
+			if ( ! has_filter( 'posts_orderby', 'designsetgo_query_seeded_rand_orderby' ) ) {
+				add_filter( 'posts_orderby', 'designsetgo_query_seeded_rand_orderby', 10, 2 );
 			}
 		}
 
 		return $args;
 	}
 
+endif;
+
+if ( ! function_exists( 'designsetgo_query_seeded_rand_orderby' ) ) :
+	/**
+	 * Swap RAND() for RAND(seed) on Query loops that asked for a seeded shuffle.
+	 *
+	 * @param string    $orderby ORDER BY clause.
+	 * @param \WP_Query $query   Query.
+	 * @return string
+	 */
+	function designsetgo_query_seeded_rand_orderby( $orderby, $query ) {
+		$seed = $query instanceof \WP_Query ? $query->get( 'dsgo_rand_seed' ) : '';
+		if ( '' === $seed || null === $seed || false === strpos( (string) $orderby, 'RAND()' ) ) {
+			return $orderby;
+		}
+		return str_replace( 'RAND()', 'RAND(' . (int) $seed . ')', $orderby );
+	}
 endif;

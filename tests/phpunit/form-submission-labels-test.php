@@ -68,7 +68,7 @@ class Test_Form_Submission_Labels extends WP_UnitTestCase {
 		$request->set_param( 'formId', $form_id );
 		$request->set_param( 'fields', $fields );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		$request->set_param( 'sourcePostId', $post_id );
 
 		return $this->handler->handle_form_submission( $request );
@@ -178,7 +178,7 @@ class Test_Form_Submission_Labels extends WP_UnitTestCase {
 		$request->set_param( 'formId', 'hook1' );
 		$request->set_param( 'fields', array( array( 'name' => 'a', 'value' => 'x', 'type' => 'text' ) ) );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		$request->set_param( 'sourcePostId', $post_id );
 		$request->set_param( 'webhookUrl', 'https://93.184.216.35/attacker' );
 		$result = $this->handler->handle_form_submission( $request );
@@ -204,7 +204,7 @@ class Test_Form_Submission_Labels extends WP_UnitTestCase {
 		$request->set_param( 'formId', 'hook2' );
 		$request->set_param( 'fields', array( array( 'name' => 'a', 'value' => 'x', 'type' => 'text' ) ) );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		$request->set_param( 'sourcePostId', $post_id );
 		$request->set_param( 'webhookUrl', 'https://93.184.216.35/attacker' );
 		$result = $this->handler->handle_form_submission( $request );

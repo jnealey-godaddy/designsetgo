@@ -51,6 +51,10 @@ class FilterIndexCLI {
 		$batch  = (int) \WP_CLI\Utils\get_flag_value( $assoc_args, 'batch-size', 200 );
 		$result = FilterIndexRebuilder::rebuild_all( array( 'batch_size' => $batch ) );
 
+		if ( 'locked' === ( $result['status'] ?? '' ) ) {
+			\WP_CLI::error( 'Another rebuild is already running. Try again when it finishes.' );
+		}
+
 		if ( 'error' === ( $result['status'] ?? '' ) ) {
 			\WP_CLI::error( sprintf( 'Rebuild failed (status: %s).', $result['status'] ) );
 		}
@@ -96,6 +100,10 @@ class FilterIndexCLI {
 		if ( 'skipped' === ( $result['status'] ?? '' ) ) {
 			\WP_CLI::warning( sprintf( 'Filter "%s" is not registered — nothing to do.', $args[0] ) );
 			return;
+		}
+
+		if ( 'locked' === ( $result['status'] ?? '' ) ) {
+			\WP_CLI::error( 'Another rebuild is already running. Try again when it finishes.' );
 		}
 
 		if ( 'error' === ( $result['status'] ?? '' ) ) {

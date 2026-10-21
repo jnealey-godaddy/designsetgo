@@ -253,7 +253,7 @@ class Loader {
 	private function get_category_patterns( $category ) {
 		$patterns_dir  = DESIGNSETGO_PATH . 'patterns/';
 		$category_dir  = $patterns_dir . $category . '/';
-		$transient_key = self::CACHE_TRANSIENT_PREFIX . $category;
+		$transient_key = self::get_transient_key( $category );
 
 		// Skip cache in debug mode so new/removed patterns are picked up immediately.
 		$cache_enabled = ! defined( 'WP_DEBUG' ) || ! WP_DEBUG;
@@ -408,9 +408,29 @@ class Loader {
 		// Delete legacy transient.
 		delete_transient( self::CACHE_TRANSIENT );
 
-		// Delete all category-level transients.
+		// Delete all category-level transients: the pre-locale key and one per locale.
+		$locales = array_unique( array_merge( array( 'en_US', determine_locale() ), get_available_languages() ) );
 		foreach ( self::ALLOWED_CATEGORIES as $category ) {
 			delete_transient( self::CACHE_TRANSIENT_PREFIX . $category );
+			foreach ( $locales as $locale ) {
+				delete_transient( self::get_transient_key( $category, $locale ) );
+			}
 		}
+	}
+
+	/**
+	 * Transient key for a category's cached pattern data.
+	 *
+	 * Pattern titles and descriptions are translated when the files are
+	 * included, so the cache is per locale. Without it, whichever locale warmed
+	 * the cache decided the language every other user saw.
+	 *
+	 * @param string      $category Category directory name.
+	 * @param string|null $locale   Locale; defaults to the current one.
+	 * @return string
+	 */
+	public static function get_transient_key( $category, $locale = null ) {
+		$locale = $locale ? $locale : determine_locale();
+		return self::CACHE_TRANSIENT_PREFIX . $category . '_' . sanitize_key( $locale );
 	}
 }

@@ -82,10 +82,16 @@ class Find_Blocks extends Abstract_Ability {
 				),
 				'limit'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of posts to search', 'designsetgo' ),
+					'description' => __( 'Posts to search per page (newest-modified first)', 'designsetgo' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 100,
+				),
+				'page'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Page of posts to search, starting at 1. When the result has has_more true, call again with the next page: only one page of posts is scanned per call.', 'designsetgo' ),
+					'default'     => 1,
+					'minimum'     => 1,
 				),
 			),
 			'required'             => array( 'block_name' ),
@@ -102,19 +108,35 @@ class Find_Blocks extends Abstract_Ability {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'success'     => array(
+				'success'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the search succeeded', 'designsetgo' ),
 				),
-				'block_name'  => array(
+				'block_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Block name that was searched', 'designsetgo' ),
 				),
-				'total_found' => array(
+				'total_found'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Total number of matching blocks found', 'designsetgo' ),
 				),
-				'posts'       => array(
+				'page'          => array(
+					'type'        => 'integer',
+					'description' => __( 'Page of posts that was scanned', 'designsetgo' ),
+				),
+				'posts_scanned' => array(
+					'type'        => 'integer',
+					'description' => __( 'Number of posts scanned on this page', 'designsetgo' ),
+				),
+				'total_posts'   => array(
+					'type'        => 'integer',
+					'description' => __( 'Number of posts of this type and status across all pages', 'designsetgo' ),
+				),
+				'has_more'      => array(
+					'type'        => 'boolean',
+					'description' => __( 'True when more posts remain beyond this page, so the results are incomplete until the next page is fetched', 'designsetgo' ),
+				),
+				'posts'         => array(
 					'type'        => 'array',
 					'description' => __( 'Posts containing matching blocks', 'designsetgo' ),
 					'items'       => array(
@@ -151,7 +173,8 @@ class Find_Blocks extends Abstract_Ability {
 		$block_name  = $input['block_name'] ?? '';
 		$post_type   = $input['post_type'] ?? 'page';
 		$post_status = $input['post_status'] ?? 'publish';
-		$limit       = min( (int) ( $input['limit'] ?? 50 ), 100 );
+		$limit       = max( 1, min( (int) ( $input['limit'] ?? 50 ), 100 ) );
+		$page        = max( 1, (int) ( $input['page'] ?? 1 ) );
 
 		// Validate block name.
 		if ( empty( $block_name ) ) {
@@ -187,16 +210,18 @@ class Find_Blocks extends Abstract_Ability {
 		}
 
 		// Query posts.
-		$posts = get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false (see below)
+		$query = new \WP_Query(
 			array(
 				'post_type'        => $post_type,
 				'post_status'      => $post_status,
 				'posts_per_page'   => $limit,
+				'paged'            => $page,
 				'orderby'          => 'modified',
 				'order'            => 'DESC',
 				'suppress_filters' => false,
 			)
 		);
+		$posts = $query->posts;
 
 		$results     = array();
 		$total_found = 0;
@@ -225,10 +250,14 @@ class Find_Blocks extends Abstract_Ability {
 		}
 
 		return array(
-			'success'     => true,
-			'block_name'  => $block_name,
-			'total_found' => $total_found,
-			'posts'       => $results,
+			'success'       => true,
+			'block_name'    => $block_name,
+			'total_found'   => $total_found,
+			'page'          => $page,
+			'posts_scanned' => count( $posts ),
+			'total_posts'   => (int) $query->found_posts,
+			'has_more'      => $page < (int) $query->max_num_pages,
+			'posts'         => $results,
 		);
 	}
 

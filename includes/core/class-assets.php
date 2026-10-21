@@ -475,9 +475,22 @@ class Assets {
 			'form-', // All form blocks.
 		);
 
+		// Block stylesheets are registered as "designsetgo-{slug}-style". Match the
+		// slug exactly: a substring test made "tab" hit table-of-contents and
+		// comparison-table, "divider" hit section-divider, "slide" hit scroll-slides.
+		if ( ! preg_match( '/^designsetgo-(.+)-style$/', $handle, $handle_parts ) ) {
+			return $html;
+		}
+		$slug = $handle_parts[1];
+
 		// Check if this is a non-critical block.
 		foreach ( $noncritical_blocks as $block ) {
-			if ( strpos( $handle, $block ) !== false ) {
+			// A trailing hyphen marks a prefix (all form blocks); anything else is an exact slug.
+			$is_match = '-' === substr( $block, -1 )
+				? 0 === strpos( $slug, $block )
+				: $slug === $block;
+
+			if ( $is_match ) {
 				// Defer CSS using media attribute trick.
 				// Tells browser to load CSS async, then switch to 'all' media.
 				// Handle both double quotes (WordPress default) and single quotes.

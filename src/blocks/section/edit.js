@@ -47,7 +47,11 @@ import {
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { getOverlayOpacity } from '../../utils/overlay-opacity';
-import { useBlockColors, useFixedOrientation } from '../../hooks';
+import {
+	useBlockColors,
+	useFixedOrientation,
+	useWasJustInserted,
+} from '../../hooks';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -210,11 +214,16 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
-	// Auto-clear default padding for nested sections.
+	// Only a section the author just inserted is a candidate; one loaded with
+	// the post mounts too, and rewriting it here would silently change saved
+	// padding and dirty the post on open.
+	const wasJustInserted = useWasJustInserted(clientId);
+
+	// Auto-clear default padding for newly inserted nested sections.
 	// Intentionally uses [] deps (mount-only) — isNested is excluded because
 	// re-running on block moves would clear user-customized padding.
 	useEffect(() => {
-		if (!isNested) {
+		if (!isNested || !wasJustInserted) {
 			return;
 		}
 

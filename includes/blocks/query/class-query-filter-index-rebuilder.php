@@ -81,6 +81,15 @@ class FilterIndexRebuilder {
 	}
 
 	/**
+	 * Pushes the lock's timestamp forward so a long rebuild never outlives it.
+	 *
+	 * @return void
+	 */
+	private static function refresh_lock(): void {
+		update_option( self::LOCK_OPTION, time(), false );
+	}
+
+	/**
 	 * Releases the rebuild mutex by deleting the lock option.
 	 *
 	 * @return void
@@ -90,7 +99,7 @@ class FilterIndexRebuilder {
 	}
 
 	/**
-	 * Truncates the index and repopulates it from all published posts.
+	 * Repopulates the index from all published posts, then prunes stale rows.
 	 *
 	 * Batch-scans the posts table in chunks of $args['batch_size'] (default 200,
 	 * minimum 50). Writes progress to FilterIndex::OPTION_STATUS so callers can
@@ -161,23 +170,6 @@ class FilterIndexRebuilder {
 		}
 
 		$table = FilterIndex::table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- TRUNCATE has no cache; %i correctly escapes the identifier.
-		$truncated = $wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table ) );
-		FilterIndex::bump_counts_cache();
-		if ( false === $truncated ) {
-			self::write_status(
-				array(
-					'in_progress' => false,
-					'error'       => 'truncate_failed',
-					'updated_at'  => time(),
-				)
-			);
-			return array(
-				'status'     => 'error',
-				'processed'  => 0,
-				'total_rows' => 0,
-			);
-		}
 
 		// Keyset pagination: track the last ID seen and query `WHERE ID > $last_id`.
 		// OFFSET degrades quadratically because MySQL must scan all skipped rows;
@@ -205,6 +197,7 @@ class FilterIndexRebuilder {
 			}
 
 			$ids_count = count( $ids );
+			self::refresh_lock();
 			self::write_status(
 				array(
 					'in_progress' => $ids_count === $batch_size,
@@ -213,6 +206,8 @@ class FilterIndexRebuilder {
 				)
 			);
 		} while ( $ids_count === $batch_size );
+
+		self::prune_stale_rows( $table );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for the rebuild status; %i correctly escapes the identifier.
 		$total_rows  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
@@ -233,6 +228,42 @@ class FilterIndexRebuilder {
 			'processed'  => $processed,
 			'total_rows' => $total_rows,
 		);
+	}
+
+	/**
+	 * Removes rows the rebuild did not rewrite: posts that are gone or no
+	 * longer published, and filter keys that are no longer registered.
+	 *
+	 * The index is rewritten object by object instead of truncated up front, so
+	 * filter counts stay populated while a rebuild runs.
+	 *
+	 * @param string $table Index table name.
+	 * @return void
+	 */
+	private static function prune_stale_rows( string $table ): void {
+		global $wpdb;
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table maintenance; %i escapes identifiers.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE i FROM %i i LEFT JOIN {$wpdb->posts} p ON p.ID = i.object_id AND p.post_status = 'publish' WHERE i.object_type = 'post' AND p.ID IS NULL",
+				$table
+			)
+		);
+		$keys = array_map( 'strval', array_keys( FilterRegistry::all() ) );
+		if ( empty( $keys ) ) {
+			$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) );
+		} else {
+			$placeholders = implode( ',', array_fill( 0, count( $keys ), '%s' ) );
+			$wpdb->query(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders are generated from the key count.
+					"DELETE FROM %i WHERE filter_key NOT IN ({$placeholders})",
+					array_merge( array( $table ), $keys )
+				)
+			);
+		}
+		// phpcs:enable
+		FilterIndex::bump_counts_cache();
 	}
 
 	/**
@@ -296,11 +327,6 @@ class FilterIndexRebuilder {
 		$table      = FilterIndex::table_name();
 		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
 
-		// Delete all rows for this key in one statement — fast regardless of row count.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
-		$wpdb->delete( $table, array( 'filter_key' => $key ), array( '%s' ) );
-		FilterIndex::bump_counts_cache();
-
 		self::write_status(
 			array(
 				'in_progress' => true,
@@ -333,6 +359,7 @@ class FilterIndexRebuilder {
 			}
 
 			$ids_count = count( $ids );
+			self::refresh_lock();
 			self::write_status(
 				array(
 					'in_progress' => $ids_count === $batch_size,
@@ -341,6 +368,8 @@ class FilterIndexRebuilder {
 				)
 			);
 		} while ( $ids_count === $batch_size );
+
+		self::prune_stale_rows( $table );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for the rebuild status; %i correctly escapes the identifier.
 		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE filter_key = %s', $table, $key ) );
@@ -388,7 +417,10 @@ class FilterIndexRebuilder {
 		// also elapses — the two TTLs are aligned but a poll can still race
 		// a new click, so unlock explicitly.
 		if ( ! empty( $status['in_progress'] ) && ! empty( $status['started_at'] ) ) {
-			if ( time() - (int) $status['started_at'] > 5 * MINUTE_IN_SECONDS ) {
+			// Idle time since the last batch, not total runtime: a big rebuild
+			// legitimately runs longer than the lock TTL.
+			$last_activity = max( (int) $status['started_at'], (int) ( $status['updated_at'] ?? 0 ) );
+			if ( time() - $last_activity > self::LOCK_TTL ) {
 				$status['in_progress'] = false;
 				$status['error']       = 'timed_out';
 				update_option( FilterIndex::OPTION_STATUS, $status, false );

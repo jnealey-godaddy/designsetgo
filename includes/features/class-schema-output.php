@@ -109,6 +109,14 @@ class SchemaOutput {
 				continue;
 			}
 
+			// A block (and everything inside it) that a server-evaluated
+			// visibility rule hides is not on the page, so it must not be in
+			// the structured data either. Device-hidden blocks are different:
+			// they stay in the DOM, so they stay here.
+			if ( ! $this->passes_visibility( $block ) ) {
+				continue;
+			}
+
 			$name = isset( $block['blockName'] ) ? $block['blockName'] : '';
 			$type = isset( $block['attrs']['dsgoSchema'] ) ? $block['attrs']['dsgoSchema'] : 'none';
 
@@ -132,6 +140,35 @@ class SchemaOutput {
 		}
 
 		return $nodes;
+	}
+
+	/**
+	 * Whether a block's `dsgoVisibility` rules let it render for this request.
+	 *
+	 * Uses the same evaluator and the same page context as the render filter
+	 * (BlockVisibility::filter_render_block()), so the markup and the JSON-LD
+	 * agree about what is on the page.
+	 *
+	 * @param array $block Parsed block.
+	 * @return bool False when the rules hide the block.
+	 */
+	private function passes_visibility( array $block ) {
+		$rules = isset( $block['attrs']['dsgoVisibility'] ) ? $block['attrs']['dsgoVisibility'] : null;
+
+		if ( empty( $rules ) || ! is_array( $rules ) ) {
+			return true;
+		}
+
+		$context = array();
+		$post_id = (int) get_the_ID();
+		if ( $post_id ) {
+			$context = array(
+				'postId'   => $post_id,
+				'postType' => get_post_type( $post_id ),
+			);
+		}
+
+		return BlockVisibility::matches( $rules, $context );
 	}
 
 	/**

@@ -6,7 +6,8 @@
  * `Accept: text/markdown` with higher preference than `text/html`.
  *
  * Mirrors the acceptmarkdown.com readiness contract: honor q-values,
- * set `Vary: Accept`, reject fully-unsupported Accept headers with 406.
+ * set `Vary: Accept`. Requests that do not explicitly prefer Markdown are
+ * left to normal WordPress rendering (never a 406).
  *
  * @package DesignSetGo
  * @since   1.5.0
@@ -89,13 +90,11 @@ class Negotiation_Handler {
 
 		$preferred = self::preferred_type( $accept );
 
-		if ( 'none' === $preferred ) {
-			$this->send_406();
-			return;
-		}
-
+		// Only intervene when the client explicitly prefers Markdown. Anything
+		// else (html, json, images, unknown types) renders normally; never 406
+		// an ordinary page request.
 		if ( 'markdown' !== $preferred ) {
-			return; // HTML wins; let WordPress render normally.
+			return;
 		}
 
 		// Front page or blog posts index: serve the llms.txt listing as Markdown.
@@ -183,6 +182,7 @@ class Negotiation_Handler {
 
 			switch ( $type ) {
 				case 'text/markdown':
+				case 'text/x-markdown':
 					$md_explicit = ( null === $md_explicit ) ? $q : max( $md_explicit, $q );
 					break;
 				case 'text/html':
@@ -302,17 +302,5 @@ class Negotiation_Handler {
 		// Intentionally no Content-Length: it becomes incorrect under
 		// mod_deflate / ob_gzhandler, causing truncated or hung responses.
 		echo $markdown; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markdown body.
-	}
-
-	/**
-	 * Emit 406 Not Acceptable when the client rejects both html and markdown.
-	 */
-	private function send_406(): void {
-		nocache_headers();
-		status_header( 406 );
-		header( 'Content-Type: text/plain; charset=utf-8' );
-		header( 'Vary: Accept' );
-		echo "Not Acceptable. Supported media types: text/html, text/markdown.\n";
-		exit;
 	}
 }

@@ -167,6 +167,10 @@
 		&--outofstock {
 			color: var(--wp--preset--color--vivid-red, #cf2e2e);
 		}
+
+		&--onbackorder {
+			color: var(--wp--preset--color--luminous-vivid-amber, #fcb900);
+		}
 	}
 
 	&__description {

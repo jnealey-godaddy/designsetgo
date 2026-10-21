@@ -84,3 +84,38 @@ describe('tabs deep linking', () => {
 		expect(el.querySelector('#panel-outer-two').hidden).toBe(false);
 	});
 });
+
+describe('tabs accessibility wiring', () => {
+	beforeAll(() => {
+		require('../view.js');
+	});
+
+	afterEach(() => {
+		document.body.innerHTML = '';
+		window.location.hash = '';
+	});
+
+	it('points each panel aria-labelledby at its built tab, even with a custom anchor', () => {
+		const el = mount('');
+		const panel = el.querySelector('#panel-one');
+		panel.setAttribute('aria-labelledby', 'tab-unique-id');
+
+		new window.DSGTabs(el);
+
+		const tab = el.querySelector('.dsgo-tabs__tab');
+		expect(panel.getAttribute('aria-labelledby')).toBe(tab.id);
+		expect(document.getElementById(tab.id)).toBe(tab);
+	});
+
+	it('keeps the skip link out of the tablist', () => {
+		const el = mount('');
+
+		new window.DSGTabs(el);
+
+		const nav = el.querySelector('.dsgo-tabs__nav');
+		expect(nav.querySelector('.dsgo-tabs__skip-link')).toBeNull();
+		expect(nav.previousElementSibling.className).toBe(
+			'dsgo-tabs__skip-link'
+		);
+	});
+});

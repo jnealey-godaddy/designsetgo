@@ -326,4 +326,155 @@ class DesignSetGo_Breadcrumbs_Render_Test extends WP_UnitTestCase {
 
 		$this->assertSame( '', $html );
 	}
+
+	public function test_trail_omits_ancestors_the_visitor_cannot_read() {
+		$parent = self::factory()->post->create(
+			array(
+				'post_type'   => 'page',
+				'post_title'  => 'Secret Draft Parent',
+				'post_status' => 'draft',
+			)
+		);
+		$child  = self::factory()->post->create(
+			array(
+				'post_type'   => 'page',
+				'post_title'  => 'Public Child',
+				'post_parent' => $parent,
+			)
+		);
+		wp_set_current_user( 0 );
+
+		$block  = $this->block_with_context( array( 'postId' => $child ) );
+		$trail  = designsetgo_get_breadcrumb_trail( $block, array( 'showCurrent' => true ) );
+		$titles = wp_list_pluck( $trail, 'title' );
+
+		$this->assertSame( array( 'Public Child' ), $titles );
+
+		$this->go_to( get_permalink( $child ) );
+		$html = $this->render( array( 'showCurrent' => true ), $block );
+		$this->assertStringNotContainsString( 'Secret Draft Parent', $html );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$titles = wp_list_pluck( designsetgo_get_breadcrumb_trail( $block, array( 'showCurrent' => true ) ), 'title' );
+		$this->assertSame( array( 'Secret Draft Parent', 'Public Child' ), $titles );
+	}
+
+	public function test_term_choice_is_the_lowest_term_id_not_the_first_by_name() {
+		$zebra = self::factory()->category->create( array( 'name' => 'Zebra' ) );
+		$apple = self::factory()->category->create( array( 'name' => 'Apple' ) );
+		$post  = self::factory()->post->create( array( 'post_title' => 'Two Cats' ) );
+		wp_set_post_categories( $post, array( $apple, $zebra ) );
+
+		$titles = wp_list_pluck(
+			designsetgo_get_breadcrumb_trail(
+				$this->block_with_context( array( 'postId' => $post ) ),
+				array( 'showCurrent' => true )
+			),
+			'title'
+		);
+
+		$this->assertSame( array( 'Zebra', 'Two Cats' ), $titles );
+	}
+
+	public function test_separator_mirrors_directional_glyphs_in_rtl() {
+		$this->assertSame( '›', designsetgo_get_breadcrumb_separator( array( 'separator' => 'chevron' ) ) );
+
+		$GLOBALS['wp_locale']->text_direction = 'rtl';
+		try {
+			$this->assertSame( '‹', designsetgo_get_breadcrumb_separator( array( 'separator' => 'chevron' ) ) );
+			$this->assertSame( '<', designsetgo_get_breadcrumb_separator( array( 'separator' => 'greater' ) ) );
+			$this->assertSame( '←', designsetgo_get_breadcrumb_separator( array( 'separator' => 'arrow-right' ) ) );
+			$this->assertSame( '/', designsetgo_get_breadcrumb_separator( array( 'separator' => 'slash' ) ) );
+		} finally {
+			$GLOBALS['wp_locale']->text_direction = 'ltr';
+		}
+	}
+
+	public function test_category_archive_trail_has_term_ancestors() {
+		$parent = self::factory()->category->create( array( 'name' => 'Guides' ) );
+		$child  = self::factory()->category->create(
+			array(
+				'name'   => 'Gardening',
+				'parent' => $parent,
+			)
+		);
+		self::factory()->post->create( array( 'post_category' => array( $child ) ) );
+		$this->go_to( get_category_link( $child ) );
+
+		$trail = designsetgo_get_breadcrumb_trail(
+			$this->block_with_context( array() ),
+			array(
+				'showHome'    => true,
+				'showCurrent' => true,
+			)
+		);
+
+		$this->assertSame( array( 'Home', 'Guides', 'Gardening' ), wp_list_pluck( $trail, 'title' ) );
+		$this->assertTrue( $trail[2]['is_current'] );
+
+		$html = $this->render(
+			array(
+				'showHome'    => true,
+				'showCurrent' => true,
+			),
+			$this->block_with_context( array() )
+		);
+		$this->assertStringContainsString( 'Gardening', $html );
+		$this->assertStringContainsString( 'application/ld+json', $html );
+	}
+
+	public function test_search_and_404_trails() {
+		$this->go_to( home_url( '/?s=tomatoes' ) );
+		$titles = wp_list_pluck(
+			designsetgo_get_breadcrumb_trail(
+				$this->block_with_context( array() ),
+				array(
+					'showHome'    => true,
+					'showCurrent' => true,
+				)
+			),
+			'title'
+		);
+		$this->assertSame( array( 'Home', 'Search results for “tomatoes”' ), $titles );
+
+		$this->go_to( home_url( '/?p=999999' ) );
+		$titles = wp_list_pluck(
+			designsetgo_get_breadcrumb_trail(
+				$this->block_with_context( array() ),
+				array(
+					'showHome'    => true,
+					'showCurrent' => true,
+				)
+			),
+			'title'
+		);
+		$this->assertSame( array( 'Home', 'Page not found' ), $titles );
+	}
+
+	public function test_loop_item_on_an_archive_still_describes_its_post() {
+		$cat  = self::factory()->category->create( array( 'name' => 'News' ) );
+		$post = self::factory()->post->create( array( 'post_title' => 'Loop Item' ) );
+		$this->go_to( get_category_link( $cat ) );
+
+		// A real WP_Block, so context is filtered through block.json's
+		// usesContext exactly as on a live page.
+		$trail = function ( array $available_context ) {
+			$block = new WP_Block( parse_blocks( '<!-- wp:designsetgo/breadcrumbs /-->' )[0], $available_context );
+			return wp_list_pluck( designsetgo_get_breadcrumb_trail( $block, array( 'showCurrent' => true ) ), 'title' );
+		};
+
+		foreach ( array( 'queryId', 'designsetgo/queryId' ) as $loop_key ) {
+			$titles = $trail(
+				array(
+					'postId'  => $post,
+					$loop_key => 1,
+				)
+			);
+			$this->assertContains( 'Loop Item', $titles, "Inside a loop ($loop_key) the trail describes the item." );
+		}
+
+		// Outside a loop, render_block() still hands a template block the global
+		// post's ID on an archive; the trail must describe the archive.
+		$this->assertContains( 'News', $trail( array( 'postId' => $post ) ) );
+	}
 }

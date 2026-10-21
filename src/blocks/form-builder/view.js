@@ -18,6 +18,32 @@ let turnstileScriptLoading = false;
 const turnstileLoadCallbacks = [];
 
 /**
+ * Read the plugin's own JSON error from a response, if that is what it is.
+ *
+ * The plugin answers 429 itself (rate limit, submitted too fast), and so does
+ * a host or CDN that blocks the request. Only the plugin's body has the
+ * REST error shape ({ code, message }) or the admin-ajax one
+ * ({ success: false, data: { message } }); a host returns HTML or nothing.
+ *
+ * @param {Response} response A response the caller may still read (clone it).
+ * @return {Promise<string>} The plugin's message, or '' when it is not one.
+ */
+async function readPluginError(response) {
+	try {
+		const body = await response.json();
+		if (body && typeof body.code === 'string' && body.message) {
+			return String(body.message);
+		}
+		if (body && body.success === false && body.data?.message) {
+			return String(body.data.message);
+		}
+	} catch {
+		// Not JSON: a host or CDN block page.
+	}
+	return '';
+}
+
+/**
  * Load Turnstile script dynamically
  *
  * @return {Promise} Resolves when script is loaded
@@ -389,6 +415,22 @@ function initFormBuilder() {
 			}
 		}
 
+		/**
+		 * Clear the Turnstile token and ask the widget for a fresh one.
+		 *
+		 * The server spends a token the moment it verifies it, so a token that
+		 * went out with a failed submission can never be used again.
+		 */
+		function resetTurnstile() {
+			turnstileToken = null;
+			if (turnstileTokenField) {
+				turnstileTokenField.value = '';
+			}
+			if (turnstileWidgetId !== null && window.turnstile) {
+				window.turnstile.reset(turnstileWidgetId);
+			}
+		}
+
 		function submitViaNativePost() {
 			ensureNativePostFields();
 			if (turnstileTokenField) {
@@ -412,6 +454,20 @@ function initFormBuilder() {
 				formElement.appendChild(typeMapField);
 			}
 			typeMapField.value = JSON.stringify(typeMap);
+
+			// dsg_timestamp holds this browser's clock (set at init), so send
+			// the submit time from the same clock; the server would otherwise
+			// compare it with its own time and reject a fast-running clock.
+			let submittedAtField = formElement.querySelector(
+				'input[name="dsg_submitted_at"]'
+			);
+			if (!submittedAtField) {
+				submittedAtField = document.createElement('input');
+				submittedAtField.type = 'hidden';
+				submittedAtField.name = 'dsg_submitted_at';
+				formElement.appendChild(submittedAtField);
+			}
+			submittedAtField.value = String(Date.now());
 
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
@@ -543,7 +599,10 @@ function initFormBuilder() {
 					formId,
 					fields,
 					honeypot: honeypot || '',
-					timestamp: timestamp || Date.now(),
+					timestamp: timestamp || '',
+					// Same clock as `timestamp`, so a visitor whose clock is off
+					// from the server's isn't rejected as "too fast".
+					submittedAt: String(Date.now()),
 					// Form IDs can repeat across pages; this picks the copy on this page.
 					sourcePostId: parseInt(designsetgoForm.postId, 10) || 0,
 					// Include Turnstile token if available (graceful degradation: empty if failed)
@@ -624,8 +683,14 @@ function initFormBuilder() {
 
 					if (restResponse.ok) {
 						result = await restResponse.json();
-					} else if (restResponse.status === 429 && useAjax) {
-						// Remember that REST is blocked for this session
+					} else if (
+						restResponse.status === 429 &&
+						useAjax &&
+						!(await readPluginError(restResponse.clone()))
+					) {
+						// A 429 that is not the plugin's own JSON error comes
+						// from the host or CDN. Remember that REST is blocked
+						// for this session.
 						markTransportBlocked('dsgo_rest_blocked');
 						// Fall through to admin-ajax below
 					} else {
@@ -664,7 +729,10 @@ function initFormBuilder() {
 					});
 
 					if (!ajaxResponse.ok) {
-						if (ajaxResponse.status === 429) {
+						if (
+							ajaxResponse.status === 429 &&
+							!(await readPluginError(ajaxResponse.clone()))
+						) {
 							markTransportBlocked('dsgo_ajax_blocked');
 							redirecting = true;
 							submitViaNativePost();
@@ -721,13 +789,7 @@ function initFormBuilder() {
 
 					// Reset form
 					formElement.reset();
-					turnstileToken = null;
-					if (turnstileTokenField) {
-						turnstileTokenField.value = '';
-					}
-					if (turnstileWidgetId !== null && window.turnstile) {
-						window.turnstile.reset(turnstileWidgetId);
-					}
+					resetTurnstile();
 
 					// Scroll to message if not visible
 					const revealMessage = () => {
@@ -748,11 +810,6 @@ function initFormBuilder() {
 							if (!messageContainer.hasAttribute('tabindex')) {
 								messageContainer.setAttribute('tabindex', '-1');
 							}
-							// Focus reads the message itself, so silence the
-							// duplicate announcement copy inside it.
-							messageContainer
-								.querySelector('.screen-reader-text')
-								?.setAttribute('aria-hidden', 'true');
 							messageContainer.focus({ preventScroll: true });
 							revealMessage();
 						}, 0);
@@ -766,12 +823,18 @@ function initFormBuilder() {
 				// eslint-disable-next-line no-console -- Error logging for debugging
 				console.error('Form submission error:', error);
 
+				// The server may have already spent the Turnstile token.
+				resetTurnstile();
+
 				// Show error message
 				showMessage(
 					messageContainer,
 					error.message ||
 						errorMessage ||
-						'An error occurred. Please try again.',
+						__(
+							'An error occurred. Please try again.',
+							'designsetgo'
+						),
 					'error'
 				);
 
@@ -805,17 +868,13 @@ function initFormBuilder() {
 	 * @param {string}      type      Message type: 'success' or 'error'
 	 */
 	function showMessage(container, message, type) {
-		container.textContent = message;
+		// The container is itself the live region (status, or alert for
+		// errors), so it announces the text once. Shown before the text is
+		// set, so the region is in the accessibility tree when it changes.
 		container.className = `dsgo-form__message dsgo-form__message--${type}`;
 		container.style.display = 'block';
 		container.setAttribute('role', type === 'error' ? 'alert' : 'status');
-
-		// Announce to screen readers
-		const announcement = document.createElement('span');
-		announcement.className = 'screen-reader-text';
-		announcement.textContent = message;
-		announcement.setAttribute('aria-live', 'polite');
-		container.appendChild(announcement);
+		container.textContent = message;
 	}
 
 	/**

@@ -141,7 +141,7 @@ class Test_Form_Turnstile_Verification extends WP_UnitTestCase {
 			)
 		);
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		$request->set_param( 'turnstile_token', $token );
 
 		return ( new Form_Handler() )->handle_form_submission( $request );

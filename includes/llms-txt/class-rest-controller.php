@@ -358,19 +358,33 @@ class REST_Controller {
 			);
 		}
 
-		// Rate limit: 30 requests per minute per IP.
-		$raw_ip   = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ); // phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-		$ip       = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
+		// Rate limit: 30 requests per fixed one-minute window per IP. The window
+		// start is stored with the count and the expiry is never extended, so a
+		// client that keeps polling is released when its window ends.
+		if ( class_exists( '\\DesignSetGo\\Blocks\\Form_Security' ) ) {
+			$ip = ( new \DesignSetGo\Blocks\Form_Security() )->get_client_ip();
+		} else {
+			$raw_ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ); // phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+			$ip     = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
+		}
 		$rate_key = 'dsgo_llms_rate_' . md5( $ip );
-		$count    = (int) get_transient( $rate_key );
-		if ( $count > 30 ) {
+		$now      = time();
+		$window   = get_transient( $rate_key );
+		if ( ! is_array( $window ) || ! isset( $window['start'], $window['count'] ) || $now - (int) $window['start'] >= MINUTE_IN_SECONDS ) {
+			$window = array(
+				'start' => $now,
+				'count' => 0,
+			);
+		}
+		if ( (int) $window['count'] >= 30 ) {
 			return new \WP_Error(
 				'rate_limited',
 				__( 'Too many requests. Please try again later.', 'designsetgo' ),
 				array( 'status' => 429 )
 			);
 		}
-		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
+		++$window['count'];
+		set_transient( $rate_key, $window, max( 1, MINUTE_IN_SECONDS - ( $now - (int) $window['start'] ) ) );
 
 		$post_id = absint( $request->get_param( 'post_id' ) );
 		$post    = get_post( $post_id );

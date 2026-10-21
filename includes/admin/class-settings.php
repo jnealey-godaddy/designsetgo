@@ -173,8 +173,6 @@ class Settings {
 				'show_page_list_actions' => true,
 				'show_page_list_column'  => true,
 				'show_frontend_preview'  => true,
-				'auto_save_enabled'      => true,
-				'auto_save_interval'     => 60,
 			),
 			'llms_txt'            => array(
 				'enable'            => false,
@@ -353,9 +351,36 @@ class Settings {
 
 		$saved_settings        = self::get_saved_settings();
 		$defaults              = self::get_defaults();
-		self::$cached_settings = wp_parse_args( $saved_settings, $defaults );
+		self::$cached_settings = self::merge_with_defaults( $defaults, $saved_settings );
 
 		return self::$cached_settings;
+	}
+
+	/**
+	 * Deep-merge stored settings over defaults.
+	 *
+	 * Associative groups are merged key by key so a partial save such as
+	 * `{ sticky_header: { enable: false } }` keeps the group's other defaults.
+	 * Lists (numeric-keyed arrays such as `post_types`) and scalars are taken
+	 * from the stored value as is, so an empty list stays empty.
+	 *
+	 * @param array $defaults Default values.
+	 * @param array $saved    Stored values.
+	 * @return array Merged settings.
+	 */
+	private static function merge_with_defaults( array $defaults, array $saved ): array {
+		$merged = $defaults;
+		foreach ( $saved as $key => $value ) {
+			$is_assoc_default = isset( $defaults[ $key ] ) && is_array( $defaults[ $key ] )
+				&& array() !== $defaults[ $key ]
+				&& array_keys( $defaults[ $key ] ) !== range( 0, count( $defaults[ $key ] ) - 1 );
+			if ( $is_assoc_default && is_array( $value ) ) {
+				$merged[ $key ] = self::merge_with_defaults( $defaults[ $key ], $value );
+			} else {
+				$merged[ $key ] = $value;
+			}
+		}
+		return $merged;
 	}
 
 	/**
@@ -865,6 +890,7 @@ class Settings {
 	 * Supported sanitizer types:
 	 * - 'bool'       — Cast to boolean.
 	 * - 'absint'     — Unsigned integer via absint().
+	 * - 'absint:N'   — absint() clamped to a maximum of N (the settings UI limit).
 	 * - 'text'       — sanitize_text_field().
 	 * - 'secret'     — Trimmed, control characters removed, otherwise verbatim
 	 *                  (sanitize_text_field() would alter %xx, <…> and spacing).
@@ -883,17 +909,17 @@ class Settings {
 			'excluded_blocks'     => 'text_list',
 			'performance'         => array(
 				'conditional_loading' => 'bool',
-				'cache_duration'      => 'absint',
+				'cache_duration'      => 'absint:86400',
 			),
 			'forms'               => array(
 				'enable_honeypot'      => 'bool',
 				'enable_rate_limiting' => 'bool',
 				'enable_email_logging' => 'bool',
-				'retention_days'       => 'absint',
+				'retention_days'       => 'absint', // Never clamped: a lower cap would delete submissions.
 			),
 			'animations'          => array(
 				'enable_animations'              => 'bool',
-				'default_duration'               => 'absint',
+				'default_duration'               => 'absint:2000',
 				'default_easing'                 => 'text',
 				'respect_prefers_reduced_motion' => 'bool',
 				'default_icon_button_hover'      => 'key',
@@ -914,19 +940,19 @@ class Settings {
 			'sticky_header'       => array(
 				'enable'                    => 'bool',
 				'custom_selector'           => 'css_selector',
-				'z_index'                   => 'absint',
+				'z_index'                   => 'absint:9999',
 				'shadow_on_scroll'          => 'bool',
 				'shadow_size'               => 'text',
 				'shrink_on_scroll'          => 'bool',
-				'shrink_amount'             => 'absint',
+				'shrink_amount'             => 'absint:70',
 				'mobile_enabled'            => 'bool',
-				'mobile_breakpoint'         => 'absint',
-				'transition_speed'          => 'absint',
-				'scroll_threshold'          => 'absint',
+				'mobile_breakpoint'         => 'absint:1024',
+				'transition_speed'          => 'absint:1000',
+				'scroll_threshold'          => 'absint:500',
 				'hide_on_scroll_down'       => 'bool',
 				'background_on_scroll'      => 'bool',
 				'background_scroll_color'   => 'hex_color',
-				'background_scroll_opacity' => 'absint',
+				'background_scroll_opacity' => 'absint:100',
 				'text_scroll_color'         => 'hex_color',
 			),
 			'draft_mode'          => array(
@@ -934,8 +960,6 @@ class Settings {
 				'show_page_list_actions' => 'bool',
 				'show_page_list_column'  => 'bool',
 				'show_frontend_preview'  => 'bool',
-				'auto_save_enabled'      => 'bool',
-				'auto_save_interval'     => 'absint',
 			),
 			'llms_txt'            => array(
 				'enable'            => 'bool',
@@ -966,6 +990,11 @@ class Settings {
 	 * @return mixed Sanitized value.
 	 */
 	private static function sanitize_value( $value, string $sanitizer, $fallback ) {
+		// 'absint:<max>' clamps to the limit the settings UI enforces.
+		if ( 0 === strpos( $sanitizer, 'absint:' ) ) {
+			return min( absint( $value ), absint( substr( $sanitizer, 7 ) ) );
+		}
+
 		switch ( $sanitizer ) {
 			case 'bool':
 				return (bool) $value;

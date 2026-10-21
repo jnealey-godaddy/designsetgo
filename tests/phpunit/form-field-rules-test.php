@@ -313,7 +313,7 @@ class Test_Form_Field_Rules extends WP_UnitTestCase {
 		$request->set_param( 'formId', $form_id );
 		$request->set_param( 'fields', array( array( 'name' => 'code', 'value' => 'too long', 'type' => 'text' ) ) );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 
 		$result = ( new Form_Handler() )->handle_form_submission( $request );
 

@@ -377,6 +377,51 @@ describe('Accordion - Frontend', () => {
 		});
 	});
 
+	describe('Rapid toggling', () => {
+		test('close then re-open within the animation window leaves the panel visible', () => {
+			jest.useFakeTimers();
+
+			const accordion = createAccordion({ initiallyOpen: [0] });
+			loadView();
+
+			const item = accordion.querySelector('.dsgo-accordion-item');
+			const trigger = item.querySelector('.dsgo-accordion-item__trigger');
+			const panel = item.querySelector('.dsgo-accordion-item__panel');
+
+			trigger.click(); // close
+			jest.advanceTimersByTime(100);
+			trigger.click(); // re-open before the close finished
+			jest.runAllTimers();
+
+			expect(trigger.getAttribute('aria-expanded')).toBe('true');
+			expect(panel.hidden).toBe(false);
+
+			jest.useRealTimers();
+		});
+
+		test('open then close within the animation window ends hidden', () => {
+			jest.useFakeTimers();
+
+			const accordion = createAccordion();
+			loadView();
+
+			const item = accordion.querySelector('.dsgo-accordion-item');
+			const trigger = item.querySelector('.dsgo-accordion-item__trigger');
+			const panel = item.querySelector('.dsgo-accordion-item__panel');
+
+			trigger.click(); // open
+			jest.advanceTimersByTime(100);
+			trigger.click(); // close
+			jest.runAllTimers();
+
+			expect(trigger.getAttribute('aria-expanded')).toBe('false');
+			expect(panel.hidden).toBe(true);
+			expect(panel.style.height).toBe('');
+
+			jest.useRealTimers();
+		});
+	});
+
 	describe('URL hash deep links', () => {
 		afterEach(() => {
 			window.history.replaceState(null, '', window.location.pathname);

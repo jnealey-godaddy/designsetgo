@@ -166,7 +166,11 @@ function fallbackTabTitle(index) {
 			// Clear existing navigation (modern approach without innerHTML)
 			this.nav.replaceChildren();
 
-			// Add skip link for keyboard accessibility
+			// Add skip link for keyboard accessibility. It is a sibling placed
+			// before the nav, not a child: role="tablist" may only own tabs.
+			this.nav.parentElement
+				?.querySelectorAll(':scope > .dsgo-tabs__skip-link')
+				.forEach((link) => link.remove());
 			const activePanel = this.panels[this.clampTabIndex(this.activeTab)];
 			const skipLink = document.createElement('a');
 			skipLink.href = `#${activePanel.id}`;
@@ -179,7 +183,7 @@ function fallbackTabTitle(index) {
 					panel.focus();
 				}
 			});
-			this.nav.appendChild(skipLink);
+			this.nav.before(skipLink);
 
 			// Build tab buttons from panels
 			this.panels.forEach((panel, index) => {
@@ -196,6 +200,9 @@ function fallbackTabTitle(index) {
 				const button = document.createElement('button');
 				button.className = 'dsgo-tabs__tab';
 				button.id = tabId;
+				// With a custom anchor the panel id no longer matches the
+				// server-rendered aria-labelledby, so point it at this tab.
+				panel.setAttribute('aria-labelledby', tabId);
 				button.setAttribute('type', 'button');
 				button.setAttribute('role', 'tab');
 				button.setAttribute(

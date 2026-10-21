@@ -6,11 +6,8 @@
 
 import { initOpenStreetMap } from './openstreetmap-handler';
 import { initGoogleMap } from './googlemaps-handler';
+import { __ } from '@wordpress/i18n';
 import { geocodeAddress } from '../utils/geocoding';
-
-/** Default fallback coordinates (New York City) when geocoding fails. */
-const DEFAULT_LAT = 40.7128;
-const DEFAULT_LNG = -74.006;
 
 /**
  * DSGMap Class - Manages individual map instances.
@@ -25,6 +22,8 @@ export default class DSGMap {
 		this.element = element;
 		this.config = this.parseConfig();
 		this.mapInstance = null;
+		this.isLoading = false;
+		this.isLoaded = false;
 		this.loadMapBound = this.loadMap.bind(this);
 
 		if (this.config.privacyMode) {
@@ -86,12 +85,20 @@ export default class DSGMap {
 	 * This allows address-only block markup (e.g. LLM-generated) to work without coordinates.
 	 */
 	async loadMap() {
+		// A double click in privacy mode (or a repeat call) must not start a
+		// second load while the geocode/script await is in flight.
+		if (this.isLoading || this.isLoaded) {
+			return;
+		}
+		this.isLoading = true;
+
 		try {
 			// The keyless Google provider is a server-rendered iframe. In privacy
 			// mode render.php parks the URL in data-dsgo-src so nothing reaches
 			// Google until now; there is no JS map library to initialize.
 			if (this.config.provider === 'googlemaps-embed') {
 				this.revealEmbed();
+				this.isLoaded = true;
 				return;
 			}
 
@@ -105,12 +112,14 @@ export default class DSGMap {
 					this.config.lat = result.lat;
 					this.config.lng = result.lng;
 				} else {
-					// eslint-disable-next-line no-console
-					console.warn(
-						'[DSGMap] Could not geocode configured address. Falling back to default coordinates.'
+					// Don't pin a normal-looking marker on a wrong place.
+					this.showError(
+						__(
+							'The map location could not be found for this address.',
+							'designsetgo'
+						)
 					);
-					this.config.lat = DEFAULT_LAT;
-					this.config.lng = DEFAULT_LNG;
+					return;
 				}
 			}
 
@@ -119,6 +128,7 @@ export default class DSGMap {
 			} else {
 				await initOpenStreetMap(this);
 			}
+			this.isLoaded = true;
 
 			// Hide privacy overlay if present
 			const overlay = this.element.querySelector(
@@ -140,7 +150,14 @@ export default class DSGMap {
 		} catch (error) {
 			// eslint-disable-next-line no-console
 			console.error('Failed to load map:', error);
-			this.showError('Failed to load map. Please check your settings.');
+			this.showError(
+				__(
+					'Failed to load map. Please check your settings.',
+					'designsetgo'
+				)
+			);
+		} finally {
+			this.isLoading = false;
 		}
 	}
 
@@ -175,6 +192,7 @@ export default class DSGMap {
 	showError(message) {
 		const errorDiv = document.createElement('div');
 		errorDiv.className = 'dsgo-map__error';
+		errorDiv.setAttribute('role', 'alert');
 		errorDiv.textContent = message;
 		errorDiv.style.cssText = `
 			padding: 20px;

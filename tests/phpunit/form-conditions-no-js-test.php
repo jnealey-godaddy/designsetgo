@@ -132,7 +132,7 @@ class Test_Form_Conditions_No_JS extends WP_UnitTestCase {
 		$saved_post    = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$saved_referer = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
-		$_POST                   = wp_slash( array_merge( array( '_wpnonce' => wp_create_nonce( 'designsetgo_form_submit' ) ), $post ) );
+		$_POST                   = wp_slash( array_merge( array( '_wpnonce' => wp_create_nonce( 'designsetgo_form_submit' ), 'dsg_timestamp' => (string) ( ( time() - 60 ) * 1000 ) ), $post ) );
 		$_SERVER['HTTP_REFERER'] = home_url( '/contact/' );
 
 		$throw = static function ( $location ) {

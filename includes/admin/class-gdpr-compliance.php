@@ -89,14 +89,17 @@ class GDPR_Compliance {
 		$export_items   = array();
 		$items_per_page = 100;
 
-		// Find form submissions that contain this email address.
+		// Candidates only: submissions whose stored fields mention the address
+		// (the exact check below still decides), so a page is never wasted on
+		// unrelated submissions. Oldest first keeps pages stable.
 		$args = array(
 			'post_type'      => 'dsgo_form_submission',
 			'posts_per_page' => $items_per_page,
 			'paged'          => $page,
 			'post_status'    => 'private',
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+			'meta_query'     => $this->get_email_meta_query( $email_address ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Narrows an admin-only privacy export to candidate rows.
 		);
 
 		$submissions = new WP_Query( $args );
@@ -181,7 +184,7 @@ class GDPR_Compliance {
 
 		return array(
 			'data' => $export_items,
-			'done' => count( $export_items ) < $items_per_page,
+			'done' => $page >= $submissions->max_num_pages,
 		);
 	}
 
@@ -193,66 +196,73 @@ class GDPR_Compliance {
 	 * @return array Erasure results.
 	 */
 	public function erase_form_submissions( $email_address, $page = 1 ) {
-		$page           = (int) $page;
+		unset( $page ); // Everything is handled in a single pass; see below.
+
 		$items_removed  = false;
 		$items_retained = false;
 		$messages       = array();
-		$items_per_page = 100;
 
-		// Find form submissions that contain this email address.
-		$args = array(
-			'post_type'      => 'dsgo_form_submission',
-			'posts_per_page' => $items_per_page,
-			'paged'          => $page,
-			'post_status'    => 'private',
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-		);
+		// Deleting shifts later rows into earlier pages, so paging while deleting
+		// would skip submissions. Collect every candidate ID first (rows that
+		// mention the address, a small set), page by page, then delete, and
+		// finish in a single call. Retained rows are simply not deleted, so there
+		// is nothing to loop on.
+		$candidate_ids = array();
+		$per_page      = 100;
+		for ( $batch = 1; ; $batch++ ) {
+			$candidates    = new WP_Query(
+				array(
+					'post_type'      => 'dsgo_form_submission',
+					'posts_per_page' => $per_page,
+					'paged'          => $batch,
+					'post_status'    => 'private',
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					'meta_query'     => $this->get_email_meta_query( $email_address ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Narrows an admin-only privacy erasure to candidate rows.
+				)
+			);
+			$candidate_ids = array_merge( $candidate_ids, $candidates->posts );
+			if ( count( $candidates->posts ) < $per_page ) {
+				break;
+			}
+		}
 
-		$submissions = new WP_Query( $args );
+		foreach ( $candidate_ids as $post_id ) {
+			$post_id = (int) $post_id;
+			$fields  = get_post_meta( $post_id, '_dsg_form_fields', true );
 
-		if ( $submissions->have_posts() ) {
-			while ( $submissions->have_posts() ) {
-				$submissions->the_post();
-				$post_id = get_the_ID();
-
-				// Get form fields.
-				$fields = get_post_meta( $post_id, '_dsg_form_fields', true );
-
-				// Check if this submission contains the email address.
-				$contains_email = $this->submission_contains_email( $fields, $email_address );
-
-				if ( $contains_email ) {
-					// Allow plugins to prevent deletion.
-					$can_delete = apply_filters( 'designsetgo_can_delete_form_submission', true, $post_id, $email_address );
-
-					if ( $can_delete ) {
-						// Delete the submission.
-						$deleted = wp_delete_post( $post_id, true );
-
-						if ( $deleted ) {
-							$items_removed = true;
-							do_action( 'designsetgo_form_submission_erased', $post_id, $email_address );
-						} else {
-							$items_retained = true;
-							$messages[]     = sprintf(
-								/* translators: %d: submission ID */
-								__( 'Form submission %d could not be deleted.', 'designsetgo' ),
-								$post_id
-							);
-						}
-					} else {
-						$items_retained = true;
-						$messages[]     = sprintf(
-							/* translators: %d: submission ID */
-							__( 'Form submission %d was retained by plugin filter.', 'designsetgo' ),
-							$post_id
-						);
-					}
-				}
+			// Check if this submission contains the email address.
+			if ( ! $this->submission_contains_email( $fields, $email_address ) ) {
+				continue;
 			}
 
-			wp_reset_postdata();
+			// Allow plugins to prevent deletion.
+			$can_delete = apply_filters( 'designsetgo_can_delete_form_submission', true, $post_id, $email_address );
+
+			if ( $can_delete ) {
+				$deleted = wp_delete_post( $post_id, true );
+
+				if ( $deleted ) {
+					$items_removed = true;
+					do_action( 'designsetgo_form_submission_erased', $post_id, $email_address );
+				} else {
+					$items_retained = true;
+					$messages[]     = sprintf(
+						/* translators: %d: submission ID */
+						__( 'Form submission %d could not be deleted.', 'designsetgo' ),
+						$post_id
+					);
+				}
+			} else {
+				$items_retained = true;
+				$messages[]     = sprintf(
+					/* translators: %d: submission ID */
+					__( 'Form submission %d was retained by plugin filter.', 'designsetgo' ),
+					$post_id
+				);
+			}
 		}
 
 		return array(
@@ -260,6 +270,29 @@ class GDPR_Compliance {
 			'items_retained' => $items_retained,
 			'messages'       => $messages,
 			'done'           => true,
+		);
+	}
+
+	/**
+	 * Meta query that prefilters submissions to those whose stored fields
+	 * contain the email address.
+	 *
+	 * Fields are stored as a serialized array, which keeps string values
+	 * verbatim, so a case-insensitive LIKE is never stricter than
+	 * submission_contains_email() (MySQL's default collations are also
+	 * accent-insensitive, making the prefilter looser if anything). The exact
+	 * check remains authoritative.
+	 *
+	 * @param string $email_address Email address.
+	 * @return array Meta query clause list.
+	 */
+	private function get_email_meta_query( $email_address ) {
+		return array(
+			array(
+				'key'     => '_dsg_form_fields',
+				'value'   => (string) $email_address,
+				'compare' => 'LIKE',
+			),
 		);
 	}
 

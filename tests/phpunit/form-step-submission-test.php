@@ -62,7 +62,7 @@ class Test_Form_Step_Submission extends WP_UnitTestCase {
 		$request->set_param( 'sourcePostId', $post_id );
 		$request->set_param( 'fields', $fields );
 		$request->set_param( 'honeypot', '' );
-		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'timestamp', (string) ( ( time() - 60 ) * 1000 ) );
 		return $this->handler->handle_form_submission( $request );
 	}
 

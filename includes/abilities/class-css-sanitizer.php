@@ -118,7 +118,8 @@ class CSS_Sanitizer {
 		 * cap is high enough that no legitimate CSS reaches it (real CSS has zero
 		 * or one layer), and anything that does is layered on purpose.
 		 */
-		$passes = 0;
+		$original = $css;
+		$passes   = 0;
 		do {
 			$previous = $css;
 			$css      = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
@@ -129,6 +130,8 @@ class CSS_Sanitizer {
 		if ( $css !== $previous ) {
 			return '/* blocked */';
 		}
+
+		$decoded = $css;
 
 		// Only now can tag-stripping see every tag: a CSS-escaped `\3c script\3e`
 		// has been decoded to a real `<script>` above, so this removes it. Before
@@ -145,8 +148,22 @@ class CSS_Sanitizer {
 
 		// Ensure balanced braces.
 		$css = self::balance_braces( $css );
+		$css = trim( $css );
 
-		return trim( $css );
+		/*
+		 * The decoded text is what was vetted, but it is a worse thing to ship: it
+		 * turns `.md\:flex` into `.md:flex` (a different selector) and
+		 * `content:"a\"b"` into `content:"a"b"` (a broken string). When the
+		 * vetted text came through completely unchanged and the only encoding
+		 * involved was CSS escapes, the original is exactly as safe and means what
+		 * its author wrote. Entities are not CSS, so any entity still goes out
+		 * decoded, as before.
+		 */
+		if ( trim( $decoded ) === $css && html_entity_decode( $original, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) === $original ) {
+			return trim( $original );
+		}
+
+		return $css;
 	}
 
 	/**
@@ -166,8 +183,15 @@ class CSS_Sanitizer {
 		// Sanitize the selector (only allow valid CSS selector characters).
 		$selector = preg_replace( '/[^a-zA-Z0-9_\-\.\#\[\]\=\"\'\s\:\>\+\~\*]/', '', $selector );
 
-		// Replace "selector" placeholder with actual selector.
-		$css = str_replace( 'selector', $selector, $css );
+		// Replace only the standalone "selector" placeholder, never the word inside
+		// a class, attribute, custom property or string (".selector-x", "[data-selector]").
+		$css = preg_replace_callback(
+			'/(?<=^|[\s,{};>+~(])selector(?![\w\-])/',
+			static function () use ( $selector ) {
+				return $selector;
+			},
+			$css
+		);
 
 		return $css;
 	}

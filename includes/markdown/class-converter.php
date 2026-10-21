@@ -229,11 +229,11 @@ class Converter {
 	 */
 	public function html_to_text( string $html ): string {
 		// Convert common inline elements to markdown.
-		$html = preg_replace( '/<strong[^>]*>(.*?)<\/strong>/is', '**$1**', $html );
-		$html = preg_replace( '/<b[^>]*>(.*?)<\/b>/is', '**$1**', $html );
-		$html = preg_replace( '/<em[^>]*>(.*?)<\/em>/is', '*$1*', $html );
-		$html = preg_replace( '/<i[^>]*>(.*?)<\/i>/is', '*$1*', $html );
-		$html = preg_replace( '/<code[^>]*>(.*?)<\/code>/is', '`$1`', $html );
+		$html = preg_replace( '/<strong(?:\s[^>]*)?>(.*?)<\/strong>/is', '**$1**', $html );
+		$html = preg_replace( '/<b(?:\s[^>]*)?>(.*?)<\/b>/is', '**$1**', $html );
+		$html = preg_replace( '/<em(?:\s[^>]*)?>(.*?)<\/em>/is', '*$1*', $html );
+		$html = preg_replace( '/<i(?:\s[^>]*)?>(.*?)<\/i>/is', '*$1*', $html );
+		$html = preg_replace( '/<code(?:\s[^>]*)?>(.*?)<\/code>/is', '`$1`', $html );
 
 		// Convert links.
 		$html = preg_replace( '/<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is', '[$2]($1)', $html );

@@ -77,12 +77,9 @@ class Card_Serializer {
 		}
 
 		// CTA area for inner blocks.
-		$cta_opening = '';
-		$cta_closing = '';
-		if ( $show_cta ) {
-			$cta_opening = '<div class="dsgo-card__cta">';
-			$cta_closing = '</div>';
-		}
+		// Always rendered; a hidden CTA keeps its element (and inner blocks).
+		$cta_opening = '<div class="dsgo-card__cta' . ( $show_cta ? '' : ' dsgo-card__cta--hidden' ) . '">';
+		$cta_closing = '</div>';
 
 		// Image. save.js renders nothing unless the image is shown, the
 		// layout is not 'minimal', and the URL passes isValidImageUrl()

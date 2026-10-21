@@ -31,7 +31,8 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 		// Search — attribute-bound OR URL-bound via bindSearchTo.
 		$search = (string) $atts['search'];
 		if ( ! empty( $atts['bindSearchTo'] ) && isset( $context['params'][ $atts['bindSearchTo'] ] ) ) {
-			$search = (string) $context['params'][ $atts['bindSearchTo'] ];
+			$bound  = $context['params'][ $atts['bindSearchTo'] ];
+			$search = is_scalar( $bound ) ? (string) $bound : '';
 		}
 		if ( '' !== $search ) {
 			// Wildcard search like WP_User_Query default.
@@ -75,9 +76,10 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 			++$item_index;
 		}
 
-		$state = array(
-			'totalItems' => $total_users,
-			'totalPages' => $per_page > 0 ? (int) ceil( $total_users / $per_page ) : 0,
+		$totals = designsetgo_query_paginate_totals( $total_users, (int) $atts['offset'], $per_page );
+		$state  = array(
+			'totalItems' => $totals['totalItems'],
+			'totalPages' => $totals['totalPages'],
 			'page'       => $page,
 		);
 		designsetgo_query_set_last_state( $query_id, $state );

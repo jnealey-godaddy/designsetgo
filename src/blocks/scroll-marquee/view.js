@@ -172,6 +172,11 @@ function initSingleMarquee(marquee) {
 	}
 
 	function requestTick() {
+		// Soft navigation removed the marquee: release the global listeners.
+		if (!marquee.isConnected) {
+			teardown();
+			return;
+		}
 		if (!ticking) {
 			requestAnimationFrame(updateMarquee);
 			ticking = true;
@@ -239,18 +244,15 @@ function initSingleMarquee(marquee) {
 				return;
 			}
 
-			// Determine raw delta: prefer horizontal axis when it dominates,
-			// and treat shift+wheel as horizontal intent
+			// Capture only when horizontal intent dominates (or shift is held);
+			// a mostly-vertical swipe must keep scrolling the page.
 			let delta;
-			if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-				delta = e.shiftKey ? e.deltaY : e.deltaX;
-			} else {
-				// Vertical wheel — only capture when horizontal delta is negligible
-				// so the page can still scroll vertically
-				if (Math.abs(e.deltaX) < 1) {
-					return;
-				}
+			if (e.shiftKey) {
+				delta = e.deltaY;
+			} else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
 				delta = e.deltaX;
+			} else {
+				return;
 			}
 
 			// Normalize deltaMode: DOM_DELTA_LINE (1) and DOM_DELTA_PAGE (2)
@@ -294,10 +296,21 @@ function initSingleMarquee(marquee) {
 	let resizeTimer;
 	const handleResize = () => {
 		clearTimeout(resizeTimer);
+		if (!marquee.isConnected) {
+			teardown();
+			return;
+		}
 		resizeTimer = setTimeout(() => {
 			calculateDimensions();
 		}, 250);
 	};
+
+	function teardown() {
+		clearTimeout(resizeTimer);
+		window.removeEventListener('resize', handleResize);
+		window.removeEventListener('scroll', requestTick);
+		observer.disconnect();
+	}
 	window.addEventListener('resize', handleResize, { passive: true });
 
 	// Add scroll listener with passive flag for better performance

@@ -88,8 +88,8 @@ class Modal_Trigger_Serializer {
 			$trigger_styles[] = 'gap:' . $icon_gap;
 		}
 		// Padding is skip-serialized on the root and re-applied here.
-		// Unlike Icon Button, save.js writes the value through unchanged.
-		$trigger_styles    = array_merge( $trigger_styles, Serializer_Support::routed_padding_styles( $attributes, false ) );
+		// Like Icon Button, save.js converts spacing presets to CSS vars.
+		$trigger_styles    = array_merge( $trigger_styles, Serializer_Support::routed_padding_styles( $attributes, true ) );
 		$button_style_attr = empty( $trigger_styles )
 			? ''
 			: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';

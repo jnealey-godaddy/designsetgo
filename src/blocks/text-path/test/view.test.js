@@ -2,6 +2,57 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 
 describe('text path motion', () => {
+	const OriginalIO = window.IntersectionObserver;
+
+	beforeEach(() => {
+		// Default to browsers without IntersectionObserver (always run).
+		window.IntersectionObserver = undefined;
+	});
+
+	afterEach(() => {
+		window.IntersectionObserver = OriginalIO;
+	});
+
+	test('only animates while on screen and honours the visitor pause control', () => {
+		const frames = [];
+		let notify;
+		window.IntersectionObserver = class {
+			constructor(cb) {
+				notify = cb;
+			}
+			observe() {}
+			disconnect() {}
+		};
+		window.matchMedia = jest.fn(() => ({ matches: false }));
+		global.requestAnimationFrame = jest.fn((callback) => {
+			frames.push(callback);
+			return frames.length;
+		});
+		global.cancelAnimationFrame = jest.fn();
+		document.body.innerHTML = `
+			<div data-dsgo-text-path-motion="true" data-dsgo-text-path-motion-duration="12" data-dsgo-text-path-motion-direction="forward">
+				<svg><text><textPath data-dsgo-text-path-offset="5" startOffset="5%">Moving text</textPath></text></svg>
+			</div>
+		`;
+
+		jest.isolateModules(() => {
+			require('../view');
+		});
+		// Off screen: no frame requested.
+		expect(frames).toHaveLength(0);
+		notify([{ isIntersecting: true }]);
+		expect(frames).toHaveLength(1);
+
+		// Visitor pause button stops the loop.
+		const button = document.querySelector('.dsgo-text-path__pause');
+		expect(button).not.toBeNull();
+		button.click();
+		expect(global.cancelAnimationFrame).toHaveBeenCalled();
+		const before = frames.length;
+		notify([{ isIntersecting: true }]);
+		expect(frames).toHaveLength(before);
+	});
+
 	test('ships a frontend motion controller', () => {
 		expect(existsSync(resolve(__dirname, '../view.js'))).toBe(true);
 	});

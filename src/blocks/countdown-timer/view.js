@@ -124,8 +124,25 @@ function getTimeData(timer) {
 	return calculateTimeRemaining(
 		timer.dataset.targetDatetime,
 		timer.dataset.timezone || '',
-		timer.dataset.siteTimezone ?? null
+		timer.dataset.siteTimezone ?? null,
+		{
+			days: timer.dataset.showDays !== 'false',
+			hours: timer.dataset.showHours !== 'false',
+			minutes: timer.dataset.showMinutes !== 'false',
+			seconds: timer.dataset.showSeconds !== 'false',
+		}
 	);
+}
+
+/**
+ * Timers that are currently ticking. One shared visibility listener serves
+ * all of them (a listener per timer leaked on soft navigation).
+ */
+const activeTimers = new Set();
+let visibilityBound = false;
+
+function onVisibilityChange() {
+	activeTimers.forEach((controller) => controller.onVisibility());
 }
 
 /**
@@ -161,11 +178,20 @@ function initCountdownTimer(timer) {
 		interval = null;
 	};
 
+	const controller = { onVisibility: () => {} };
+
 	// A soft navigation can remove the timer; stop ticking and listening
 	// rather than keep updating a detached element.
 	const detach = () => {
 		stop();
-		document.removeEventListener('visibilitychange', onVisibility);
+		activeTimers.delete(controller);
+		if (!activeTimers.size && visibilityBound) {
+			document.removeEventListener(
+				'visibilitychange',
+				onVisibilityChange
+			);
+			visibilityBound = false;
+		}
 	};
 
 	const tick = () => {
@@ -192,7 +218,7 @@ function initCountdownTimer(timer) {
 
 	// A hidden tab can't see the timer, so stop ticking. The remaining time is
 	// recomputed from the clock on return, so nothing drifts while paused.
-	function onVisibility() {
+	controller.onVisibility = () => {
 		if (document.hidden) {
 			stop();
 			return;
@@ -201,13 +227,40 @@ function initCountdownTimer(timer) {
 		if (timer.isConnected && !timeData.isComplete) {
 			start();
 		}
-	}
+	};
 
-	document.addEventListener('visibilitychange', onVisibility);
+	activeTimers.add(controller);
+	if (!visibilityBound) {
+		document.addEventListener('visibilitychange', onVisibilityChange);
+		visibilityBound = true;
+	}
 
 	if (!document.hidden) {
 		start();
 	}
+}
+
+// One observer for every timer, created lazily and released when idle.
+let sharedObserver = null;
+
+function getObserver() {
+	if (!sharedObserver) {
+		// eslint-disable-next-line no-undef
+		sharedObserver = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						sharedObserver.unobserve(entry.target);
+						initCountdownTimer(entry.target);
+					}
+				});
+			},
+			{
+				rootMargin: '50px', // Start 50px before entering viewport
+			}
+		);
+	}
+	return sharedObserver;
 }
 
 /**
@@ -227,30 +280,19 @@ function initAllCountdownTimers() {
 		// save() stores untranslated literals, and a timer below the fold
 		// would otherwise show them until it scrolls into view. Only the
 		// ticking waits for the observer.
-		updateCountdownDisplay(
-			timer,
-			timer.dataset.targetDatetime
-				? getTimeData(timer)
-				: { days: 0, hours: 0, minutes: 0, seconds: 0 }
-		);
+		const timeData = timer.dataset.targetDatetime
+			? getTimeData(timer)
+			: { days: 0, hours: 0, minutes: 0, seconds: 0 };
+		updateCountdownDisplay(timer, timeData);
 
-		// Use Intersection Observer for lazy initialization
-		// eslint-disable-next-line no-undef
-		const observer = new IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						initCountdownTimer(entry.target);
-						observer.unobserve(entry.target);
-					}
-				});
-			},
-			{
-				rootMargin: '50px', // Start 50px before entering viewport
-			}
-		);
+		// An already-passed timer resolves now (e.g. "hide" must not flash
+		// 00:00:00:00 until the visitor scrolls near it).
+		if (timer.dataset.targetDatetime && timeData.isComplete) {
+			handleCompletion(timer);
+			return;
+		}
 
-		observer.observe(timer);
+		getObserver().observe(timer);
 	});
 }
 

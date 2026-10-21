@@ -43,10 +43,11 @@ import deprecated from '../../../../src/blocks/modal-trigger/deprecated';
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
-// deprecated.js exports newest-first: [v4, v3, v2, v1]. v4 is the pre-wrapper
-// deprecation added for the justification-wrapper refactor; v2/v1 are the
-// pre-v3 nested `<div><button>` structure.
-const [v4, , v2] = deprecated;
+// deprecated.js exports newest-first: [v5, v4, v3, v2, v1]. v5 is the
+// raw-preset-padding save of the current (wrapper) markup; v4 is the
+// pre-wrapper deprecation added for the justification-wrapper refactor; v2/v1
+// are the pre-v3 nested `<div><button>` structure.
+const [, v4, , v2] = deprecated;
 
 /**
  * getSaveContent() renders EXACTLY the attributes object it is given —

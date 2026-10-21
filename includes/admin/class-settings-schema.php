@@ -209,10 +209,16 @@ class Settings_Schema {
 						'show_page_list_actions' => array( 'type' => 'boolean' ),
 						'show_page_list_column'  => array( 'type' => 'boolean' ),
 						'show_frontend_preview'  => array( 'type' => 'boolean' ),
-						'auto_save_enabled'      => array( 'type' => 'boolean' ),
+						// Deprecated: nothing reads these. Still accepted so a client
+						// echoing back a stored value is not rejected; they are ignored.
+						'auto_save_enabled'      => array(
+							'type'        => 'boolean',
+							'description' => __( 'Deprecated and ignored.', 'designsetgo' ),
+						),
 						'auto_save_interval'     => array(
-							'type'    => 'integer',
-							'minimum' => 0,
+							'type'        => 'integer',
+							'minimum'     => 0,
+							'description' => __( 'Deprecated and ignored.', 'designsetgo' ),
 						),
 					),
 				),

@@ -165,7 +165,7 @@
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-tablet-#{$i} > .dsgo-grid__inner {
-				grid-template-columns: var(--dsgo-grid-columns-tablet, repeat(#{$i}, 1fr)) !important;
+				grid-template-columns: var(--dsgo-grid-columns-tablet, repeat(#{$i}, minmax(0, 1fr))) !important;
 			}
 		}
 	}
@@ -175,7 +175,7 @@
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-mobile-#{$i} > .dsgo-grid__inner {
-				grid-template-columns: var(--dsgo-grid-columns-mobile, repeat(#{$i}, 1fr)) !important;
+				grid-template-columns: var(--dsgo-grid-columns-mobile, repeat(#{$i}, minmax(0, 1fr))) !important;
 			}
 		}
 	}

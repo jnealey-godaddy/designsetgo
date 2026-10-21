@@ -30,6 +30,9 @@
 	padding: 0;
 	position: relative;
 	width: 100%; // Fill container width
+	// A border or padding from block supports must not push it past the
+	// container (a 3px border made it 6px wider than a phone column).
+	box-sizing: border-box;
 
 	// Optional: subtle border around entire accordion
 	border-radius: var(--dsgo-accordion-border-radius);

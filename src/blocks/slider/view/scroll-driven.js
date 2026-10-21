@@ -107,10 +107,9 @@ export default class ScrollDrivenController {
 		if (!this.pinSpacer) {
 			return;
 		}
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			return;
-		}
-
+		// Reduced motion is decided once, before this controller exists (the
+		// slider falls back to paged navigation), so there is no per-frame
+		// media query here.
 		const sliderHeight = this.slider.offsetHeight;
 		const scrollable = this.pinSpacer.offsetHeight - sliderHeight;
 		if (scrollable <= 0) {
@@ -122,7 +121,10 @@ export default class ScrollDrivenController {
 		const scrolled = this.stickyTop - spacerTop;
 		const progress = Math.max(0, Math.min(1, scrolled / scrollable));
 
-		this.track.style.transform = `translate3d(${-(progress * this.maxOffset)}px, 0, 0)`;
+		// The track starts at the right edge in RTL, so it travels the other way.
+		const direction =
+			window.getComputedStyle(this.slider).direction === 'rtl' ? 1 : -1;
+		this.track.style.transform = `translate3d(${direction * progress * this.maxOffset}px, 0, 0)`;
 
 		if (this.progressBar) {
 			this.progressBar.style.width = `${progress * 100}%`;

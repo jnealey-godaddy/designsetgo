@@ -14,17 +14,18 @@ import { useEffect, useRef, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { publishDraft } from '../api';
-import { clearDirtyState } from '../utils';
+import { clearDirtyState, didSaveSucceed, isConflictError } from '../utils';
 
 /**
  * Custom hook to intercept the Publish button
  *
- * @param {number}   postId  The current post ID.
- * @param {boolean}  isDraft Whether the current post is a draft.
- * @param {Function} onError Callback when an error occurs.
+ * @param {number}   postId     The current post ID.
+ * @param {boolean}  isDraft    Whether the current post is a draft.
+ * @param {Function} onError    Callback when an error occurs.
+ * @param {Function} onConflict Callback receiving a retry function when the live page changed since the draft was created.
  * @return {Object} State object with isPublishing flag.
  */
-export function usePublishIntercept(postId, isDraft, onError) {
+export function usePublishIntercept(postId, isDraft, onError, onConflict) {
 	const publishInterceptRef = useRef(null);
 	const isPublishingRef = useRef(false);
 	const handlerRef = useRef(null);
@@ -38,14 +39,9 @@ export function usePublishIntercept(postId, isDraft, onError) {
 
 	const { savePost } = useDispatch('core/editor');
 
-	// Handle custom publish (merge draft to original).
-	const handlePublishDraft = useCallback(
-		async (e) => {
-			// Prevent the native WordPress publish action.
-			e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation();
-
+	// Save pending edits, then merge the draft into the original.
+	const runPublish = useCallback(
+		async (force) => {
 			if (isPublishingRef.current) {
 				return;
 			}
@@ -56,10 +52,21 @@ export function usePublishIntercept(postId, isDraft, onError) {
 				// First save any pending changes and wait for completion.
 				if (hasEdits) {
 					await savePost();
+
+					// savePost() resolves even when the request failed. Merging
+					// then would publish the previously saved content.
+					if (!didSaveSucceed()) {
+						throw new Error(
+							__(
+								'Saving the draft failed, so it was not published. Please try again.',
+								'designsetgo'
+							)
+						);
+					}
 				}
 
 				// Then merge draft to original via our API.
-				const result = await publishDraft(postId);
+				const result = await publishDraft(postId, force);
 
 				if (result.success && result.edit_url) {
 					// Clear dirty state before navigating to prevent "Leave site?" warning.
@@ -67,14 +74,33 @@ export function usePublishIntercept(postId, isDraft, onError) {
 					window.location.href = result.edit_url;
 				}
 			} catch (err) {
+				isPublishingRef.current = false;
+
+				if (isConflictError(err) && onConflict) {
+					onConflict(() => runPublish(true));
+					return;
+				}
+
 				const errorMessage =
 					err.message ||
 					__('Failed to publish changes.', 'designsetgo');
 				onError?.(errorMessage);
-				isPublishingRef.current = false;
 			}
 		},
-		[postId, hasEdits, savePost, onError]
+		[postId, hasEdits, savePost, onError, onConflict]
+	);
+
+	// Handle custom publish (merge draft to original).
+	const handlePublishDraft = useCallback(
+		(e) => {
+			// Prevent the native WordPress publish action.
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+
+			return runPublish(false);
+		},
+		[runPublish]
 	);
 
 	// Update the handler ref whenever handlePublishDraft changes.

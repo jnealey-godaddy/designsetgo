@@ -5,9 +5,10 @@ import {
 	RichText,
 	InspectorControls,
 } from '@wordpress/block-editor';
-import { useEffect, useMemo } from '@wordpress/element';
+import { useMemo } from '@wordpress/element';
 import { Icon, ToggleControl } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { useUniqueBlockId } from '../../hooks';
 import { useSelect, useDispatch } from '@wordpress/data';
 import classnames from 'classnames';
 
@@ -112,14 +113,13 @@ export default function AccordionItemEdit({
 		setOpen(!isOpen);
 	};
 
-	// Generate unique ID for accessibility
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({
-				uniqueId: `accordion-item-${Math.random().toString(36).substr(2, 9)}`,
-			});
-		}
-	}, [uniqueId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'uniqueId',
+		value: uniqueId,
+		setAttributes,
+		prefix: 'accordion-item-',
+	});
 
 	// Declaratively calculate classes
 	const itemClasses = classnames('dsgo-accordion-item', {

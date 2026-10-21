@@ -248,8 +248,25 @@ class Custom_CSS_Renderer {
 			return '';
 		}
 
-		// Replace "selector" with the actual class (word boundary aware).
-		return preg_replace( '/\bselector\b/', '.' . $class_name, $css );
+		// Replace the standalone word "selector" with the actual class.
+		//
+		// A plain \b is not enough: it treats "-" and "_" as boundaries, so
+		// `.my-selector-list`, `--selector-gap` and `[data-selector]` were all
+		// corrupted. Strings, comments and attribute selectors are matched first
+		// and returned untouched, and the word must not touch an identifier
+		// character, "-", ".", "#" or "\".
+		//
+		// Mirrors replaceSelector() in src/extensions/custom-css/styles.js.
+		// Change one, change the other.
+		$replacement = '.' . $class_name;
+
+		return preg_replace_callback(
+			'/("(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|\/\*[\s\S]*?\*\/|\[[^\]]*\])|(?<![\w.#\\\\-])selector(?![\w-])/',
+			static function ( $matches ) use ( $replacement ) {
+				return isset( $matches[1] ) && '' !== $matches[1] ? $matches[1] : $replacement;
+			},
+			$css
+		);
 	}
 
 	/**
@@ -302,9 +319,13 @@ class Custom_CSS_Renderer {
 		// Remove behavior (IE specific).
 		$css = preg_replace( '/behavior\s*:/i', '', $css );
 
-		// Remove @import with non-http(s) URLs.
-		$css = preg_replace( '/@import\s+url\s*\(\s*["\']?(?!https?:).*?["\']?\s*\)/i', '', $css );
-		$css = preg_replace( '/@import\s+["\'](?!https?:).*?["\']/i', '', $css );
+		// Remove @import entirely, matching the editor preview. The footer
+		// stylesheet concatenates every block's CSS, so an import is only ever
+		// valid for whichever block happens to come first, and it lets block
+		// CSS pull in third-party stylesheets. Fonts and the like belong in
+		// theme.json or the site's own CSS.
+		$css = preg_replace( '/@import\b[^;{}]*(?:;|$)/im', '', $css );
+		$css = preg_replace( '/@import\b/i', '', $css );
 
 		// Remove expression() (IE specific).
 		$css = preg_replace( '/expression\s*\(/i', '', $css );
