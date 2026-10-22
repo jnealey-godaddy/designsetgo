@@ -135,8 +135,8 @@ function designsetgo_uninstall_site() {
 		'filter index table',
 		function () use ( $wpdb ) {
 			$table = $wpdb->prefix . 'dsgo_query_filter_index';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Uninstall drops the plugin's own table; name is built from $wpdb->prefix.
-			$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall drops the plugin's own table.
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) );
 		}
 	);
 
