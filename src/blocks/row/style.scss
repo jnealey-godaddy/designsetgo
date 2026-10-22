@@ -122,6 +122,23 @@
 		}
 	}
 
+	// Wrap below the tablet breakpoint only. Added at render time to no-wrap
+	// rows of wordmarks stored by older patterns
+	// (Stored_Markup_Repairs::repair_wordmark_row), which push the page
+	// sideways on phones and small tablets. Wider screens keep the stored
+	// single line: some of those rows fit there only because nowrap squeezes
+	// them, and would break onto two lines if allowed to wrap. The stored
+	// flex-wrap is an inline style, hence !important.
+	&--wrap-narrow {
+
+		@include below($breakpoint-tablet) {
+
+			> .dsgo-flex__inner {
+				flex-wrap: wrap !important;
+			}
+		}
+	}
+
 	// CRITICAL: Override WordPress width constraints when constrainWidth is disabled
 	// The WordPress container class is on the INNER div, not the outer div
 	// We need higher specificity to override this

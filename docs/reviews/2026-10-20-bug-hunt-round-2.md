@@ -162,7 +162,9 @@ Behaviour changes to note:
 ## Notes
 - The logo-row overflow fix in #652 changed the pattern source only. Pages already built from
   those patterns (e.g. smoke page 1711: 465px document at a 375px viewport) still scroll
-  sideways until the row is re-inserted or its `nowrap` turned off. [live]
+  sideways until the row is re-inserted or its `nowrap` turned off. [live] — Since fixed at
+  render time: `Stored_Markup_Repairs::repair_wordmark_row()` adds `dsgo-flex--wrap-narrow`
+  (wraps below 1024px) to no-wrap Rows of letter-spaced wordmark paragraphs.
 - The TOC rewriting the URL hash while scrolling is deliberate (tied to Smooth Scroll), not a bug.
 - Corrected reviewer claim: Draft Mode does **not** strip `type`/`name`/`value` from form inputs
   (verified); the real damage is the ARIA and other attributes in Tier 1 #1.
