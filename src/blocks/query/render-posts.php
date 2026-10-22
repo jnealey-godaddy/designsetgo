@@ -620,9 +620,45 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
+		// Posts that tie on the sort column (same publish time, same title)
+		// come back in whatever order MySQL picks per request, so offset
+		// pages repeat some and skip others. Break ties on ID. Done in SQL so
+		// `orderby` stays the string the designsetgo_query_args filter sees.
+		$args['dsgo_id_tiebreak'] = true;
+		if ( ! has_filter( 'posts_orderby', 'designsetgo_query_id_tiebreak_orderby' ) ) {
+			add_filter( 'posts_orderby', 'designsetgo_query_id_tiebreak_orderby', 20, 2 );
+		}
+
 		return $args;
 	}
 
+endif;
+
+if ( ! function_exists( 'designsetgo_query_id_tiebreak_orderby' ) ) :
+	/**
+	 * Append `posts.ID` to the ORDER BY of Query loops so ties sort stably.
+	 *
+	 * Skipped when the clause already orders by ID (post__in, an ID sort) or
+	 * is random, where a tiebreak changes nothing.
+	 *
+	 * @param string    $orderby ORDER BY clause.
+	 * @param \WP_Query $query   Query.
+	 * @return string
+	 */
+	function designsetgo_query_id_tiebreak_orderby( $orderby, $query ) {
+		global $wpdb;
+
+		$orderby = (string) $orderby;
+		if ( ! $query instanceof \WP_Query || ! $query->get( 'dsgo_id_tiebreak' ) || '' === trim( $orderby ) ) {
+			return $orderby;
+		}
+		if ( false !== stripos( $orderby, 'RAND(' ) || false !== strpos( $orderby, "{$wpdb->posts}.ID" ) ) {
+			return $orderby;
+		}
+
+		$order = 'ASC' === strtoupper( (string) $query->get( 'order' ) ) ? 'ASC' : 'DESC';
+		return $orderby . ", {$wpdb->posts}.ID {$order}";
+	}
 endif;
 
 if ( ! function_exists( 'designsetgo_query_seeded_rand_orderby' ) ) :

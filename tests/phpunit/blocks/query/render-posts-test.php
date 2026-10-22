@@ -8,6 +8,9 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$path = DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
 		$this->assertFileExists( $path, 'Run `npm run build` before PHPUnit — render helpers are served from build/.' );
 		require_once $path;
+		// render-helpers.php loads this lazily on the first posts render; tests
+		// that build query args directly must not depend on test order.
+		require_once DESIGNSETGO_PATH . 'build/blocks/query/render-posts.php';
 	}
 
 	public function test_grouped_items_render_with_their_own_global_post() {
@@ -169,6 +172,72 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 
 		$query = new WP_Query( $args );
 		$this->assertStringContainsString( 'RAND(' . $args['dsgo_rand_seed'] . ')', $query->request );
+	}
+
+	public function test_posts_that_tie_on_the_sort_column_page_without_repeats() {
+		$this->load_helpers();
+		$ids = self::factory()->post->create_many(
+			5,
+			array(
+				'post_status' => 'publish',
+				'post_date'   => '2026-01-01 10:00:00',
+			)
+		);
+		$atts = designsetgo_query_defaults(
+			array(
+				'postType' => 'post',
+				'orderBy'  => 'date',
+				'perPage'  => 2,
+			)
+		);
+
+		$seen = array();
+		foreach ( array( 1, 2, 3 ) as $page ) {
+			$query = new WP_Query( designsetgo_query_build_posts_args( $atts, array( 'page' => $page, 'params' => array() ) ) );
+			$seen  = array_merge( $seen, wp_list_pluck( $query->posts, 'ID' ) );
+		}
+
+		$this->assertSame( array_reverse( $ids ), $seen, 'Every tied post appears once, newest ID first.' );
+	}
+
+	public function test_tiebreak_follows_the_sort_direction() {
+		$this->load_helpers();
+		global $wpdb;
+		$atts = designsetgo_query_defaults(
+			array(
+				'postType' => 'post',
+				'orderBy'  => 'title',
+				'order'    => 'ASC',
+			)
+		);
+
+		$query = new WP_Query( designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array() ) ) );
+
+		$this->assertStringContainsString( "{$wpdb->posts}.post_title ASC, {$wpdb->posts}.ID ASC", $query->request );
+	}
+
+	public function test_tiebreak_leaves_args_orderby_a_string() {
+		$this->load_helpers();
+		$atts = designsetgo_query_defaults( array( 'postType' => 'post' ) );
+
+		$args = designsetgo_query_build_posts_args( $atts, array( 'page' => 1, 'params' => array() ) );
+
+		$this->assertSame( 'date', $args['orderby'], 'designsetgo_query_args filters keep seeing the plain orderby.' );
+	}
+
+	public function test_tiebreak_skips_random_and_manual_order() {
+		$this->load_helpers();
+		global $wpdb;
+		$ids = self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
+
+		$appended = '/,\s*' . preg_quote( $wpdb->posts, '/' ) . '\.ID (ASC|DESC)/';
+
+		$rand = new WP_Query( designsetgo_query_build_posts_args( designsetgo_query_defaults( array( 'postType' => 'post', 'orderBy' => 'rand' ) ), array( 'page' => 1, 'params' => array() ) ) );
+		$this->assertDoesNotMatchRegularExpression( $appended, $rand->request );
+
+		$manual = new WP_Query( designsetgo_query_build_posts_args( designsetgo_query_defaults( array( 'source' => 'manual', 'manualIds' => $ids ) ), array( 'page' => 1, 'params' => array() ) ) );
+		$this->assertStringContainsString( 'FIELD(', $manual->request );
+		$this->assertDoesNotMatchRegularExpression( $appended, $manual->request, 'post__in keeps only its FIELD() ordering.' );
 	}
 
 	public function test_load_more_continues_the_first_paint_seed() {
