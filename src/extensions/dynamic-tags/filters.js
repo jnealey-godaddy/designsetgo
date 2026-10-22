@@ -196,7 +196,9 @@ function DynamicTagsToolbar({ bindable, bindings, setBinding }) {
 					<ToolbarDropdownMenu
 						icon={dynamicIcon}
 						label={__('Connect to Dynamic Tag', 'designsetgo')}
-						toggleProps={{ isActive: isAnyConnected }}
+						// The toggle is a plain Button, which knows isPressed;
+						// isActive would reach the DOM as an unknown attribute.
+						toggleProps={{ isPressed: isAnyConnected }}
 						controls={controls}
 					/>
 				</ToolbarGroup>

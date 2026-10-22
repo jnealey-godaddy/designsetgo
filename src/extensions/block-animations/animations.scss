@@ -84,11 +84,14 @@ body:not(.block-editor-page):not(.wp-admin) {
 			animation-fill-mode: both;
 		}
 
-		// Show content immediately for users who prefer reduced motion
+		// Show content immediately for users who prefer reduced motion.
+		// frontend.js skips setup entirely under reduced motion, so nothing
+		// else ever reveals the block; the hiding rule above is more specific,
+		// hence !important.
 		@media (prefers-reduced-motion: reduce) {
 
 			&:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
-				opacity: 1;
+				opacity: 1 !important; // Accessibility override.
 			}
 
 			&.dsgo-entrance-active,

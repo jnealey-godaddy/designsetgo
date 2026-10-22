@@ -17,7 +17,7 @@ import {
 } from '@wordpress/block-editor';
 import { Notice, SelectControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useMemo } from '@wordpress/element';
 import { DsgoInspectorPanel } from '../../components/shared';
 
 export default function FlipCardFaceEdit({
@@ -37,13 +37,16 @@ export default function FlipCardFaceEdit({
 	// "already present" when deciding whether this face is a newly inserted
 	// duplicate, while `all` drives the inspector dropdown's occupied-side
 	// state (which must consider every sibling regardless of order).
-	const { earlierSiblingSides, allSiblingSides } = useSelect(
+	// Sides come back as comma-joined strings so useSelect's shallow compare
+	// sees an unchanged value; arrays built per call would re-render on
+	// every store change.
+	const { earlierSides, otherSides } = useSelect(
 		(select) => {
 			const { getBlockRootClientId, getBlock } =
 				select('core/block-editor');
 			const parentId = getBlockRootClientId(clientId);
 			if (!parentId) {
-				return { earlierSiblingSides: [], allSiblingSides: [] };
+				return { earlierSides: '', otherSides: '' };
 			}
 			const siblings = getBlock(parentId)?.innerBlocks || [];
 			const toSide = (sibling) => {
@@ -71,11 +74,21 @@ export default function FlipCardFaceEdit({
 				.filter((sibling) => sibling.clientId !== clientId)
 				.map(toSide)
 				.filter(Boolean);
-			return { earlierSiblingSides: earlier, allSiblingSides: all };
+			return {
+				earlierSides: earlier.join(','),
+				otherSides: all.join(','),
+			};
 		},
 		[clientId]
 	);
-	const siblingSides = allSiblingSides;
+	const earlierSiblingSides = useMemo(
+		() => (earlierSides ? earlierSides.split(',') : []),
+		[earlierSides]
+	);
+	const siblingSides = useMemo(
+		() => (otherSides ? otherSides.split(',') : []),
+		[otherSides]
+	);
 	const hasDuplicateSide = siblingSides.includes(side);
 
 	// When an author deletes a face and inserts a replacement via the parent's

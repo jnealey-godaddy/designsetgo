@@ -122,7 +122,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **Fix:** Closing and quickly reopening an Accordion item no longer leaves it empty. A Counter ending at 0 shows 0, and its prefix and suffix show when reduced motion is on.
 * **Fix:** A duplicated accordion item, tab, hotspot or counter gets its own ID, so screen readers announce the right panel.
 * **Fix:** Breadcrumbs show a visible focus outline, hide draft and private parent pages, point the right way on right-to-left sites, and appear on archive, search and 404 pages.
-* **Fix:** Six logo and trust-bar patterns, large Blobs and bordered accordions no longer make pages scroll sideways on phones.
+* **Fix:** Six logo and trust-bar patterns, large Blobs and bordered accordions no longer make pages scroll sideways on phones. Logo rows already on your pages wrap on phones and small tablets without re-saving.
 * **Fix:** Convert & Deactivate converts every page and keeps quotes and special characters intact.
 * **Fix:** Privacy exports and erasures include all of a person's form submissions, not only recent ones.
 * **Fix:** llms.txt is no longer rewritten on every save, updates when its settings change, and pages no longer answer some apps and bots with "Not Acceptable".
@@ -134,13 +134,13 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **Fix:** Pages with a form or slider no longer scroll sideways on right-to-left sites.
 * **Fix:** Sticky header settings chosen for an individual header (shadow, shrink, hide on scroll, background) now apply on your site, and a header hidden while scrolling reappears when you jump back to the top.
 * **Fix:** Blocks animated "On Hover" or "On Click" are visible before you interact with them, and animated blocks show when printing.
-* **Fix:** Timeline marker shapes and colours now show on your site. Existing timelines update without re-saving.
+* **Fix:** Timeline marker shapes and colours now show on your site. Existing timelines update without re-saving. Opening a page with an older Timeline no longer marks it as having unsaved changes.
 * **Fix:** Countdown Timer adds hidden units to the next one shown, so hiding Days shows 77 hours instead of 5.
 * **Fix:** Table of Contents lists every heading, including ones that skip a level, supports non-Latin headings, and no longer jumps to the top of the page when it has nothing to list.
 * **Fix:** Card: turning off the button area no longer deletes its buttons, and badges are read as their text. Modal Trigger padding from the spacing presets now applies. Existing pages update without re-saving.
 * **Fix:** A Group or Section with a click interaction no longer blocks typing a space in fields inside it.
 * **Fix:** Forms: with the country code dropdown shown, phone numbers are saved without an extra "+". Success messages are read once by screen readers, and visitors whose clock is off can still submit.
-* **Fix:** Dynamic Query: random order no longer repeats posts when you load more, and a sort option no longer hides posts missing the sorted field. Filter counts stay available while the index rebuilds and update when a category is deleted.
+* **Fix:** Dynamic Query: random order no longer repeats posts when you load more, and a sort option no longer hides posts missing the sorted field. Posts published at the same moment, or sharing a title when sorted by title, are no longer repeated or skipped across pages. Filter counts stay available while the index rebuilds and update when a category is deleted.
 * **Fix:** Image Accordion panels read their heading and caption to screen readers, and hover works on touch-screen laptops. Scroll Marquee no longer stops the page scrolling. A map whose address can't be found shows a message instead of a pin in New York.
 * **Fix:** Moving Text Path text has a pause button and stops while off screen. Progress bars and Reveal on Hover respect reduced motion and keyboard focus. Sticky Sections stack correctly after rotating a phone and with more than 20 sections.
 * **Fix:** Comparison Table tooltips open on tap and are no longer cut off when the table scrolls, Text Reveal keeps links readable by screen readers, and icons without a label are no longer announced by their name.

@@ -19,8 +19,7 @@ import {
 	Popover,
 	TextControl,
 } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
-import { useInstanceId } from '@wordpress/compose';
+import { useState } from '@wordpress/element';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -90,7 +89,6 @@ export default function TimelineItemEdit({
 		linkUrl,
 		linkTarget,
 		customMarkerColor,
-		uniqueId,
 	} = attributes;
 
 	// Get context from parent timeline
@@ -104,18 +102,6 @@ export default function TimelineItemEdit({
 
 	// Color settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
-
-	// Generate stable unique ID for accessibility using useInstanceId
-	const instanceId = useInstanceId(TimelineItemEdit, 'timeline-item');
-
-	// Persist unique ID to attributes if not already set
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({
-				uniqueId: `timeline-item-${instanceId}`,
-			});
-		}
-	}, [uniqueId, instanceId, setAttributes]);
 
 	// Determine marker colors (custom overrides parent)
 	const effectiveMarkerColor =
