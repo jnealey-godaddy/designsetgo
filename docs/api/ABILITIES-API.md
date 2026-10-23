@@ -108,7 +108,9 @@ curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-blocks
 
 #### `designsetgo/get-post-blocks`
 
-Retrieves all blocks from a post with their attributes, enabling inspection of current content structure. Returns `blockIndex` values needed for configurator and delete abilities.
+Retrieves all blocks from a post with their attributes, enabling inspection of current content structure. Returns `blockIndex` values needed for configurator and delete abilities, and `blockPath` values for `add-child-block`'s `parent_block_path`.
+
+Both identifiers are positions in the **complete post**, assigned before any filtering. They stay valid when `block_name`, `include_inner: false`, or `flatten` narrows the response, so a filtered result can be passed straight to a configurator. Freeform content between blocks is not counted, matching how the configurators resolve `block_index`.
 
 **Input:**
 ```json
@@ -128,6 +130,7 @@ Retrieves all blocks from a post with their attributes, enabling inspection of c
   "blocks": [
     {
       "blockIndex": 0,
+      "blockPath": "0",
       "blockName": "designsetgo/section",
       "attrs": { "contentWidth": "1140px" },
       "innerBlocks": [ ... ]
@@ -136,6 +139,10 @@ Retrieves all blocks from a post with their attributes, enabling inspection of c
   "total": 5
 }
 ```
+
+With `flatten: true`, `innerBlocks` is omitted and each block carries `depth`, its nesting depth in the post (`0` = top level). A filtered block keeps its real depth: a matched block nested two levels down reports `depth: 2`.
+
+A block that matches `block_name` is returned with its subtree, which is not searched further, so a match nested inside another match is not listed separately.
 
 **REST API Example:** (readonly — uses GET)
 ```bash

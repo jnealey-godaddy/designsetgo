@@ -250,6 +250,11 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 		$phone = $result['blocks'][0];
 		$this->assertSame( 3, $phone['blockIndex'] );
 		$this->assertSame( '0.1.0', $phone['blockPath'] );
+		if ( $flatten ) {
+			$this->assertSame( 2, $phone['depth'], 'Depth is the block\'s depth in the post, not in the filtered response.' );
+		} else {
+			$this->assertArrayNotHasKey( 'depth', $phone );
+		}
 
 		$update = new Update_Block();
 		$saved  = $update->execute(
@@ -308,6 +313,95 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $filtered['blocks'] );
 		$this->assertSame( 2, $filtered['blocks'][0]['blockIndex'] );
 		$this->assertSame( '1', $filtered['blocks'][0]['blockPath'] );
+	}
+
+	/**
+	 * Freeform content between top-level blocks must not take an index.
+	 *
+	 * parse_blocks() returns it as a block with a null blockName, which the
+	 * configurators skip when resolving block_index.
+	 */
+	public function test_get_post_blocks_skips_freeform_content(): void {
+		$content = "\n\nloose text\n\n"
+			. '<!-- wp:paragraph --><p>First</p><!-- /wp:paragraph -->'
+			. "\n\n"
+			. '<!-- wp:group --><div class="wp-block-group">'
+			. "\n\n"
+			. '<!-- wp:paragraph --><p>Nested</p><!-- /wp:paragraph -->'
+			. "\n\n"
+			. '</div><!-- /wp:group -->'
+			. "\n\nmore loose text\n\n"
+			. '<!-- wp:paragraph --><p>Last</p><!-- /wp:paragraph -->';
+		$post_id = $this->create_block_post( $content );
+		$get     = new Get_Post_Blocks();
+
+		$flat = $get->execute(
+			array(
+				'post_id' => $post_id,
+				'flatten' => true,
+			)
+		);
+		$this->assertSame( array( 0, 1, 2, 3 ), array_column( $flat['blocks'], 'blockIndex' ) );
+		$this->assertSame( array( '0', '1', '1.0', '2' ), array_column( $flat['blocks'], 'blockPath' ) );
+
+		$update = new Update_Block();
+		$saved  = $update->execute(
+			array(
+				'post_id'     => $post_id,
+				'block_index' => $flat['blocks'][3]['blockIndex'],
+				'block_name'  => 'core/paragraph',
+				'attributes'  => array( 'className' => 'is-last' ),
+			)
+		);
+		$this->assertNotWPError( $saved );
+		$this->assertTrue( $saved['success'] );
+
+		$after = $get->execute( array( 'post_id' => $post_id ) );
+		$this->assertSame( 'is-last', $after['blocks'][2]['attrs']['className'] ?? null );
+		$this->assertArrayNotHasKey( 'className', $after['blocks'][0]['attrs'] );
+	}
+
+	/**
+	 * A blockPath from filtered discovery must resolve as parent_block_path.
+	 */
+	public function test_filtered_block_path_targets_add_child_block(): void {
+		$content = '<!-- wp:group {"className":"outer"} --><div class="wp-block-group outer">'
+			. '<!-- wp:paragraph --><p>Intro</p><!-- /wp:paragraph -->'
+			. '<!-- wp:columns --><div class="wp-block-columns">'
+			. '<!-- wp:column --><div class="wp-block-column"></div><!-- /wp:column -->'
+			. '<!-- wp:column {"className":"target"} --><div class="wp-block-column target"></div><!-- /wp:column -->'
+			. '</div><!-- /wp:columns -->'
+			. '</div><!-- /wp:group -->';
+		$post_id = $this->create_block_post( $content );
+		$get     = new Get_Post_Blocks();
+
+		$columns = $get->execute(
+			array(
+				'post_id'    => $post_id,
+				'block_name' => 'core/column',
+				'flatten'    => true,
+			)
+		);
+		$this->assertCount( 2, $columns['blocks'] );
+		$target = $columns['blocks'][1];
+		$this->assertSame( '0.1.1', $target['blockPath'] );
+
+		$add    = new Add_Child_Block();
+		$result = $add->execute(
+			array(
+				'post_id'           => $post_id,
+				'parent_block_path' => $target['blockPath'],
+				'block_name'        => 'core/paragraph',
+				'attributes'        => array( 'content' => 'Added' ),
+			)
+		);
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+
+		$after   = $get->execute( array( 'post_id' => $post_id ) );
+		$columns = $after['blocks'][0]['innerBlocks'][1]['innerBlocks'];
+		$this->assertArrayNotHasKey( 'innerBlocks', $columns[0] );
+		$this->assertSame( 'core/paragraph', $columns[1]['innerBlocks'][0]['blockName'] ?? null );
 	}
 
 	// -------------------------------------------------------------------------
