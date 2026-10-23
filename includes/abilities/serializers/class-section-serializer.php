@@ -54,7 +54,7 @@ class Section_Serializer {
 		$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
 		$box_width       = isset( $attributes['boxWidth'] ) && is_string( $attributes['boxWidth'] ) ? $attributes['boxWidth'] : '';
 		$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
-		$tag_name        = isset( $attributes['tagName'] ) && $attributes['tagName'] ? $attributes['tagName'] : 'div';
+		$tag_name        = designsetgo_sanitize_container_tag( $attributes['tagName'] ?? 'div' );
 
 		// Build outer classes (order: wp-block-*, alignX, dsgo-*).
 		$outer_class_parts = array( 'wp-block-designsetgo-section' );
