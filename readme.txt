@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.11.0
+Stable tag: 2.11.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,9 +110,10 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
-= Unreleased =
+= 2.11.1 - 2026-10-23 =
 
 * **Security:** Section, Row and Grid only use the HTML elements their "HTML Element" setting offers, including when converted to core blocks.
+* **Security:** Custom CSS checks read escaped characters the same way browsers do.
 * **Fix:** Keyboard users can use modals again: focus moves into the modal, and Tab no longer closes it.
 * **Fix:** Opening a page in the editor no longer removes padding from Sections inside other Sections.
 * **Fix:** Icon List colour, background, size and icon position now show on your site, not only in the editor. Existing lists update without re-saving.
@@ -146,6 +147,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **Fix:** Moving Text Path text has a pause button and stops while off screen. Progress bars and Reveal on Hover respect reduced motion and keyboard focus. Sticky Sections stack correctly after rotating a phone and with more than 20 sections.
 * **Fix:** Comparison Table tooltips open on tap and are no longer cut off when the table scrolls, Text Reveal keeps links readable by screen readers, and icons without a label are no longer announced by their name.
 * **Fix:** The settings screen shows an error with a Retry button if settings fail to load, instead of a form that can't save.
+* **Fix:** AI assistants connected through DesignSetGo change the block you asked for, instead of sometimes changing a different block on the page.
 * **Improved:** Structured data from a Star Rating block set to Aggregate rating now only appears when the rating count is shown, and the count can go above 1,000.
 * **Improved:** Custom CSS no longer allows `@import`. It only ever worked in the first block on a page; load fonts and stylesheets through your theme instead.
 * **Security:** The form endpoint limits how often one visitor can submit, including to forms that don't exist, and parallel submissions can no longer get around a form's limit.
@@ -242,6 +244,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.11.1 =
+Security fixes and a large batch of bug fixes for forms, Dynamic Query, Draft Mode, sliders, accessibility and right-to-left sites. Custom CSS no longer allows @import; load fonts and stylesheets through your theme instead.
 
 = 2.11.0 =
 Fixes for form webhooks and in-place page refreshes. Webhooks to link-local or carrier-grade NAT addresses are blocked; see the changelog for the filter that allows one on your WordPress version.
