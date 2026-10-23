@@ -181,13 +181,9 @@ class Get_Post_Blocks extends Abstract_Ability {
 		// Parse blocks from post content.
 		$blocks = parse_blocks( $post->post_content );
 
-		// Filter out empty blocks (whitespace-only).
-		$blocks = array_filter(
-			$blocks,
-			function ( $block ) {
-				return ! empty( $block['blockName'] );
-			}
-		);
+		// Assign document identities before filtering, flattening, or hiding children.
+		// Configurators resolve these indices and paths against the complete post.
+		$blocks = $this->clean_blocks_for_output( $blocks );
 
 		// Filter by block name if specified.
 		if ( $block_name ) {
@@ -209,9 +205,6 @@ class Get_Post_Blocks extends Abstract_Ability {
 		if ( $flatten ) {
 			$blocks = $this->flatten_blocks( $blocks );
 		}
-
-		// Clean up blocks for output.
-		$blocks = $this->clean_blocks_for_output( array_values( $blocks ) );
 
 		return array(
 			'success' => true,
@@ -255,8 +248,8 @@ class Get_Post_Blocks extends Abstract_Ability {
 		$flat = array();
 
 		foreach ( $blocks as $block ) {
-			$block['_depth'] = $depth;
-			$inner_blocks    = $block['innerBlocks'] ?? array();
+			$block['depth'] = $depth;
+			$inner_blocks   = $block['innerBlocks'] ?? array();
 			unset( $block['innerBlocks'] );
 
 			$flat[] = $block;
@@ -285,6 +278,11 @@ class Get_Post_Blocks extends Abstract_Ability {
 		$ordinal = 0;
 
 		foreach ( $blocks as $block ) {
+			// Match the configurators' indexing of named blocks at every depth.
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+
 			$path = '' === $path_prefix ? (string) $ordinal : $path_prefix . '.' . $ordinal;
 			++$ordinal;
 
@@ -306,11 +304,6 @@ class Get_Post_Blocks extends Abstract_Ability {
 			// Include cleaned inner blocks if present.
 			if ( ! empty( $block['innerBlocks'] ) ) {
 				$cleaned['innerBlocks'] = $this->clean_blocks_for_output( $block['innerBlocks'], $counter, $path );
-			}
-
-			// Include depth if flattened.
-			if ( isset( $block['_depth'] ) ) {
-				$cleaned['depth'] = $block['_depth'];
 			}
 
 			$result[] = $cleaned;
