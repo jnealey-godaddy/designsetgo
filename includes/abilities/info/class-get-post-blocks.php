@@ -52,7 +52,7 @@ class Get_Post_Blocks extends Abstract_Ability {
 				'readonly'     => true,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Use this to inspect existing blocks in a post before making changes. Returns block indices needed for configurator and delete abilities.',
+				'instructions' => 'Use this to inspect existing blocks in a post before making changes. Returns blockIndex and blockPath values needed for configurator, delete, and add-child-block abilities. Both are positions in the complete post, so they stay valid when block_name, include_inner, or flatten narrows the response.',
 			),
 		);
 	}
@@ -125,6 +125,10 @@ class Get_Post_Blocks extends Abstract_Ability {
 							'attrs'       => array( 'type' => 'object' ),
 							'innerBlocks' => array( 'type' => 'array' ),
 							'innerHTML'   => array( 'type' => 'string' ),
+							'depth'       => array(
+								'type'        => 'integer',
+								'description' => __( 'Nesting depth in the post (0 = top level). Present only when flatten is true.', 'designsetgo' ),
+							),
 						),
 					),
 				),
@@ -217,6 +221,9 @@ class Get_Post_Blocks extends Abstract_Ability {
 	/**
 	 * Filter blocks by name, including searching inner blocks.
 	 *
+	 * A matching block is returned with its subtree, which is not searched
+	 * further, so a match nested inside another match is not listed twice.
+	 *
 	 * @param array<int, array<string, mixed>> $blocks     Blocks to filter.
 	 * @param string                           $block_name Block name to filter by.
 	 * @param bool                             $search_inner Whether to search inner blocks.
@@ -240,22 +247,24 @@ class Get_Post_Blocks extends Abstract_Ability {
 	/**
 	 * Flatten nested block structure to a single-level array.
 	 *
+	 * Depth comes from blockPath, so it is the block's depth in the post even
+	 * when a block_name filter made it a root of the response.
+	 *
 	 * @param array<int, array<string, mixed>> $blocks Blocks to flatten.
-	 * @param int                              $depth  Current depth level.
 	 * @return array<int, array<string, mixed>> Flattened blocks.
 	 */
-	private function flatten_blocks( array $blocks, int $depth = 0 ): array {
+	private function flatten_blocks( array $blocks ): array {
 		$flat = array();
 
 		foreach ( $blocks as $block ) {
-			$block['depth'] = $depth;
+			$block['depth'] = substr_count( $block['blockPath'], '.' );
 			$inner_blocks   = $block['innerBlocks'] ?? array();
 			unset( $block['innerBlocks'] );
 
 			$flat[] = $block;
 
 			if ( ! empty( $inner_blocks ) ) {
-				$flat = array_merge( $flat, $this->flatten_blocks( $inner_blocks, $depth + 1 ) );
+				$flat = array_merge( $flat, $this->flatten_blocks( $inner_blocks ) );
 			}
 		}
 

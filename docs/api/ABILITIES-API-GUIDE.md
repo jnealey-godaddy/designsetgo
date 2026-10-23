@@ -100,7 +100,9 @@ Retrieves all blocks from a post with document-order `blockIndex` values. Essent
 
 Only `post_id` is required. Use `block_name` to filter, `include_inner` to include nested blocks, `flatten` to get a flat list.
 
-**Output**: Array of block objects with `blockIndex`, `blockName`, `attrs`, `innerBlocks`.
+**Output**: Array of block objects with `blockIndex`, `blockPath`, `blockName`, `attrs`, `innerBlocks` (plus `depth` instead of `innerBlocks` when flattened).
+
+`blockIndex` and `blockPath` are positions in the complete post, so they stay valid under `block_name`, `include_inner`, and `flatten`. Pass `blockIndex` as `block_index` to configurators and `blockPath` as `parent_block_path` to `add-child-block`.
 
 #### find-blocks
 Searches for blocks across multiple posts. Useful for finding all posts that use a specific block type.
