@@ -53,6 +53,16 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 			'zero-padded escape'   => array( 'java\000073cript:alert(1)', 'javascript:alert(1)' ),
 			'escaped expression('  => array( 'expression\28 1\29', 'expression(1)' ),
 			'backslash-escaped ASCII' => array( '\u\r\l(x)', 'url(x)' ),
+			// CSS treats CR LF as ONE newline, and an escape consumes one
+			// whitespace after its hex digits - so the whole pair goes.
+			'escape then CRLF'     => array( "\\75\r\nrl(x)", 'url(x)' ),
+			'escape then CR'       => array( "\\75\rrl(x)", 'url(x)' ),
+			'escape then LF'       => array( "\\75\nrl(x)", 'url(x)' ),
+			'escape then form feed' => array( "\\75\frl(x)", 'url(x)' ),
+			'escape then tab'      => array( "\\75\trl(x)", 'url(x)' ),
+			'only one whitespace'  => array( "\\75\r\n\r\nrl(x)", "u\r\nrl(x)" ),
+			// Vertical tab is not CSS whitespace: the browser keeps it.
+			'escape then VT'       => array( "\\75\vrl(x)", "u\vrl(x)" ),
 			'plain text untouched' => array( '10px', '10px' ),
 			'empty string'         => array( '', '' ),
 		);
@@ -331,6 +341,21 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 	public function test_unsafe_escaped_css_is_still_blocked() {
 		$out = CSS_Sanitizer::sanitize( 'a { background: \\75rl(javascript:alert(1)); }' );
 		$this->assertStringNotContainsString( 'javascript', $out );
+	}
+
+	/**
+	 * An escape followed by CR LF must decode the way a browser reads it.
+	 *
+	 * Eating only the CR left `u\nrl(`, which the url() protocol allowlist
+	 * never saw, so the original - which a browser reads as `url(` - was
+	 * returned as written.
+	 */
+	public function test_crlf_after_escape_does_not_hide_url() {
+		$css = "a { background: \\75\r\nrl(ftp://evil.test/x.png); }";
+		$out = CSS_Sanitizer::sanitize( $css );
+
+		$this->assertStringContainsString( 'blocked-url', $out );
+		$this->assertStringNotContainsString( 'ftp:', $out );
 	}
 
 	/**

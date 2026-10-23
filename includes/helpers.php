@@ -76,8 +76,12 @@ function designsetgo_normalize_css_escapes( $css ) {
 	$css = str_replace( "\0", '', $css );
 
 	// Unicode escape: backslash + 1..6 hex digits + optional single whitespace.
+	// "Whitespace" is CSS's, not PCRE's `\s`: CR LF is ONE newline to a browser,
+	// so it goes as a pair, and vertical tab is not whitespace at all. Eating
+	// only the CR of `\75\r\nrl(` left `u\nrl(`, which hid a `url(` the browser
+	// still saw.
 	$css = preg_replace_callback(
-		'/\\\\([0-9a-fA-F]{1,6})\s?/',
+		'/\\\\([0-9a-fA-F]{1,6})(?:\r\n|[ \t\r\n\f])?/',
 		static function ( $matches ) {
 			$codepoint = hexdec( $matches[1] );
 
