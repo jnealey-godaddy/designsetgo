@@ -107,11 +107,9 @@ class Grid_Serializer {
 		}
 
 		// save.js honours tagName; hardcoding <div> lost an author's
-		// choice of <section>, <article> and so on.
-		$grid_tag = ( isset( $attributes['tagName'] ) && '' !== $attributes['tagName'] )
-			? preg_replace( '/[^a-z0-9]/i', '', (string) $attributes['tagName'] )
-			: 'div';
-		$grid_tag = '' !== $grid_tag ? $grid_tag : 'div';
+		// choice of <section>, <article> and so on. An allowlist, not a
+		// character filter: `script` and `iframe` are alphanumeric too.
+		$grid_tag = designsetgo_sanitize_container_tag( $attributes['tagName'] ?? 'div' );
 
 		return array(
 			'opening' => '<' . $grid_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .

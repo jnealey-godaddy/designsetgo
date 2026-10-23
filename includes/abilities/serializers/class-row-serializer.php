@@ -37,9 +37,7 @@ class Row_Serializer {
 		// save.js renders `<TagName>` from `tagName || 'div'`. The mirror
 		// hardcoded div, so a row saved as a <section> failed validation
 		// on its tag name alone.
-		$row_tag         = isset( $attributes['tagName'] ) && is_string( $attributes['tagName'] ) && '' !== $attributes['tagName']
-			? $attributes['tagName']
-			: 'div';
+		$row_tag         = designsetgo_sanitize_container_tag( $attributes['tagName'] ?? 'div' );
 		$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : false;
 		$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
 		$mobile_stack    = isset( $attributes['mobileStack'] ) ? $attributes['mobileStack'] : false;

@@ -258,6 +258,28 @@ function designsetgo_is_dsg_block( $block_name ) {
 }
 
 /**
+ * Restrict a container block's tagName to the elements it may render as.
+ *
+ * Section, Row and Grid store their wrapper element as a free-form `tagName`
+ * string in the block comment, and any author can write that comment by hand.
+ * kses never sees it as markup - `img src=x onerror=...` contains no `<` - so
+ * PHP that builds `'<' . $tag` from it writes a live element into the page.
+ * Every such place must pass the value through here first.
+ *
+ * The list mirrors the "HTML Element" options in each block's edit.js and the
+ * `enum` on `tagName` in their block.json files; change all three together.
+ *
+ * @param mixed  $tag      Stored tagName value.
+ * @param string $fallback Element to use when $tag is not allowed.
+ * @return string An allowed element name, or $fallback.
+ */
+function designsetgo_sanitize_container_tag( $tag, $fallback = 'div' ) {
+	$allowed = array( 'div', 'section', 'article', 'aside', 'header', 'footer', 'main' );
+
+	return is_string( $tag ) && in_array( $tag, $allowed, true ) ? $tag : $fallback;
+}
+
+/**
  * Resolve a WordPress preset color reference to its concrete value.
  *
  * Color controls store theme palette selections as the WordPress preset

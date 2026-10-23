@@ -101,4 +101,53 @@ class DesignSetGo_Block_Migrator_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$this->assertFalse( $data['hasMore'] );
 		$this->assertLessThanOrEqual( 2, $steps );
 	}
+
+	/**
+	 * A tagName payload stored in a block comment must not become live markup
+	 * when an administrator runs the conversion, while an allowed element
+	 * still carries through to the core/group.
+	 */
+	public function test_tag_name_payload_is_not_promoted_to_markup() {
+		$payload = 'img src=x onerror=alert(document.domain)';
+		$hostile = array();
+		foreach ( array( 'section', 'row', 'grid' ) as $slug ) {
+			$hostile[] = self::factory()->post->create(
+				array(
+					'post_status'  => 'draft',
+					'post_content' => '<!-- wp:designsetgo/' . $slug . ' {"tagName":"' . $payload . '"} --><p>test</p><!-- /wp:designsetgo/' . $slug . ' -->',
+				)
+			);
+		}
+		$allowed = self::factory()->post->create(
+			array(
+				'post_status'  => 'draft',
+				'post_content' => '<!-- wp:designsetgo/section {"tagName":"article"} --><article class="wp-block-designsetgo-section"></article><!-- /wp:designsetgo/section -->',
+			)
+		);
+
+		$offset    = 0;
+		$converted = 0;
+		for ( $guard = 0; $guard < 10; $guard++ ) {
+			$data       = $this->run_batch( $offset );
+			$converted += $data['converted'];
+			if ( ! $data['hasMore'] ) {
+				break;
+			}
+			$offset = $data['nextOffset'];
+		}
+		$this->assertSame( 4, $converted );
+
+		foreach ( $hostile as $id ) {
+			$content = get_post_field( 'post_content', $id );
+			$this->assertStringNotContainsString( 'onerror', $content );
+			$this->assertStringNotContainsString( '<img', $content );
+			$this->assertStringContainsString( '<div class="wp-block-group', $content );
+			$blocks = parse_blocks( $content );
+			$this->assertArrayNotHasKey( 'tagName', $blocks[0]['attrs'] );
+		}
+
+		$content = get_post_field( 'post_content', $allowed );
+		$this->assertStringContainsString( '<article class="wp-block-group', $content );
+		$this->assertSame( 'article', parse_blocks( $content )[0]['attrs']['tagName'] );
+	}
 }

@@ -1179,6 +1179,18 @@ JS;
 			}
 		}
 
+		// tagName comes from post content any author can write. An element
+		// outside the allowlist would carry into core/group's save() as-is,
+		// so drop it and let the group fall back to its default <div>.
+		if ( isset( $new_attrs['tagName'] ) ) {
+			$tag_name = designsetgo_sanitize_container_tag( $new_attrs['tagName'], '' );
+			if ( '' === $tag_name ) {
+				unset( $new_attrs['tagName'] );
+			} else {
+				$new_attrs['tagName'] = $tag_name;
+			}
+		}
+
 		return $new_attrs;
 	}
 
@@ -1194,7 +1206,9 @@ JS;
 	 * @return array Complete core/group block array.
 	 */
 	private function build_group_block( $attrs, $inner_blocks ) {
-		$tag     = $attrs['tagName'] ?? 'div';
+		// Concatenated into the open tag below, so it must be an allowed
+		// element name, never the raw attribute.
+		$tag     = designsetgo_sanitize_container_tag( $attrs['tagName'] ?? 'div' );
 		$classes = array( 'wp-block-group' );
 		$styles  = array();
 

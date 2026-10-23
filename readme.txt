@@ -112,6 +112,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 = Unreleased =
 
+* **Security:** Section, Row and Grid only use the HTML elements their "HTML Element" setting offers, including when converted to core blocks.
 * **Fix:** Keyboard users can use modals again: focus moves into the modal, and Tab no longer closes it.
 * **Fix:** Opening a page in the editor no longer removes padding from Sections inside other Sections.
 * **Fix:** Icon List colour, background, size and icon position now show on your site, not only in the editor. Existing lists update without re-saving.

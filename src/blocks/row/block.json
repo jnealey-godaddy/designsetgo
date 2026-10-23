@@ -96,7 +96,16 @@
 		},
 		"tagName": {
 			"type": "string",
-			"default": "div"
+			"default": "div",
+			"enum": [
+				"div",
+				"section",
+				"article",
+				"aside",
+				"header",
+				"footer",
+				"main"
+			]
 		},
 		"constrainWidth": {
 			"type": "boolean",
