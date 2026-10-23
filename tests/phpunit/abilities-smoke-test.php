@@ -219,6 +219,95 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, $result['total'] );
 		$this->assertSame( 0, $result['blocks'][0]['depth'] );
 		$this->assertSame( 1, $result['blocks'][1]['depth'] );
+		$this->assertSame( '0.0', $result['blocks'][1]['blockPath'] );
+		$this->assertSame( 1, $result['blocks'][1]['blockIndex'] );
+	}
+
+	/**
+	 * Discovery filters must retain identifiers that configurators can use.
+	 *
+	 * @dataProvider discovery_output_options
+	 * @param bool $flatten Whether to return a flat list.
+	 */
+	public function test_filtered_block_identifiers_can_update_the_original_block( bool $flatten ): void {
+		$content = '<!-- wp:group --><div class="wp-block-group">'
+			. '<!-- wp:paragraph --><p>Keep me</p><!-- /wp:paragraph -->'
+			. '<!-- wp:group --><div class="wp-block-group">'
+			. '<!-- wp:designsetgo/form-phone-field {"label":"Phone"} /-->'
+			. '</div><!-- /wp:group -->'
+			. '</div><!-- /wp:group -->';
+		$post_id = $this->create_block_post( $content );
+		$get     = new Get_Post_Blocks();
+		$result  = $get->execute(
+			array(
+				'post_id'    => $post_id,
+				'block_name' => 'designsetgo/form-phone-field',
+				'flatten'    => $flatten,
+			)
+		);
+
+		$this->assertCount( 1, $result['blocks'] );
+		$phone = $result['blocks'][0];
+		$this->assertSame( 3, $phone['blockIndex'] );
+		$this->assertSame( '0.1.0', $phone['blockPath'] );
+
+		$update = new Update_Block();
+		$saved  = $update->execute(
+			array(
+				'post_id'     => $post_id,
+				'block_index' => $phone['blockIndex'],
+				'block_name'  => $phone['blockName'],
+				'attributes'  => array( 'label' => 'Mobile' ),
+			)
+		);
+		$this->assertNotWPError( $saved );
+		$this->assertTrue( $saved['success'] );
+		$full = $get->execute( array( 'post_id' => $post_id ) );
+		$this->assertSame( 'Mobile', $full['blocks'][0]['innerBlocks'][1]['innerBlocks'][0]['attrs']['label'] );
+		$this->assertSame( '<p>Keep me</p>', $full['blocks'][0]['innerBlocks'][0]['innerHTML'] );
+	}
+
+	/**
+	 * Output modes for filtered discovery.
+	 *
+	 * @return array<string, array<bool>> Output modes.
+	 */
+	public static function discovery_output_options(): array {
+		return array(
+			'nested' => array( false ),
+			'flat'   => array( true ),
+		);
+	}
+
+	/**
+	 * Hiding children must still count them when assigning later indices.
+	 */
+	public function test_get_post_blocks_without_children_preserves_document_indices(): void {
+		$content = '<!-- wp:group --><div class="wp-block-group">'
+			. '<!-- wp:paragraph --><p>Inner</p><!-- /wp:paragraph -->'
+			. '</div><!-- /wp:group -->'
+			. '<!-- wp:paragraph --><p>Outer</p><!-- /wp:paragraph -->';
+		$post_id = $this->create_block_post( $content );
+		$get     = new Get_Post_Blocks();
+		$result  = $get->execute(
+			array(
+				'post_id'       => $post_id,
+				'include_inner' => false,
+			)
+		);
+		$this->assertSame( array( 0, 2 ), array_column( $result['blocks'], 'blockIndex' ) );
+		$this->assertArrayNotHasKey( 'innerBlocks', $result['blocks'][0] );
+
+		$filtered = $get->execute(
+			array(
+				'post_id'       => $post_id,
+				'include_inner' => false,
+				'block_name'    => 'core/paragraph',
+			)
+		);
+		$this->assertCount( 1, $filtered['blocks'] );
+		$this->assertSame( 2, $filtered['blocks'][0]['blockIndex'] );
+		$this->assertSame( '1', $filtered['blocks'][0]['blockPath'] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -258,8 +347,8 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 
 		if ( $full['total'] > 0 ) {
 			// Full detail may include fields like minimum, maximum, items, properties.
-			$full_block  = $full['blocks'][0];
-			$full_json   = wp_json_encode( $full_block['attributes'] );
+			$full_block   = $full['blocks'][0];
+			$full_json    = wp_json_encode( $full_block['attributes'] );
 			$summary_json = wp_json_encode( $summary['blocks'][0]['attributes'] );
 
 			// Full detail should be at least as long (likely longer) than summary.
