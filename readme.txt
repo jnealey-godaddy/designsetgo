@@ -110,6 +110,10 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
+= Unreleased =
+
+* **Fix:** Form notification emails name each answer by the label on your form, such as "Email Address", instead of an internal code like "Field 3d375a5f".
+
 = 2.11.1 - 2026-10-23 =
 
 * **Security:** Section, Row and Grid only use the HTML elements their "HTML Element" setting offers, including when converted to core blocks.
