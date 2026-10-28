@@ -571,7 +571,13 @@ class Form_Handler {
 		}
 
 		// Send email notification if enabled (settings looked up server-side from block attributes).
-		$this->send_email_notification( $form_id, $sanitized_fields, $submission_id, $block_attrs );
+		$this->send_email_notification(
+			$form_id,
+			$sanitized_fields,
+			$submission_id,
+			$block_attrs,
+			isset( $form_definition['labels'] ) ? $form_definition['labels'] : array()
+		);
 
 		// Trigger action hook for email notifications, integrations, etc.
 		// The fourth argument is the form's server-resolved block attributes.
@@ -1174,8 +1180,10 @@ class Form_Handler {
 	 * @param array|null $block_attrs   Attributes of the form the submission was
 	 *                                  validated against. Passing them keeps the
 	 *                                  email on the same copy of a shared form ID.
+	 * @param array      $labels        Visible field labels keyed by name, from
+	 *                                  the same form definition.
 	 */
-	private function send_email_notification( $form_id, $fields, $submission_id, $block_attrs = null ) {
+	private function send_email_notification( $form_id, $fields, $submission_id, $block_attrs = null, array $labels = array() ) {
 		// Look up email settings from the form block attributes (server-side only).
 		// This prevents client-side manipulation of email configuration.
 		if ( null === $block_attrs ) {
@@ -1307,12 +1315,14 @@ class Form_Handler {
 
 		// The {all_fields} summary is markup by construction, so it is built once
 		// per context rather than escaped generically: HTML for the body, and a
-		// flat one-liner for the subject (where tags would be nonsense).
+		// flat one-liner for the subject (where tags would be nonsense). Each row
+		// is named by the label the visitor saw, never the generated field name.
+		$display_labels  = Form_Email_Labels::resolve( $fields, $labels );
 		$all_fields_html = '';
 		$all_fields_text = array();
 		foreach ( $fields as $field_name => $field_data ) {
 			$value = self::stringify_field_value( $field_data );
-			$label = ucwords( str_replace( array( '_', '-' ), ' ', $field_name ) );
+			$label = $display_labels[ (string) $field_name ];
 
 			$all_fields_html  .= sprintf( "<strong>%s:</strong> %s<br>\n", esc_html( $label ), esc_html( $value ) );
 			$all_fields_text[] = $label . ': ' . $value;
@@ -2005,7 +2015,9 @@ class Form_Handler {
 	 * Extract each field's visible label from a form's inner blocks.
 	 *
 	 * A label left at its block.json default is absent from the block comment,
-	 * so the registered default is used. Labels are stored as plain text.
+	 * so the registered default is used. A label cleared to nothing falls back
+	 * to the placeholder, the only text the visitor then sees for the field.
+	 * Labels are stored as plain text.
 	 *
 	 * @param array $blocks Parsed inner blocks.
 	 * @return array<string, string> Labels keyed by field name.
@@ -2021,6 +2033,10 @@ class Form_Handler {
 			if ( $field_name && $this->map_block_name_to_field_type( $block_name ) ) {
 				$label = isset( $attrs['label'] ) && is_string( $attrs['label'] ) ? $attrs['label'] : $this->default_field_label( $block_name );
 				$label = trim( html_entity_decode( wp_strip_all_tags( $label ), ENT_QUOTES, 'UTF-8' ) );
+
+				if ( '' === $label && isset( $attrs['placeholder'] ) && is_string( $attrs['placeholder'] ) ) {
+					$label = trim( html_entity_decode( wp_strip_all_tags( $attrs['placeholder'] ), ENT_QUOTES, 'UTF-8' ) );
+				}
 
 				if ( '' !== $label ) {
 					$labels[ $field_name ] = $label;
