@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.11.2
+Stable tag: 2.11.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,10 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 11. Editing chart data right in the block settings sidebar
 
 == Changelog ==
+
+= 2.11.3 - 2026-11-20 =
+
+* **Improved:** Find blocks by describing what you need. Searching the block inserter for everyday phrases like "opening hours", "book now", "request a quote", "as seen in", "years in business" or "latest posts" now brings up the DesignSetGo block that does the job, and AI assistants that build pages find them the same way.
 
 = 2.11.2 - 2026-11-20 =
 
@@ -251,6 +255,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.11.3 =
+DesignSetGo blocks now come up when you search the block inserter for everyday phrases like "opening hours", "book now" or "request a quote".
 
 = 2.11.2 =
 DesignSetGo blocks move from their own inserter category to the matching WordPress categories (Design, Media, Text, Widgets, Theme) and are easier to find by search. Form emails now label each answer the way your form does.
