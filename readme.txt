@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.11.1
+Stable tag: 2.11.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,9 +110,12 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
-= Unreleased =
+= 2.11.2 - 2026-11-20 =
 
+* **Improved:** In the block inserter, DesignSetGo blocks now sit next to the WordPress blocks they work like: Section, Row, Grid and Accordion under Design, Slider and Fifty Fifty under Media, Form Builder and Counter Group under Widgets. You can still see them all together in the DesignSetGo collection.
+* **Improved:** DesignSetGo blocks are easier to find. Searching the block inserter for words like "hero", "pricing", "testimonials", "columns" or "logos" now brings up the matching DesignSetGo block, and AI assistants that build pages choose them more reliably.
 * **Fix:** Form notification emails name each answer by the label on your form, such as "Email Address", instead of an internal code like "Field 3d375a5f".
+* **Fix:** Custom CSS containing escaped characters no longer causes an error on hosts where PHP's mbstring extension isn't installed.
 
 = 2.11.1 - 2026-10-23 =
 
@@ -248,6 +251,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.11.2 =
+DesignSetGo blocks move from their own inserter category to the matching WordPress categories (Design, Media, Text, Widgets, Theme) and are easier to find by search. Form emails now label each answer the way your form does.
 
 = 2.11.1 =
 Security fixes and a large batch of bug fixes for forms, Dynamic Query, Draft Mode, sliders, accessibility and right-to-left sites. Custom CSS no longer allows @import; load fonts and stylesheets through your theme instead.
