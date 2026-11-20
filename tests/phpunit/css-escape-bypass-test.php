@@ -76,10 +76,10 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 	/**
 	 * A lone surrogate is not a Unicode scalar value.
 	 *
-	 * mb_chr() returns false for U+D800..U+DFFF, and preg_replace_callback()
-	 * requires a string back — so `\d800` coerces false to '' today and would be
-	 * a TypeError under stricter settings. This function is the shared boundary
-	 * for three sanitizers, so it must not be fragile on hostile input.
+	 * The hand-rolled UTF-8 encoder would happily emit the three bytes for
+	 * U+D800, which is invalid UTF-8. The range guard drops it instead. This
+	 * function is the shared boundary for three sanitizers, so it must not be
+	 * fragile on hostile input.
 	 *
 	 * @dataProvider surrogate_provider
 	 *
@@ -106,22 +106,44 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Pin the platform hazard the surrogate guard exists for.
+	 * The UTF-8 encoder is exact at every byte-width boundary.
 	 *
-	 * Be honest about what the test above can and cannot prove: WITHOUT the guard,
-	 * `\d800` still yields '' — because mb_chr() returns FALSE and
-	 * preg_replace_callback() coerces that bool to an empty string. Same output,
-	 * by accident. So no output-level assertion can fail on the unguarded code
-	 * today; the guard makes correct behaviour intentional rather than incidental,
-	 * and keeps the callback's contract (return a string) honest for stricter PHP.
+	 * The normalizer encodes code points by hand rather than with mb_chr(),
+	 * which needs mbstring (not a WordPress requirement). Compare against
+	 * json_decode()'s encoder, which is always available, at each edge.
 	 *
-	 * This test pins the underlying fact, so if a future PHP/mbstring changes it,
-	 * we find out here rather than through a TypeError in a sanitizer.
+	 * @dataProvider codepoint_boundary_provider
+	 *
+	 * @param int $codepoint Code point to escape and decode.
 	 */
-	public function test_mb_chr_returns_false_for_a_surrogate() {
-		$this->assertFalse( mb_chr( 0xD800, 'UTF-8' ) );
-		$this->assertFalse( mb_chr( 0xDFFF, 'UTF-8' ) );
-		$this->assertIsString( mb_chr( 0x73, 'UTF-8' ) );
+	public function test_normalizer_encodes_utf8_at_width_boundaries( $codepoint ) {
+		$expected = 0xFFFF < $codepoint
+			? json_decode( '"' . sprintf( '\\u%04x\\u%04x', 0xD800 + ( ( $codepoint - 0x10000 ) >> 10 ), 0xDC00 + ( ( $codepoint - 0x10000 ) & 0x3FF ) ) . '"' )
+			: json_decode( '"' . sprintf( '\\u%04x', $codepoint ) . '"' );
+
+		$result = designsetgo_normalize_css_escapes( '\\' . dechex( $codepoint ) . ' ' );
+
+		$this->assertSame( $expected, $result );
+		$this->assertTrue( (bool) preg_match( '//u', $result ), 'Not valid UTF-8' );
+	}
+
+	/**
+	 * @return array<string, array{0: int}>
+	 */
+	public function codepoint_boundary_provider() {
+		return array(
+			'1-byte min'            => array( 0x1 ),
+			'1-byte max'            => array( 0x7F ),
+			'2-byte min'            => array( 0x80 ),
+			'2-byte max'            => array( 0x7FF ),
+			'3-byte min'            => array( 0x800 ),
+			'just below surrogates' => array( 0xD7FF ),
+			'just above surrogates' => array( 0xE000 ),
+			'3-byte max'            => array( 0xFFFF ),
+			'4-byte min'            => array( 0x10000 ),
+			'emoji'                 => array( 0x1F600 ),
+			'Unicode max'           => array( 0x10FFFF ),
+		);
 	}
 
 	/**
