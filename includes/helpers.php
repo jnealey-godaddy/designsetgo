@@ -87,12 +87,9 @@ function designsetgo_normalize_css_escapes( $css ) {
 
 			// Drop anything that is not a Unicode scalar value: null, out of
 			// range, and the surrogate range (U+D800..U+DFFF, which a lone `\d800`
-			// escape would otherwise produce). mb_chr() returns false for a
-			// surrogate, and preg_replace_callback() requires a string back — so
-			// today that silently coerces to '', and in a stricter context it is a
-			// TypeError. The CSS spec says to treat these as U+FFFD; dropping them
-			// is the same thing for our purpose, which is producing text safe to
-			// pattern-match. This function is the shared security boundary for
+			// escape would otherwise produce). The CSS spec says to treat these
+			// as U+FFFD; dropping them is the same thing for our purpose, which is
+			// producing text safe to pattern-match. This function is the shared security boundary for
 			// three sanitizers, so it does not get to be fragile.
 			if (
 				0 === $codepoint
@@ -102,7 +99,26 @@ function designsetgo_normalize_css_escapes( $css ) {
 				return '';
 			}
 
-			return (string) mb_chr( $codepoint, 'UTF-8' );
+			// Encode the code point as UTF-8 by hand. mb_chr() needs the mbstring
+			// extension, which WordPress does not require (core only polyfills it
+			// from WP 7.1), and the range checks above already guarantee a valid
+			// scalar value, so plain bit shifting is exact.
+			if ( $codepoint < 0x80 ) {
+				return chr( $codepoint );
+			}
+			if ( $codepoint < 0x800 ) {
+				return chr( 0xC0 | ( $codepoint >> 6 ) )
+					. chr( 0x80 | ( $codepoint & 0x3F ) );
+			}
+			if ( $codepoint < 0x10000 ) {
+				return chr( 0xE0 | ( $codepoint >> 12 ) )
+					. chr( 0x80 | ( ( $codepoint >> 6 ) & 0x3F ) )
+					. chr( 0x80 | ( $codepoint & 0x3F ) );
+			}
+			return chr( 0xF0 | ( $codepoint >> 18 ) )
+				. chr( 0x80 | ( ( $codepoint >> 12 ) & 0x3F ) )
+				. chr( 0x80 | ( ( $codepoint >> 6 ) & 0x3F ) )
+				. chr( 0x80 | ( $codepoint & 0x3F ) );
 		},
 		(string) $css
 	);
