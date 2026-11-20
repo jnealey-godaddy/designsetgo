@@ -228,7 +228,7 @@ class List_Blocks extends Abstract_Ability {
 				'name'        => $block_type->name,
 				'title'       => '' !== $block_type->title ? $block_type->title : $this->generate_title_from_name( $block_type->name ),
 				'description' => $block_type->description,
-				'keywords'    => array_values( (array) ( $block_type->keywords ?? array() ) ),
+				'keywords'    => array_values( (array) $block_type->keywords ),
 				'category'    => $block_type->category ?? '',
 				'group'       => self::get_block_group( $block_type->name ),
 				'supports'    => $this->format_supports( $block_type->supports ?? array() ),
