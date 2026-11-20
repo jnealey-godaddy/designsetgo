@@ -5,10 +5,17 @@
 	"version": "1.0.0",
 	"title": "Grid",
 	"category": "designsetgo",
-	"description": "Responsive multi-column grid layouts. Perfect for feature grids, product listings, team members, and card layouts.",
+	"description": "Responsive multi-column grid, like Columns but with per-device column counts, equal-height rows, and custom column templates. Use for feature grids, services, team members, card layouts, product listings, logo walls, and stats.",
 	"keywords": [
 		"grid",
 		"columns",
+		"column",
+		"multi-column",
+		"features",
+		"services",
+		"team",
+		"cards",
+		"logos",
 		"layout",
 		"container",
 		"responsive"

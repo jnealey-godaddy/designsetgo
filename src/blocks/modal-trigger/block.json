@@ -5,12 +5,12 @@
 	"version": "1.0.0",
 	"title": "Modal Trigger",
 	"category": "designsetgo",
-	"description": "A button or link that opens a modal dialog.",
+	"description": "Button or link that opens a Modal popup.",
 	"keywords": [
 		"modal",
+		"popup",
 		"button",
 		"trigger",
-		"popup",
 		"open"
 	],
 	"textdomain": "designsetgo",

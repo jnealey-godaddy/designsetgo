@@ -5,12 +5,16 @@
 	"version": "1.0.0",
 	"title": "Row",
 	"category": "designsetgo",
-	"description": "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts.",
+	"description": "Horizontal flex layout, like a Row or Group block in row mode: places blocks side by side and wraps on small screens. Use for button groups, logo strips, icon + text pairs, inline stats, and header or footer bars.",
 	"keywords": [
 		"row",
+		"group",
 		"flex",
 		"flexbox",
 		"horizontal",
+		"inline",
+		"side by side",
+		"buttons",
 		"layout",
 		"container"
 	],

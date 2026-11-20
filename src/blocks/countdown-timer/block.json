@@ -5,13 +5,16 @@
 	"version": "1.0.0",
 	"title": "Countdown Timer",
 	"category": "designsetgo",
-	"description": "Display a countdown timer to a specific date and time with customizable styling.",
+	"description": "Countdown to a date and time. Use for sales, launches, events, webinars, and coming-soon pages.",
 	"keywords": [
 		"countdown",
 		"timer",
 		"clock",
 		"deadline",
-		"event"
+		"event",
+		"sale",
+		"launch",
+		"coming soon"
 	],
 	"textdomain": "designsetgo",
 	"icon": "clock",

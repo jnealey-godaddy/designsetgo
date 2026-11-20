@@ -5,12 +5,14 @@
 	"version": "1.0.0",
 	"title": "Tabs",
 	"category": "designsetgo",
-	"description": "Create tabbed content with icons, deep linking, and responsive accordion mode.",
+	"description": "Tabbed content panels with optional icons, deep linking, and accordion mode on mobile. Use to organize features, pricing tiers, product details, or services into switchable tabs.",
 	"keywords": [
 		"tabs",
 		"tabbed",
-		"accordion",
-		"toggle"
+		"tab panels",
+		"switcher",
+		"toggle",
+		"accordion"
 	],
 	"textdomain": "designsetgo",
 	"icon": "tickets",

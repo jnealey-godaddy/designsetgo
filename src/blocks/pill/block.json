@@ -5,12 +5,14 @@
 	"version": "1.0.0",
 	"title": "Pill",
 	"category": "designsetgo",
-	"description": "Display text with a rounded background that wraps tightly around content.",
+	"description": "Small rounded label that wraps tightly around its text. Use for eyebrow text above headings, badges, tags, and 'New' or 'Popular' labels.",
 	"keywords": [
 		"pill",
 		"badge",
 		"tag",
-		"label"
+		"label",
+		"eyebrow",
+		"chip"
 	],
 	"textdomain": "designsetgo",
 	"icon": "tag",

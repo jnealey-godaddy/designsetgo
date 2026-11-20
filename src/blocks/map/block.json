@@ -5,14 +5,16 @@
 	"version": "1.0.0",
 	"title": "Map",
 	"category": "designsetgo",
-	"description": "Display an interactive map using OpenStreetMap or Google Maps.",
+	"description": "Interactive map using OpenStreetMap or Google Maps. Use for contact, location, and 'find us' sections.",
 	"keywords": [
 		"map",
 		"location",
 		"address",
+		"contact",
+		"find us",
+		"directions",
 		"openstreetmap",
-		"google maps",
-		"directions"
+		"google maps"
 	],
 	"textdomain": "designsetgo",
 	"icon": "location-alt",

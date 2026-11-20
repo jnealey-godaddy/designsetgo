@@ -5,11 +5,13 @@
   "version": "1.0.0",
   "title": "Star Rating",
   "category": "designsetgo",
-  "description": "Show a rating as stars — from a fixed value or bound to post meta, ACF or a WooCommerce average rating.",
+  "description": "Star rating display from a fixed value or bound to post meta, ACF, or a WooCommerce average rating. Use in testimonials, reviews, and product highlights.",
   "keywords": [
     "rating",
     "stars",
+    "star",
     "review",
+    "reviews",
     "score",
     "testimonial"
   ],

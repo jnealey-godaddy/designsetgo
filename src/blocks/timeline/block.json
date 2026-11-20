@@ -5,16 +5,18 @@
 	"version": "1.0.0",
 	"title": "Timeline",
 	"category": "designsetgo",
-	"description": "Display chronological events, company history, or process steps in a visual timeline format with customizable layouts and scroll animations.",
+	"description": "Visual timeline of dated events or numbered steps with scroll animations. Use for company history, process steps, 'how it works', roadmaps, and milestones.",
 	"keywords": [
 		"timeline",
 		"history",
-		"events",
-		"chronology",
-		"roadmap",
+		"how it works",
 		"process",
 		"steps",
-		"milestones"
+		"roadmap",
+		"milestones",
+		"events",
+		"chronology",
+		"journey"
 	],
 	"textdomain": "designsetgo",
 	"icon": "backup",

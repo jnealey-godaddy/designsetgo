@@ -5,10 +5,12 @@
 	"version": "1.0.0",
 	"title": "Advanced Heading",
 	"category": "designsetgo",
-	"description": "Create headings with multiple font styles — mix fonts, weights, and colors within a single heading for advanced typographic designs.",
+	"description": "Heading that mixes fonts, weights, and colors within one line, like a Heading block with highlighted words. Use for hero titles and section headings with an accented word.",
 	"keywords": [
 		"heading",
 		"title",
+		"headline",
+		"highlight",
 		"typography",
 		"multi-font",
 		"advanced"

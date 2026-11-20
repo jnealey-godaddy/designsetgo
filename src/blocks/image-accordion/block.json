@@ -5,14 +5,16 @@
 	"version": "1.0.0",
 	"title": "Image Accordion",
 	"category": "designsetgo",
-	"description": "Display a series of expandable image panels that reveal content on hover or click, perfect for showcasing portfolios, galleries, or featured content.",
+	"description": "Row of image panels that expand on hover or click to reveal text. Use for portfolios, galleries, services, destinations, and featured content.",
 	"keywords": [
-		"image",
-		"accordion",
+		"image accordion",
 		"gallery",
 		"portfolio",
+		"images",
+		"accordion",
 		"hover",
-		"expand"
+		"expand",
+		"panels"
 	],
 	"textdomain": "designsetgo",
 	"icon": "images-alt2",

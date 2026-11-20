@@ -5,12 +5,13 @@
 	"version": "1.0.0",
 	"title": "Icon",
 	"category": "designsetgo",
-	"description": "Display an inline SVG icon with customizable styling.",
+	"description": "Standalone inline SVG icon with size, color, and background styling. Use as a visual accent above feature titles, in service boxes, or beside text.",
 	"keywords": [
 		"icon",
 		"svg",
 		"symbol",
-		"graphic"
+		"graphic",
+		"feature icon"
 	],
 	"textdomain": "designsetgo",
 	"icon": "star-filled",
