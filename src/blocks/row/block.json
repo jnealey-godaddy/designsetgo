@@ -4,7 +4,7 @@
 	"name": "designsetgo/row",
 	"version": "1.0.0",
 	"title": "Row",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Horizontal flex layout, like a Row or Group block in row mode: places blocks side by side and wraps on small screens. Use for button groups, logo strips, icon + text pairs, inline stats, and header or footer bars.",
 	"keywords": [
 		"row",

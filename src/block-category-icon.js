@@ -1,18 +1,23 @@
 /**
- * Custom icon for the DesignSetGo block category.
+ * DesignSetGo block collection.
  *
- * The category itself is registered server-side via the `block_categories_all`
- * filter (see includes/class-plugin.php). PHP only supports a Dashicon slug
- * for the category icon, so we override with a branded SVG here.
+ * DesignSetGo blocks register into the core category of the core block they
+ * stand in for (Grid → design next to Columns, Fifty Fifty → media next to
+ * Media & Text, and so on). Tools that filter blocks by category, such as AI
+ * page builders, then find them next to their core counterparts. This
+ * collection keeps a "DesignSetGo" group in the inserter, keyed on the
+ * `designsetgo/` namespace.
+ *
+ * The file keeps its historical name because PHP enqueues it as the
+ * `designsetgo-block-category-icon` handle and localizes editor globals
+ * (sticky header, integrations) onto it.
  */
 
-import domReady from '@wordpress/dom-ready';
-import { dispatch } from '@wordpress/data';
+import { registerBlockCollection } from '@wordpress/blocks';
 import { createElement } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 
-const CATEGORY_SLUG = 'designsetgo';
-
-const categoryIcon = createElement(
+const collectionIcon = createElement(
 	'svg',
 	{
 		xmlns: 'http://www.w3.org/2000/svg',
@@ -28,9 +33,7 @@ const categoryIcon = createElement(
 	})
 );
 
-domReady(() => {
-	const actions = dispatch('core/blocks');
-	if (actions && typeof actions.updateCategory === 'function') {
-		actions.updateCategory(CATEGORY_SLUG, { icon: categoryIcon });
-	}
+registerBlockCollection('designsetgo', {
+	title: __('DesignSetGo', 'designsetgo'),
+	icon: collectionIcon,
 });

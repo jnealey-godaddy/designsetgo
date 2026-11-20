@@ -4,7 +4,7 @@
 	"name": "designsetgo/image-accordion-item",
 	"version": "1.0.0",
 	"title": "Image Accordion Item",
-	"category": "designsetgo",
+	"category": "media",
 	"parent": [
 		"designsetgo/image-accordion"
 	],

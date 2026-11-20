@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-email-field",
 	"version": "1.0.0",
 	"title": "Email Field",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Email input field with built-in validation.",
 	"keywords": [
 		"form",

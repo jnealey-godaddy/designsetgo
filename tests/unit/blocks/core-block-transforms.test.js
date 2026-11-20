@@ -25,9 +25,12 @@ import fiftyTransforms from '../../../src/blocks/fifty-fifty/transforms';
 
 setCategories([
 	{ slug: 'designsetgo', title: 'DesignSetGo' },
-	{ slug: 'design', title: 'Design' },
 	{ slug: 'text', title: 'Text' },
 	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
 ]);
 
 const save = () => null;

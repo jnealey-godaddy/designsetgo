@@ -19,7 +19,15 @@ import {
 
 const editorSource = readFileSync(resolve(__dirname, '../edit.js'), 'utf8');
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 if (!getBlockType(metadata.name)) {
 	registerBlockType(metadata.name, { ...metadata, save });

@@ -4,7 +4,7 @@
 	"name": "designsetgo/card",
 	"version": "1.0.0",
 	"title": "Card",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Content card with image, badge, title, subtitle, text, and CTA button in one block. Use for feature cards, service cards, pricing plans, team member profiles, blog-style teasers, and product highlights.",
 	"keywords": [
 		"card",

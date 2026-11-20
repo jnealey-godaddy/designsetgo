@@ -41,7 +41,15 @@ import metadata from '../../../../src/blocks/modal-trigger/block.json';
 import save from '../../../../src/blocks/modal-trigger/save';
 import deprecated from '../../../../src/blocks/modal-trigger/deprecated';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 // deprecated.js exports newest-first: [v5, v4, v3, v2, v1]. v5 is the
 // raw-preset-padding save of the current (wrapper) markup; v4 is the

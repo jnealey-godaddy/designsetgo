@@ -9,7 +9,15 @@ import metadata from '../block.json';
 import save from '../save';
 import { TEXT_PATH_PRESETS } from '../../../utils/svg-paths';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 if (!getBlockType(metadata.name)) {
 	registerBlockType(metadata.name, { ...metadata, save });

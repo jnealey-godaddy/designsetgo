@@ -4,7 +4,7 @@
   "name": "designsetgo/query-results",
   "version": "1.0.0",
   "title": "Query Results",
-  "category": "designsetgo",
+  "category": "theme",
   "parent": ["designsetgo/query"],
   "description": "The repeating grid of items inside a Dynamic Query. Holds the item template that renders once per result.",
   "keywords": ["query", "loop", "results", "template", "grid"],

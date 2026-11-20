@@ -71,7 +71,7 @@
   "name": "designsetgo/container",
   "version": "1.0.0",
   "title": "Container",
-  "category": "designsetgo",
+  "category": "design",
   "description": "Advanced container block with layouts, backgrounds, and effects",
   "keywords": ["container", "layout", "section"],
   "textdomain": "designsetgo",

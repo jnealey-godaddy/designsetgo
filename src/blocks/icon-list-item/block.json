@@ -4,7 +4,7 @@
 	"name": "designsetgo/icon-list-item",
 	"version": "1.0.0",
 	"title": "Icon List Item",
-	"category": "designsetgo",
+	"category": "text",
 	"description": "A single item in an icon list, with an icon beside its content.",
 	"keywords": [
 		"icon",

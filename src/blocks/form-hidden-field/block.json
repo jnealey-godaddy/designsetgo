@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-hidden-field",
 	"version": "1.0.0",
 	"title": "Hidden Field",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "A hidden field for passing data in forms.",
 	"keywords": [
 		"form",

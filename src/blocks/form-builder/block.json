@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-builder",
 	"version": "1.0.0",
 	"title": "Form Builder",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Contact form builder with text, email, phone, select, checkbox, date, and message fields, AJAX submission, email notifications, and spam protection. Use for contact forms, quote requests, bookings, sign-ups, and surveys.",
 	"keywords": [
 		"form",

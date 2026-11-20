@@ -4,7 +4,7 @@
 	"name": "designsetgo/modal",
 	"version": "1.0.0",
 	"title": "Modal",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Accessible popup dialog opened by a button, link, or automatic trigger (time, scroll, exit intent). Use for popups, lightboxes, video popups, and signup or offer overlays.",
 	"keywords": [
 		"modal",

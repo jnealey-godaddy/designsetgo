@@ -4,7 +4,7 @@
 	"name": "designsetgo/scroll-accordion",
 	"version": "1.0.0",
 	"title": "Scroll Accordion",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Accordion that reveals items progressively as you scroll down the page",
 	"keywords": [
 		"scroll",

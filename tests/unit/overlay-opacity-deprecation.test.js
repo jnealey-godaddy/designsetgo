@@ -36,7 +36,15 @@ import itemSave from '../../src/blocks/scroll-accordion-item/save';
 import itemDeprecated from '../../src/blocks/scroll-accordion-item/deprecated';
 import fixture from '../fixtures/overlay-opacity-cases.json';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 const BLOCKS = [
 	[sectionMetadata, sectionSave, sectionDeprecated],

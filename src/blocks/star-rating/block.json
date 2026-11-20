@@ -4,7 +4,7 @@
   "name": "designsetgo/star-rating",
   "version": "1.0.0",
   "title": "Star Rating",
-  "category": "designsetgo",
+  "category": "widgets",
   "description": "Star rating display from a fixed value or bound to post meta, ACF, or a WooCommerce average rating. Use in testimonials, reviews, and product highlights.",
   "keywords": [
     "rating",

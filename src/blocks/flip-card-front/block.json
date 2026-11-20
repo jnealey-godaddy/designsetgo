@@ -4,7 +4,7 @@
 	"name": "designsetgo/flip-card-front",
 	"version": "1.0.0",
 	"title": "Flip Card Front",
-	"category": "designsetgo",
+	"category": "design",
 	"parent": [
 		"designsetgo/flip-card"
 	],

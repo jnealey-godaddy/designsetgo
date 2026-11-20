@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-text-field",
 	"version": "1.0.0",
 	"title": "Text Field",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Single-line text input field for forms.",
 	"keywords": [
 		"form",

@@ -4,7 +4,7 @@
 	"name": "designsetgo/product-showcase-hero",
 	"version": "1.0.0",
 	"title": "Product Showcase Hero",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Full-width hero section showcasing a WooCommerce product with large image, price, rating, and add-to-cart action. Requires WooCommerce.",
 	"keywords": [
 		"product",

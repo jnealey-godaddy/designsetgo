@@ -142,7 +142,12 @@ export function registerPassthroughHandler() {
 	// registerDesignSetGoBlock(), which sets them too (setCategories is idempotent).
 	setCategories([
 		{ slug: 'designsetgo', title: 'DesignSetGo' },
+		{ slug: 'text', title: 'Text' },
+		{ slug: 'media', title: 'Media' },
 		{ slug: 'design', title: 'Design' },
+		{ slug: 'widgets', title: 'Widgets' },
+		{ slug: 'theme', title: 'Theme' },
+		{ slug: 'embed', title: 'Embed' },
 	]);
 
 	registerBlockType(PASSTHROUGH_BLOCK, {
@@ -254,7 +259,12 @@ export function registerDesignSetGoBlock(blockName) {
 
 	setCategories([
 		{ slug: 'designsetgo', title: 'DesignSetGo' },
+		{ slug: 'text', title: 'Text' },
+		{ slug: 'media', title: 'Media' },
 		{ slug: 'design', title: 'Design' },
+		{ slug: 'widgets', title: 'Widgets' },
+		{ slug: 'theme', title: 'Theme' },
+		{ slug: 'embed', title: 'Embed' },
 	]);
 
 	registerBlockType(metadata.name, { ...metadata, save, deprecated });

@@ -4,7 +4,7 @@
 	"name": "designsetgo/counter",
 	"version": "1.0.0",
 	"title": "Counter",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Individual counter item with animated number",
 	"keywords": [
 		"counter",

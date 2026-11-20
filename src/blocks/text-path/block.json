@@ -4,7 +4,7 @@
 	"name": "designsetgo/text-path",
 	"version": "1.0.0",
 	"title": "Text Path",
-	"category": "designsetgo",
+	"category": "text",
 	"description": "Flow text along an SVG path.",
 	"keywords": [
 		"text",
