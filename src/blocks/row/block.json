@@ -16,7 +16,10 @@
 		"side by side",
 		"buttons",
 		"layout",
-		"container"
+		"container",
+		"trust badges",
+		"logo strip",
+		"top bar"
 	],
 	"textdomain": "designsetgo",
 	"icon": "leftright",

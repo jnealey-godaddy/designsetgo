@@ -13,7 +13,10 @@
 		"woocommerce",
 		"shop",
 		"store",
-		"ecommerce"
+		"ecommerce",
+		"shop by category",
+		"collections",
+		"departments"
 	],
 	"textdomain": "designsetgo",
 	"icon": "products",

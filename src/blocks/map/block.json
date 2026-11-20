@@ -14,7 +14,11 @@
 		"find us",
 		"directions",
 		"openstreetmap",
-		"google maps"
+		"google maps",
+		"visit us",
+		"our location",
+		"venue",
+		"office"
 	],
 	"textdomain": "designsetgo",
 	"icon": "location-alt",

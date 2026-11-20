@@ -6,7 +6,7 @@
   "title": "Hotspot",
   "category": "media",
   "description": "Interactive markers placed over an image that show tooltips. Use for product tours, annotated images, and feature callouts.",
-  "keywords": ["hotspot", "image", "tooltip", "marker", "annotated", "product tour"],
+  "keywords": ["hotspot", "image", "tooltip", "marker", "annotated", "product tour", "shop the look", "floor plan", "interactive image"],
   "textdomain": "designsetgo",
   "icon": "location-alt",
   "attributes": {

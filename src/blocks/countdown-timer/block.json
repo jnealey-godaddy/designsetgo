@@ -14,7 +14,11 @@
 		"event",
 		"sale",
 		"launch",
-		"coming soon"
+		"coming soon",
+		"grand opening",
+		"black friday",
+		"limited time offer",
+		"wedding"
 	],
 	"textdomain": "designsetgo",
 	"icon": "clock",

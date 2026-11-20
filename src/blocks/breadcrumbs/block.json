@@ -10,7 +10,9 @@
 		"breadcrumb",
 		"navigation",
 		"hierarchy",
-		"seo"
+		"seo",
+		"you are here",
+		"page trail"
 	],
 	"textdomain": "designsetgo",
 	"icon": "arrow-right-alt2",

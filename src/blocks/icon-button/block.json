@@ -15,7 +15,13 @@
 		"icon",
 		"get started",
 		"learn more",
-		"animated"
+		"animated",
+		"book now",
+		"buy now",
+		"shop now",
+		"contact us",
+		"sign up",
+		"donate"
 	],
 	"textdomain": "designsetgo",
 	"icon": "external",

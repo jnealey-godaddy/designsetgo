@@ -16,9 +16,15 @@
 		"profile",
 		"testimonial",
 		"image",
+		"photo",
+		"restaurant menu item",
 		"badge",
 		"cta",
-		"content"
+		"content",
+		"dish",
+		"staff bio",
+		"package",
+		"offer"
 	],
 	"textdomain": "designsetgo",
 	"icon": "id",

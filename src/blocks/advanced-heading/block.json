@@ -13,7 +13,9 @@
 		"highlight",
 		"typography",
 		"multi-font",
-		"advanced"
+		"advanced",
+		"tagline",
+		"slogan"
 	],
 	"textdomain": "designsetgo",
 	"icon": "heading",

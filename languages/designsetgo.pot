@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-20T16:51:01+00:00\n"
+"POT-Creation-Date: 2026-11-20T17:10:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: designsetgo\n"
@@ -22033,6 +22033,18 @@ msgctxt "block keyword"
 msgid "dropdown"
 msgstr ""
 
+#: build/blocks/accordion/block.json
+#: src/blocks/accordion/block.json
+msgctxt "block keyword"
+msgid "frequently asked questions"
+msgstr ""
+
+#: build/blocks/accordion/block.json
+#: src/blocks/accordion/block.json
+msgctxt "block keyword"
+msgid "shipping and returns"
+msgstr ""
+
 #: build/blocks/advanced-heading/block.json
 #: src/blocks/advanced-heading/block.json
 msgctxt "block title"
@@ -22091,6 +22103,18 @@ msgctxt "block keyword"
 msgid "advanced"
 msgstr ""
 
+#: build/blocks/advanced-heading/block.json
+#: src/blocks/advanced-heading/block.json
+msgctxt "block keyword"
+msgid "tagline"
+msgstr ""
+
+#: build/blocks/advanced-heading/block.json
+#: src/blocks/advanced-heading/block.json
+msgctxt "block keyword"
+msgid "slogan"
+msgstr ""
+
 #: build/blocks/blobs/block.json
 #: src/blocks/blobs/block.json
 msgctxt "block title"
@@ -22139,6 +22163,18 @@ msgctxt "block keyword"
 msgid "gradient"
 msgstr ""
 
+#: build/blocks/blobs/block.json
+#: src/blocks/blobs/block.json
+msgctxt "block keyword"
+msgid "decorative background"
+msgstr ""
+
+#: build/blocks/blobs/block.json
+#: src/blocks/blobs/block.json
+msgctxt "block keyword"
+msgid "abstract shape"
+msgstr ""
+
 #: build/blocks/breadcrumbs/block.json
 #: src/blocks/breadcrumbs/block.json
 msgctxt "block title"
@@ -22175,6 +22211,18 @@ msgstr ""
 #: src/blocks/breadcrumbs/block.json
 msgctxt "block keyword"
 msgid "seo"
+msgstr ""
+
+#: build/blocks/breadcrumbs/block.json
+#: src/blocks/breadcrumbs/block.json
+msgctxt "block keyword"
+msgid "you are here"
+msgstr ""
+
+#: build/blocks/breadcrumbs/block.json
+#: src/blocks/breadcrumbs/block.json
+msgctxt "block keyword"
+msgid "page trail"
 msgstr ""
 
 #: build/blocks/card/block.json
@@ -22272,6 +22320,18 @@ msgid "image"
 msgstr ""
 
 #: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "photo"
+msgstr ""
+
+#: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "restaurant menu item"
+msgstr ""
+
+#: build/blocks/card/block.json
 #: build/blocks/pill/block.json
 #: src/blocks/card/block.json
 #: src/blocks/pill/block.json
@@ -22291,6 +22351,30 @@ msgstr ""
 #: src/blocks/card/block.json
 msgctxt "block keyword"
 msgid "content"
+msgstr ""
+
+#: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "dish"
+msgstr ""
+
+#: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "staff bio"
+msgstr ""
+
+#: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "package"
+msgstr ""
+
+#: build/blocks/card/block.json
+#: src/blocks/card/block.json
+msgctxt "block keyword"
+msgid "offer"
 msgstr ""
 
 #: build/blocks/chart/block.json
@@ -22361,6 +22445,18 @@ msgctxt "block keyword"
 msgid "statistics"
 msgstr ""
 
+#: build/blocks/chart/block.json
+#: src/blocks/chart/block.json
+msgctxt "block keyword"
+msgid "infographic"
+msgstr ""
+
+#: build/blocks/chart/block.json
+#: src/blocks/chart/block.json
+msgctxt "block keyword"
+msgid "annual report"
+msgstr ""
+
 #: build/blocks/comparison-table/block.json
 #: src/blocks/comparison-table/block.json
 msgctxt "block title"
@@ -22417,6 +22513,30 @@ msgstr ""
 #: src/blocks/comparison-table/block.json
 msgctxt "block keyword"
 msgid "vs"
+msgstr ""
+
+#: build/blocks/comparison-table/block.json
+#: src/blocks/comparison-table/block.json
+msgctxt "block keyword"
+msgid "which plan"
+msgstr ""
+
+#: build/blocks/comparison-table/block.json
+#: src/blocks/comparison-table/block.json
+msgctxt "block keyword"
+msgid "membership levels"
+msgstr ""
+
+#: build/blocks/comparison-table/block.json
+#: src/blocks/comparison-table/block.json
+msgctxt "block keyword"
+msgid "packages"
+msgstr ""
+
+#: build/blocks/comparison-table/block.json
+#: src/blocks/comparison-table/block.json
+msgctxt "block keyword"
+msgid "competitors"
 msgstr ""
 
 #: build/blocks/countdown-timer/block.json
@@ -22481,6 +22601,30 @@ msgstr ""
 #: src/blocks/countdown-timer/block.json
 msgctxt "block keyword"
 msgid "coming soon"
+msgstr ""
+
+#: build/blocks/countdown-timer/block.json
+#: src/blocks/countdown-timer/block.json
+msgctxt "block keyword"
+msgid "grand opening"
+msgstr ""
+
+#: build/blocks/countdown-timer/block.json
+#: src/blocks/countdown-timer/block.json
+msgctxt "block keyword"
+msgid "black friday"
+msgstr ""
+
+#: build/blocks/countdown-timer/block.json
+#: src/blocks/countdown-timer/block.json
+msgctxt "block keyword"
+msgid "limited time offer"
+msgstr ""
+
+#: build/blocks/countdown-timer/block.json
+#: src/blocks/countdown-timer/block.json
+msgctxt "block keyword"
+msgid "wedding"
 msgstr ""
 
 #: build/blocks/counter-group/block.json
@@ -22555,6 +22699,24 @@ msgctxt "block keyword"
 msgid "animated"
 msgstr ""
 
+#: build/blocks/counter-group/block.json
+#: src/blocks/counter-group/block.json
+msgctxt "block keyword"
+msgid "years in business"
+msgstr ""
+
+#: build/blocks/counter-group/block.json
+#: src/blocks/counter-group/block.json
+msgctxt "block keyword"
+msgid "happy customers"
+msgstr ""
+
+#: build/blocks/counter-group/block.json
+#: src/blocks/counter-group/block.json
+msgctxt "block keyword"
+msgid "projects completed"
+msgstr ""
+
 #: build/blocks/counter/block.json
 #: src/blocks/counter/block.json
 msgctxt "block title"
@@ -22623,6 +22785,18 @@ msgctxt "block keyword"
 msgid "break"
 msgstr ""
 
+#: build/blocks/divider/block.json
+#: src/blocks/divider/block.json
+msgctxt "block keyword"
+msgid "decorative line"
+msgstr ""
+
+#: build/blocks/divider/block.json
+#: src/blocks/divider/block.json
+msgctxt "block keyword"
+msgid "ornament"
+msgstr ""
+
 #: build/blocks/dynamic-image/block.json
 #: src/blocks/dynamic-image/block.json
 msgctxt "block title"
@@ -22661,6 +22835,18 @@ msgstr ""
 #: src/blocks/pill/block.json
 msgctxt "block keyword"
 msgid "tag"
+msgstr ""
+
+#: build/blocks/dynamic-image/block.json
+#: src/blocks/dynamic-image/block.json
+msgctxt "block keyword"
+msgid "author photo"
+msgstr ""
+
+#: build/blocks/dynamic-image/block.json
+#: src/blocks/dynamic-image/block.json
+msgctxt "block keyword"
+msgid "profile picture"
 msgstr ""
 
 #: build/blocks/fifty-fifty/block.json
@@ -22733,6 +22919,32 @@ msgstr ""
 #: src/blocks/fifty-fifty/block.json
 msgctxt "block keyword"
 msgid "about"
+msgstr ""
+
+#: build/blocks/fifty-fifty/block.json
+#: build/blocks/timeline/block.json
+#: src/blocks/fifty-fifty/block.json
+#: src/blocks/timeline/block.json
+msgctxt "block keyword"
+msgid "our story"
+msgstr ""
+
+#: build/blocks/fifty-fifty/block.json
+#: src/blocks/fifty-fifty/block.json
+msgctxt "block keyword"
+msgid "photo and text"
+msgstr ""
+
+#: build/blocks/fifty-fifty/block.json
+#: src/blocks/fifty-fifty/block.json
+msgctxt "block keyword"
+msgid "image left"
+msgstr ""
+
+#: build/blocks/fifty-fifty/block.json
+#: src/blocks/fifty-fifty/block.json
+msgctxt "block keyword"
+msgid "image right"
 msgstr ""
 
 #: build/blocks/flip-card-back/block.json
@@ -22861,6 +23073,26 @@ msgctxt "block keyword"
 msgid "3d"
 msgstr ""
 
+#: build/blocks/flip-card/block.json
+#: src/blocks/flip-card/block.json
+msgctxt "block keyword"
+msgid "before and after"
+msgstr ""
+
+#: build/blocks/flip-card/block.json
+#: build/blocks/grid/block.json
+#: src/blocks/flip-card/block.json
+#: src/blocks/grid/block.json
+msgctxt "block keyword"
+msgid "meet the team"
+msgstr ""
+
+#: build/blocks/flip-card/block.json
+#: src/blocks/flip-card/block.json
+msgctxt "block keyword"
+msgid "staff"
+msgstr ""
+
 #: build/blocks/form-builder/block.json
 #: src/blocks/form-builder/block.json
 msgctxt "block title"
@@ -22957,6 +23189,60 @@ msgstr ""
 #: src/blocks/form-builder/block.json
 msgctxt "block keyword"
 msgid "fields"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "request a quote"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "appointment"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "reservation"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "rsvp"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "enquiry"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "inquiry"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "get in touch"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "application"
+msgstr ""
+
+#: build/blocks/form-builder/block.json
+#: src/blocks/form-builder/block.json
+msgctxt "block keyword"
+msgid "registration"
 msgstr ""
 
 #: build/blocks/form-checkbox-field/block.json
@@ -23413,6 +23699,22 @@ msgctxt "block keyword"
 msgid "responsive"
 msgstr ""
 
+#: build/blocks/grid/block.json
+#: build/blocks/image-accordion/block.json
+#: build/blocks/slider/block.json
+#: src/blocks/grid/block.json
+#: src/blocks/image-accordion/block.json
+#: src/blocks/slider/block.json
+msgctxt "block keyword"
+msgid "portfolio"
+msgstr ""
+
+#: build/blocks/grid/block.json
+#: src/blocks/grid/block.json
+msgctxt "block keyword"
+msgid "our services"
+msgstr ""
+
 #: build/blocks/heading-segment/block.json
 #: src/blocks/heading-segment/block.json
 msgctxt "block title"
@@ -23511,6 +23813,24 @@ msgctxt "block keyword"
 msgid "product tour"
 msgstr ""
 
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "shop the look"
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "floor plan"
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "interactive image"
+msgstr ""
+
 #: build/blocks/icon-button/block.json
 #: src/blocks/icon-button/block.json
 msgctxt "block title"
@@ -23540,7 +23860,9 @@ msgid "buttons"
 msgstr ""
 
 #: build/blocks/icon-button/block.json
+#: build/blocks/section/block.json
 #: src/blocks/icon-button/block.json
+#: src/blocks/section/block.json
 msgctxt "block keyword"
 msgid "call to action"
 msgstr ""
@@ -23567,6 +23889,42 @@ msgstr ""
 #: src/blocks/icon-button/block.json
 msgctxt "block keyword"
 msgid "learn more"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "book now"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "buy now"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "shop now"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "contact us"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "sign up"
+msgstr ""
+
+#: build/blocks/icon-button/block.json
+#: src/blocks/icon-button/block.json
+msgctxt "block keyword"
+msgid "donate"
 msgstr ""
 
 #: build/blocks/icon-list-item/block.json
@@ -23635,6 +23993,30 @@ msgctxt "block keyword"
 msgid "bullet"
 msgstr ""
 
+#: build/blocks/icon-list/block.json
+#: src/blocks/icon-list/block.json
+msgctxt "block keyword"
+msgid "opening hours"
+msgstr ""
+
+#: build/blocks/icon-list/block.json
+#: src/blocks/icon-list/block.json
+msgctxt "block keyword"
+msgid "what's included"
+msgstr ""
+
+#: build/blocks/icon-list/block.json
+#: src/blocks/icon-list/block.json
+msgctxt "block keyword"
+msgid "amenities"
+msgstr ""
+
+#: build/blocks/icon-list/block.json
+#: src/blocks/icon-list/block.json
+msgctxt "block keyword"
+msgid "pros and cons"
+msgstr ""
+
 #: build/blocks/icon/block.json
 #: src/blocks/icon/block.json
 msgctxt "block title"
@@ -23671,6 +24053,12 @@ msgstr ""
 #: src/blocks/icon/block.json
 msgctxt "block keyword"
 msgid "feature icon"
+msgstr ""
+
+#: build/blocks/icon/block.json
+#: src/blocks/icon/block.json
+msgctxt "block keyword"
+msgid "pictogram"
 msgstr ""
 
 #: build/blocks/image-accordion-item/block.json
@@ -23714,12 +24102,6 @@ msgid "gallery"
 msgstr ""
 
 #: build/blocks/image-accordion/block.json
-#: src/blocks/image-accordion/block.json
-msgctxt "block keyword"
-msgid "portfolio"
-msgstr ""
-
-#: build/blocks/image-accordion/block.json
 #: build/blocks/scroll-marquee/block.json
 #: src/blocks/image-accordion/block.json
 #: src/blocks/scroll-marquee/block.json
@@ -23731,6 +24113,24 @@ msgstr ""
 #: src/blocks/image-accordion/block.json
 msgctxt "block keyword"
 msgid "panels"
+msgstr ""
+
+#: build/blocks/image-accordion/block.json
+#: src/blocks/image-accordion/block.json
+msgctxt "block keyword"
+msgid "destinations"
+msgstr ""
+
+#: build/blocks/image-accordion/block.json
+#: src/blocks/image-accordion/block.json
+msgctxt "block keyword"
+msgid "tours"
+msgstr ""
+
+#: build/blocks/image-accordion/block.json
+#: src/blocks/image-accordion/block.json
+msgctxt "block keyword"
+msgid "rooms"
 msgstr ""
 
 #: build/blocks/map/block.json
@@ -23781,6 +24181,30 @@ msgctxt "block keyword"
 msgid "google maps"
 msgstr ""
 
+#: build/blocks/map/block.json
+#: src/blocks/map/block.json
+msgctxt "block keyword"
+msgid "visit us"
+msgstr ""
+
+#: build/blocks/map/block.json
+#: src/blocks/map/block.json
+msgctxt "block keyword"
+msgid "our location"
+msgstr ""
+
+#: build/blocks/map/block.json
+#: src/blocks/map/block.json
+msgctxt "block keyword"
+msgid "venue"
+msgstr ""
+
+#: build/blocks/map/block.json
+#: src/blocks/map/block.json
+msgctxt "block keyword"
+msgid "office"
+msgstr ""
+
 #: build/blocks/modal-trigger/block.json
 #: src/blocks/modal-trigger/block.json
 msgctxt "block title"
@@ -23819,6 +24243,18 @@ msgstr ""
 #: src/blocks/modal-trigger/block.json
 msgctxt "block keyword"
 msgid "open"
+msgstr ""
+
+#: build/blocks/modal-trigger/block.json
+#: src/blocks/modal-trigger/block.json
+msgctxt "block keyword"
+msgid "watch video"
+msgstr ""
+
+#: build/blocks/modal-trigger/block.json
+#: src/blocks/modal-trigger/block.json
+msgctxt "block keyword"
+msgid "show more"
 msgstr ""
 
 #: build/blocks/modal/block.json
@@ -23863,6 +24299,24 @@ msgctxt "block keyword"
 msgid "exit intent"
 msgstr ""
 
+#: build/blocks/modal/block.json
+#: src/blocks/modal/block.json
+msgctxt "block keyword"
+msgid "newsletter popup"
+msgstr ""
+
+#: build/blocks/modal/block.json
+#: src/blocks/modal/block.json
+msgctxt "block keyword"
+msgid "announcement"
+msgstr ""
+
+#: build/blocks/modal/block.json
+#: src/blocks/modal/block.json
+msgctxt "block keyword"
+msgid "discount popup"
+msgstr ""
+
 #: build/blocks/pill/block.json
 #: src/blocks/pill/block.json
 msgctxt "block title"
@@ -23897,6 +24351,24 @@ msgstr ""
 #: src/blocks/pill/block.json
 msgctxt "block keyword"
 msgid "chip"
+msgstr ""
+
+#: build/blocks/pill/block.json
+#: src/blocks/pill/block.json
+msgctxt "block keyword"
+msgid "sale badge"
+msgstr ""
+
+#: build/blocks/pill/block.json
+#: src/blocks/pill/block.json
+msgctxt "block keyword"
+msgid "status"
+msgstr ""
+
+#: build/blocks/pill/block.json
+#: src/blocks/pill/block.json
+msgctxt "block keyword"
+msgid "kicker"
 msgstr ""
 
 #: build/blocks/product-categories-grid/block.json
@@ -23957,6 +24429,24 @@ msgctxt "block keyword"
 msgid "ecommerce"
 msgstr ""
 
+#: build/blocks/product-categories-grid/block.json
+#: src/blocks/product-categories-grid/block.json
+msgctxt "block keyword"
+msgid "shop by category"
+msgstr ""
+
+#: build/blocks/product-categories-grid/block.json
+#: src/blocks/product-categories-grid/block.json
+msgctxt "block keyword"
+msgid "collections"
+msgstr ""
+
+#: build/blocks/product-categories-grid/block.json
+#: src/blocks/product-categories-grid/block.json
+msgctxt "block keyword"
+msgid "departments"
+msgstr ""
+
 #: build/blocks/product-showcase-hero/block.json
 #: src/blocks/product-showcase-hero/block.json
 msgctxt "block title"
@@ -23975,6 +24465,24 @@ msgstr ""
 #: src/blocks/scroll-slides/block.json
 msgctxt "block keyword"
 msgid "showcase"
+msgstr ""
+
+#: build/blocks/product-showcase-hero/block.json
+#: src/blocks/product-showcase-hero/block.json
+msgctxt "block keyword"
+msgid "featured product"
+msgstr ""
+
+#: build/blocks/product-showcase-hero/block.json
+#: src/blocks/product-showcase-hero/block.json
+msgctxt "block keyword"
+msgid "best seller"
+msgstr ""
+
+#: build/blocks/product-showcase-hero/block.json
+#: src/blocks/product-showcase-hero/block.json
+msgctxt "block keyword"
+msgid "product launch"
 msgstr ""
 
 #: build/blocks/progress-bar/block.json
@@ -24017,6 +24525,24 @@ msgstr ""
 #: src/blocks/progress-bar/block.json
 msgctxt "block keyword"
 msgid "goal"
+msgstr ""
+
+#: build/blocks/progress-bar/block.json
+#: src/blocks/progress-bar/block.json
+msgctxt "block keyword"
+msgid "donation"
+msgstr ""
+
+#: build/blocks/progress-bar/block.json
+#: src/blocks/progress-bar/block.json
+msgctxt "block keyword"
+msgid "fundraiser"
+msgstr ""
+
+#: build/blocks/progress-bar/block.json
+#: src/blocks/progress-bar/block.json
+msgctxt "block keyword"
+msgid "skill bar"
 msgstr ""
 
 #: build/blocks/query-filter/block.json
@@ -24203,6 +24729,42 @@ msgctxt "block keyword"
 msgid "listing"
 msgstr ""
 
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "blog"
+msgstr ""
+
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "latest posts"
+msgstr ""
+
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "news"
+msgstr ""
+
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "articles"
+msgstr ""
+
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "directory"
+msgstr ""
+
+#: build/blocks/query/block.json
+#: src/blocks/query/block.json
+msgctxt "block keyword"
+msgid "archive"
+msgstr ""
+
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block title"
@@ -24249,6 +24811,24 @@ msgstr ""
 #: src/blocks/row/block.json
 msgctxt "block keyword"
 msgid "side by side"
+msgstr ""
+
+#: build/blocks/row/block.json
+#: src/blocks/row/block.json
+msgctxt "block keyword"
+msgid "trust badges"
+msgstr ""
+
+#: build/blocks/row/block.json
+#: src/blocks/row/block.json
+msgctxt "block keyword"
+msgid "logo strip"
+msgstr ""
+
+#: build/blocks/row/block.json
+#: src/blocks/row/block.json
+msgctxt "block keyword"
+msgid "top bar"
 msgstr ""
 
 #: build/blocks/scroll-accordion-item/block.json
@@ -24305,6 +24885,18 @@ msgctxt "block keyword"
 msgid "stacking"
 msgstr ""
 
+#: build/blocks/scroll-accordion/block.json
+#: src/blocks/scroll-accordion/block.json
+msgctxt "block keyword"
+msgid "step by step"
+msgstr ""
+
+#: build/blocks/scroll-accordion/block.json
+#: src/blocks/scroll-accordion/block.json
+msgctxt "block keyword"
+msgid "scrollytelling"
+msgstr ""
+
 #: build/blocks/scroll-marquee/block.json
 #: src/blocks/scroll-marquee/block.json
 msgctxt "block title"
@@ -24345,6 +24937,30 @@ msgstr ""
 #: src/blocks/scroll-marquee/block.json
 msgctxt "block keyword"
 msgid "infinite"
+msgstr ""
+
+#: build/blocks/scroll-marquee/block.json
+#: src/blocks/scroll-marquee/block.json
+msgctxt "block keyword"
+msgid "as seen in"
+msgstr ""
+
+#: build/blocks/scroll-marquee/block.json
+#: src/blocks/scroll-marquee/block.json
+msgctxt "block keyword"
+msgid "trusted by"
+msgstr ""
+
+#: build/blocks/scroll-marquee/block.json
+#: src/blocks/scroll-marquee/block.json
+msgctxt "block keyword"
+msgid "partners"
+msgstr ""
+
+#: build/blocks/scroll-marquee/block.json
+#: src/blocks/scroll-marquee/block.json
+msgctxt "block keyword"
+msgid "sponsors"
 msgstr ""
 
 #: build/blocks/scroll-slide/block.json
@@ -24397,6 +25013,26 @@ msgctxt "block keyword"
 msgid "pinned"
 msgstr ""
 
+#: build/blocks/scroll-slides/block.json
+#: build/blocks/sticky-sections/block.json
+#: src/blocks/scroll-slides/block.json
+#: src/blocks/sticky-sections/block.json
+msgctxt "block keyword"
+msgid "storytelling"
+msgstr ""
+
+#: build/blocks/scroll-slides/block.json
+#: src/blocks/scroll-slides/block.json
+msgctxt "block keyword"
+msgid "product walkthrough"
+msgstr ""
+
+#: build/blocks/scroll-slides/block.json
+#: src/blocks/scroll-slides/block.json
+msgctxt "block keyword"
+msgid "case study"
+msgstr ""
+
 #: build/blocks/section-divider/block.json
 #: src/blocks/section-divider/block.json
 msgctxt "block title"
@@ -24433,6 +25069,18 @@ msgstr ""
 #: src/blocks/section-divider/block.json
 msgctxt "block keyword"
 msgid "zigzag"
+msgstr ""
+
+#: build/blocks/section-divider/block.json
+#: src/blocks/section-divider/block.json
+msgctxt "block keyword"
+msgid "wavy edge"
+msgstr ""
+
+#: build/blocks/section-divider/block.json
+#: src/blocks/section-divider/block.json
+msgctxt "block keyword"
+msgid "curved edge"
 msgstr ""
 
 #: build/blocks/section/block.json
@@ -24489,6 +25137,18 @@ msgstr ""
 #: src/blocks/section/block.json
 msgctxt "block keyword"
 msgid "content area"
+msgstr ""
+
+#: build/blocks/section/block.json
+#: src/blocks/section/block.json
+msgctxt "block keyword"
+msgid "full width"
+msgstr ""
+
+#: build/blocks/section/block.json
+#: src/blocks/section/block.json
+msgctxt "block keyword"
+msgid "promo banner"
 msgstr ""
 
 #: build/blocks/slide/block.json
@@ -24553,6 +25213,26 @@ msgctxt "block keyword"
 msgid "rotating"
 msgstr ""
 
+#: build/blocks/slider/block.json
+#: build/blocks/star-rating/block.json
+#: src/blocks/slider/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "customer reviews"
+msgstr ""
+
+#: build/blocks/slider/block.json
+#: src/blocks/slider/block.json
+msgctxt "block keyword"
+msgid "what clients say"
+msgstr ""
+
+#: build/blocks/slider/block.json
+#: src/blocks/slider/block.json
+msgctxt "block keyword"
+msgid "banner slider"
+msgstr ""
+
 #: build/blocks/star-rating/block.json
 #: src/blocks/star-rating/block.json
 msgctxt "block title"
@@ -24595,6 +25275,18 @@ msgctxt "block keyword"
 msgid "score"
 msgstr ""
 
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "5 stars"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "feedback"
+msgstr ""
+
 #: build/blocks/sticky-sections/block.json
 #: src/blocks/sticky-sections/block.json
 msgctxt "block title"
@@ -24611,6 +25303,12 @@ msgstr ""
 #: src/blocks/sticky-sections/block.json
 msgctxt "block keyword"
 msgid "sections"
+msgstr ""
+
+#: build/blocks/sticky-sections/block.json
+#: src/blocks/sticky-sections/block.json
+msgctxt "block keyword"
+msgid "stacked cards"
 msgstr ""
 
 #: build/blocks/tab/block.json
@@ -24673,6 +25371,24 @@ msgctxt "block keyword"
 msgid "outline"
 msgstr ""
 
+#: build/blocks/table-of-contents/block.json
+#: src/blocks/table-of-contents/block.json
+msgctxt "block keyword"
+msgid "jump links"
+msgstr ""
+
+#: build/blocks/table-of-contents/block.json
+#: src/blocks/table-of-contents/block.json
+msgctxt "block keyword"
+msgid "on this page"
+msgstr ""
+
+#: build/blocks/table-of-contents/block.json
+#: src/blocks/table-of-contents/block.json
+msgctxt "block keyword"
+msgid "quick links"
+msgstr ""
+
 #: build/blocks/tabs/block.json
 #: src/blocks/tabs/block.json
 msgctxt "block title"
@@ -24709,6 +25425,24 @@ msgctxt "block keyword"
 msgid "switcher"
 msgstr ""
 
+#: build/blocks/tabs/block.json
+#: src/blocks/tabs/block.json
+msgctxt "block keyword"
+msgid "specifications"
+msgstr ""
+
+#: build/blocks/tabs/block.json
+#: src/blocks/tabs/block.json
+msgctxt "block keyword"
+msgid "specs"
+msgstr ""
+
+#: build/blocks/tabs/block.json
+#: src/blocks/tabs/block.json
+msgctxt "block keyword"
+msgid "product details"
+msgstr ""
+
 #: build/blocks/text-path/block.json
 #: src/blocks/text-path/block.json
 msgctxt "block title"
@@ -24725,6 +25459,24 @@ msgstr ""
 #: src/blocks/text-path/block.json
 msgctxt "block keyword"
 msgid "path"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block keyword"
+msgid "curved text"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block keyword"
+msgid "circular text"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block keyword"
+msgid "circle"
 msgstr ""
 
 #: build/blocks/timeline-item/block.json
@@ -24817,4 +25569,22 @@ msgstr ""
 #: src/blocks/timeline/block.json
 msgctxt "block keyword"
 msgid "journey"
+msgstr ""
+
+#: build/blocks/timeline/block.json
+#: src/blocks/timeline/block.json
+msgctxt "block keyword"
+msgid "agenda"
+msgstr ""
+
+#: build/blocks/timeline/block.json
+#: src/blocks/timeline/block.json
+msgctxt "block keyword"
+msgid "itinerary"
+msgstr ""
+
+#: build/blocks/timeline/block.json
+#: src/blocks/timeline/block.json
+msgctxt "block keyword"
+msgid "schedule"
 msgstr ""

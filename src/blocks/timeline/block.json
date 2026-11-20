@@ -16,7 +16,11 @@
 		"milestones",
 		"events",
 		"chronology",
-		"journey"
+		"journey",
+		"our story",
+		"agenda",
+		"itinerary",
+		"schedule"
 	],
 	"textdomain": "designsetgo",
 	"icon": "backup",

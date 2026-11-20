@@ -10,7 +10,9 @@
 		"scroll",
 		"accordion",
 		"sticky",
-		"stacking"
+		"stacking",
+		"step by step",
+		"scrollytelling"
 	],
 	"textdomain": "designsetgo",
 	"icon": "menu-alt2",

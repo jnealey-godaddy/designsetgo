@@ -11,7 +11,10 @@
 		"slides",
 		"fullscreen",
 		"pinned",
-		"showcase"
+		"showcase",
+		"storytelling",
+		"product walkthrough",
+		"case study"
 	],
 	"textdomain": "designsetgo",
 	"icon": "images-alt",

@@ -13,7 +13,10 @@
 		"dialog",
 		"lightbox",
 		"overlay",
-		"exit intent"
+		"exit intent",
+		"newsletter popup",
+		"announcement",
+		"discount popup"
 	],
 	"textdomain": "designsetgo",
 	"icon": "feedback",

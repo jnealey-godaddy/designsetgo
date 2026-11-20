@@ -13,7 +13,10 @@
 		"woocommerce",
 		"shop",
 		"store",
-		"ecommerce"
+		"ecommerce",
+		"featured product",
+		"best seller",
+		"product launch"
 	],
 	"textdomain": "designsetgo",
 	"icon": "store",

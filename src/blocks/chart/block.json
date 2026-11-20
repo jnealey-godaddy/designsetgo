@@ -6,7 +6,7 @@
 	"title": "Chart",
 	"category": "widgets",
 	"description": "Bar, line, or donut chart for data. No JavaScript required.",
-	"keywords": ["chart", "graph", "data", "bar", "line", "donut", "pie", "statistics"],
+	"keywords": ["chart", "graph", "data", "bar", "line", "donut", "pie", "statistics", "infographic", "annual report"],
 	"textdomain": "designsetgo",
 	"icon": "chart-bar",
 	"usesContext": [ "postId", "postType" ],

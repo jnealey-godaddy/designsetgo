@@ -18,7 +18,10 @@
 		"logos",
 		"layout",
 		"container",
-		"responsive"
+		"responsive",
+		"portfolio",
+		"our services",
+		"meet the team"
 	],
 	"textdomain": "designsetgo",
 	"icon": "grid-view",

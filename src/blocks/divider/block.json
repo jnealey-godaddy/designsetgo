@@ -11,7 +11,9 @@
 		"separator",
 		"line",
 		"hr",
-		"break"
+		"break",
+		"decorative line",
+		"ornament"
 	],
 	"textdomain": "designsetgo",
 	"icon": "minus",

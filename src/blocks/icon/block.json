@@ -11,7 +11,8 @@
 		"svg",
 		"symbol",
 		"graphic",
-		"feature icon"
+		"feature icon",
+		"pictogram"
 	],
 	"textdomain": "designsetgo",
 	"icon": "star-filled",

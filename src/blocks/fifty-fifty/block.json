@@ -17,7 +17,11 @@
 		"image",
 		"hero",
 		"about",
-		"feature"
+		"feature",
+		"our story",
+		"photo and text",
+		"image left",
+		"image right"
 	],
 	"textdomain": "designsetgo",
 	"icon": "columns",

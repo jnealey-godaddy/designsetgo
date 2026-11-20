@@ -12,7 +12,10 @@
 		"tab panels",
 		"switcher",
 		"toggle",
-		"accordion"
+		"accordion",
+		"specifications",
+		"specs",
+		"product details"
 	],
 	"textdomain": "designsetgo",
 	"icon": "tickets",

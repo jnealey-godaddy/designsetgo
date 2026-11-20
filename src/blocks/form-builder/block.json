@@ -16,7 +16,16 @@
 		"newsletter",
 		"subscribe",
 		"survey",
-		"fields"
+		"fields",
+		"request a quote",
+		"appointment",
+		"reservation",
+		"rsvp",
+		"enquiry",
+		"inquiry",
+		"get in touch",
+		"application",
+		"registration"
 	],
 	"textdomain": "designsetgo",
 	"icon": "forms",

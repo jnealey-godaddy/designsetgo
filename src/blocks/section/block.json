@@ -18,7 +18,10 @@
 		"stack",
 		"vertical",
 		"layout",
-		"content area"
+		"content area",
+		"full width",
+		"promo banner",
+		"call to action"
 	],
 	"textdomain": "designsetgo",
 	"icon": "align-wide",
