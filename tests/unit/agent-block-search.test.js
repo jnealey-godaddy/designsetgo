@@ -71,6 +71,8 @@ describe('Agent block search', () => {
 		['cover image media text', null, 'designsetgo/section'],
 		['details accordion faq', null, 'designsetgo/accordion'],
 		['details accordion faq', 'design', 'designsetgo/accordion'],
+		['photo', null, 'designsetgo/card'],
+		['restaurant menu dishes', 'design', 'designsetgo/card'],
 	])('"%s" in category %s finds %s', (query, category, expected) => {
 		expect(search(query, category)).toContain(expected);
 	});
