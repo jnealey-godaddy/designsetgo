@@ -5,13 +5,18 @@
 	"version": "1.0.0",
 	"title": "Icon List",
 	"category": "designsetgo",
-	"description": "Create a list of items with icons, titles, and descriptions.",
+	"description": "List of items with an icon beside each title and description, like a List block with icons. Use for features, benefits, services, checklists, 'why choose us', contact details, and pricing plan inclusions.",
 	"keywords": [
-		"icon",
+		"icon list",
 		"list",
+		"checklist",
 		"features",
 		"benefits",
-		"services"
+		"services",
+		"why choose us",
+		"check",
+		"bullet",
+		"icon"
 	],
 	"textdomain": "designsetgo",
 	"icon": "list-view",

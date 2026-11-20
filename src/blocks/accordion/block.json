@@ -5,13 +5,18 @@
 	"version": "1.0.0",
 	"title": "Accordion",
 	"category": "designsetgo",
-	"description": "Create accessible accordion sections with customizable icons and behavior for FAQs and content organization.",
+	"description": "Accessible collapsible accordion, like the Details block but for a group of items with icons and open/close behavior. Use for FAQ sections, questions and answers, specs, and any expandable content.",
 	"keywords": [
 		"accordion",
 		"faq",
+		"faqs",
+		"questions",
+		"q&a",
+		"details",
 		"collapsible",
 		"toggle",
-		"expand"
+		"expand",
+		"dropdown"
 	],
 	"textdomain": "designsetgo",
 	"icon": "menu-alt",

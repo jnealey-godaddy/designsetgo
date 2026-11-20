@@ -4,13 +4,17 @@
 	"name": "designsetgo/slider",
 	"title": "Slider",
 	"category": "designsetgo",
-	"description": "A modern, performant slider with multiple transition effects, auto-play, and full block support inside slides.",
+	"description": "Slider and carousel with fade/slide effects, autoplay, arrows, and dots, and full block content in each slide. Use for hero sliders, testimonial carousels, image galleries, and logo carousels.",
 	"keywords": [
 		"slider",
 		"carousel",
 		"slideshow",
+		"testimonials",
+		"reviews",
+		"logos",
 		"gallery",
-		"hero"
+		"hero",
+		"rotating"
 	],
 	"textdomain": "designsetgo",
 	"icon": "images-alt2",

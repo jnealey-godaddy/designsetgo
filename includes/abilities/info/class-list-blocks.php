@@ -121,6 +121,11 @@ class List_Blocks extends Abstract_Ability {
 								'type'        => 'string',
 								'description' => __( 'Block description', 'designsetgo' ),
 							),
+							'keywords'    => array(
+								'type'        => 'array',
+								'items'       => array( 'type' => 'string' ),
+								'description' => __( 'Search terms the block answers to, including the core block it stands in for (e.g. "group", "columns", "faq").', 'designsetgo' ),
+							),
 							'category'    => array(
 								'type'        => 'string',
 								'description' => __( 'The block editor category the block registers into, verbatim from block.json (almost always "designsetgo").', 'designsetgo' ),
@@ -223,6 +228,7 @@ class List_Blocks extends Abstract_Ability {
 				'name'        => $block_type->name,
 				'title'       => '' !== $block_type->title ? $block_type->title : $this->generate_title_from_name( $block_type->name ),
 				'description' => $block_type->description,
+				'keywords'    => array_values( (array) $block_type->keywords ),
 				'category'    => $block_type->category ?? '',
 				'group'       => self::get_block_group( $block_type->name ),
 				'supports'    => $this->format_supports( $block_type->supports ?? array() ),

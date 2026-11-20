@@ -5,13 +5,18 @@
 	"version": "1.0.0",
 	"title": "Form Builder",
 	"category": "designsetgo",
-	"description": "Create custom forms with multiple field types, AJAX submission, and spam protection.",
+	"description": "Contact form builder with text, email, phone, select, checkbox, date, and message fields, AJAX submission, email notifications, and spam protection. Use for contact forms, quote requests, bookings, sign-ups, and surveys.",
 	"keywords": [
 		"form",
+		"contact form",
 		"contact",
-		"submit",
-		"fields",
-		"survey"
+		"quote",
+		"booking",
+		"signup",
+		"newsletter",
+		"subscribe",
+		"survey",
+		"fields"
 	],
 	"textdomain": "designsetgo",
 	"icon": "forms",

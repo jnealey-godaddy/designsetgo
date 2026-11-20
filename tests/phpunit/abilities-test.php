@@ -789,6 +789,18 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'blocks', $result );
 		$this->assertArrayHasKey( 'total', $result );
 		$this->assertGreaterThan( 0, $result['total'] );
+
+		// Keywords carry the core-equivalent terms agents search with.
+		$section = null;
+		foreach ( $result['blocks'] as $block ) {
+			$this->assertArrayHasKey( 'keywords', $block );
+			$this->assertIsArray( $block['keywords'] );
+			if ( 'designsetgo/section' === $block['name'] ) {
+				$section = $block;
+			}
+		}
+		$this->assertNotNull( $section );
+		$this->assertContains( 'group', $section['keywords'] );
 	}
 
 	/**

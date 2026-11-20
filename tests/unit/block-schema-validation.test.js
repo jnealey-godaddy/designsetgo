@@ -329,6 +329,35 @@ describe('Block Schema Validation', () => {
 				});
 			}
 		);
+
+		// AI page builders pick blocks by searching title/description/keywords
+		// with core vocabulary ("group", "columns", "faq"). Without these terms
+		// the core block always wins the match, so keep them pinned.
+		const agentSearchTerms = {
+			section: ['group', 'container', 'hero'],
+			row: ['group', 'horizontal', 'buttons'],
+			grid: ['columns', 'features', 'team'],
+			'fifty-fifty': ['media text', 'split', 'hero'],
+			card: ['feature', 'pricing', 'team'],
+			'icon-button': ['button', 'cta'],
+			'icon-list': ['list', 'features', 'benefits'],
+			accordion: ['faq', 'details', 'collapsible'],
+			'counter-group': ['stats', 'numbers'],
+			slider: ['carousel', 'testimonials', 'logos'],
+			timeline: ['process', 'steps', 'how it works'],
+			'form-builder': ['contact form', 'form'],
+		};
+
+		it.each(Object.entries(agentSearchTerms))(
+			'%s keeps the search terms agents use to find it',
+			(dir, terms) => {
+				const block = blocks.find((b) => b.dir === dir);
+				expect(block).toBeDefined();
+				expect(block.config.keywords).toEqual(
+					expect.arrayContaining(terms)
+				);
+			}
+		);
 	});
 
 	describe('Form Field Blocks', () => {
