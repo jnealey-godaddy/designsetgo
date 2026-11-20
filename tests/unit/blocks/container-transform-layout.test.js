@@ -26,8 +26,12 @@ import { transformLayout } from '../../../src/utils/transform-layout';
 
 setCategories([
 	{ slug: 'designsetgo', title: 'DesignSetGo' },
-	{ slug: 'design', title: 'Design' },
 	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
 ]);
 
 // `layout` becomes an attribute through the layout block support, which this

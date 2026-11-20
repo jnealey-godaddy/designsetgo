@@ -4,7 +4,7 @@
 	"name": "designsetgo/accordion-item",
 	"version": "1.0.0",
 	"title": "Accordion Item",
-	"category": "designsetgo",
+	"category": "design",
 	"parent": [
 		"designsetgo/accordion"
 	],

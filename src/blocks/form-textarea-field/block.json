@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-textarea-field",
 	"version": "1.0.0",
 	"title": "Textarea",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Multi-line text area for longer text input.",
 	"keywords": [
 		"form",

@@ -4,7 +4,7 @@
   "name": "designsetgo/query-group-header",
   "version": "1.0.0",
   "title": "Query Group Header",
-  "category": "designsetgo",
+  "category": "theme",
   "description": "Renders once per group inside a Query with group-by enabled. Use block bindings or context to display the group label.",
   "keywords": ["query", "group", "header", "section"],
   "textdomain": "designsetgo",

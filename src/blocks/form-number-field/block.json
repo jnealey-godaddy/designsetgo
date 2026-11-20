@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-number-field",
 	"version": "1.0.0",
 	"title": "Number Field",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "A number input field for forms.",
 	"keywords": [
 		"form",

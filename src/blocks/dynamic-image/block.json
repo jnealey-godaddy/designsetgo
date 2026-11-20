@@ -4,7 +4,7 @@
 	"name": "designsetgo/dynamic-image",
 	"version": "1.0.0",
 	"title": "Dynamic Image",
-	"category": "designsetgo",
+	"category": "media",
 	"description": "An image block whose source resolves at render time from the post, site, user, or a custom field (ACF, Meta Box, Pods, JetEngine).",
 	"keywords": [ "image", "dynamic", "featured", "acf", "tag" ],
 	"textdomain": "designsetgo",

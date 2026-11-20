@@ -4,7 +4,7 @@
 	"name": "designsetgo/icon",
 	"version": "1.0.0",
 	"title": "Icon",
-	"category": "designsetgo",
+	"category": "media",
 	"description": "Standalone inline SVG icon with size, color, and background styling. Use as a visual accent above feature titles, in service boxes, or beside text.",
 	"keywords": [
 		"icon",

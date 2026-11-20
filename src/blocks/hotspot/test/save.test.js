@@ -39,7 +39,15 @@ describe('hotspot save', () => {
 			registerBlockType,
 			setCategories,
 		} = require('@wordpress/block-editor/node_modules/@wordpress/blocks');
-		setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+		setCategories([
+			{ slug: 'designsetgo', title: 'DesignSetGo' },
+			{ slug: 'text', title: 'Text' },
+			{ slug: 'media', title: 'Media' },
+			{ slug: 'design', title: 'Design' },
+			{ slug: 'widgets', title: 'Widgets' },
+			{ slug: 'theme', title: 'Theme' },
+			{ slug: 'embed', title: 'Embed' },
+		]);
 		if (!getBlockType(metadata.name)) {
 			registerBlockType(metadata.name, { ...metadata, save });
 		}

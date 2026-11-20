@@ -4,7 +4,7 @@
   "name": "designsetgo/form-step",
   "version": "1.0.0",
   "title": "Form Step",
-  "category": "designsetgo",
+  "category": "widgets",
   "parent": ["designsetgo/form-builder"],
   "description": "A step of a multi-step form.",
   "keywords": ["form", "step", "wizard", "page"],

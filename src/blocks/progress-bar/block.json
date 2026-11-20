@@ -4,7 +4,7 @@
 	"name": "designsetgo/progress-bar",
 	"version": "1.0.0",
 	"title": "Progress Bar",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Animated horizontal bar showing a percentage. Use for skills, progress, goals, fundraising, and statistics.",
 	"keywords": [
 		"progress",

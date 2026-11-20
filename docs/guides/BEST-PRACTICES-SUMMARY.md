@@ -294,7 +294,7 @@ const innerBlocksProps = useInnerBlocksProps({
   "apiVersion": 3,
   "name": "designsetgo/my-block",
   "title": "My Block",
-  "category": "designsetgo",
+  "category": "design",
   "textdomain": "designsetgo",
   "supports": {
     "anchor": true,

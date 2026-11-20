@@ -4,7 +4,7 @@
 	"name": "designsetgo/advanced-heading",
 	"version": "1.0.0",
 	"title": "Advanced Heading",
-	"category": "designsetgo",
+	"category": "text",
 	"description": "Heading that mixes fonts, weights, and colors within one line, like a Heading block with highlighted words. Use for hero titles and section headings with an accented word.",
 	"keywords": [
 		"heading",

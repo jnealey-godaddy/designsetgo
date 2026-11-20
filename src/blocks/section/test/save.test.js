@@ -38,7 +38,15 @@ import save from '../save';
 // otherwise makes registerBlockType() reject the block and causes
 // createBlock()/serialize() to silently no-op (self-closing comment, save()
 // never called). Register it so save() actually runs.
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 registerBlockType(metadata.name, { ...metadata, save });
 

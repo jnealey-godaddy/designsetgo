@@ -4,7 +4,7 @@
 	"name": "designsetgo/image-accordion",
 	"version": "1.0.0",
 	"title": "Image Accordion",
-	"category": "designsetgo",
+	"category": "media",
 	"description": "Row of image panels that expand on hover or click to reveal text. Use for portfolios, galleries, services, destinations, and featured content.",
 	"keywords": [
 		"image accordion",

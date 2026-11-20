@@ -4,7 +4,7 @@
 	"name": "designsetgo/counter-group",
 	"version": "1.0.0",
 	"title": "Counter Group",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Animated statistics: numbers that count up on scroll with labels, prefixes, and suffixes. Use for stats, key figures, results, achievements, and 'by the numbers' sections.",
 	"keywords": [
 		"stats",

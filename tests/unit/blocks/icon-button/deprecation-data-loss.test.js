@@ -41,7 +41,15 @@ import metadata from '../../../../src/blocks/icon-button/block.json';
 import save from '../../../../src/blocks/icon-button/save';
 import deprecated, { v9 } from '../../../../src/blocks/icon-button/deprecated';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 // v9 is the pre-wrapper deprecation added for the justification-wrapper
 // refactor. Imported by name: positional destructuring breaks whenever a

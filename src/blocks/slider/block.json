@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "designsetgo/slider",
 	"title": "Slider",
-	"category": "designsetgo",
+	"category": "media",
 	"description": "Slider and carousel with fade/slide effects, autoplay, arrows, and dots, and full block content in each slide. Use for hero sliders, testimonial carousels, image galleries, and logo carousels.",
 	"keywords": [
 		"slider",

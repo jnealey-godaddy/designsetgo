@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "designsetgo/slide",
 	"title": "Slide",
-	"category": "designsetgo",
+	"category": "media",
 	"parent": [
 		"designsetgo/slider"
 	],

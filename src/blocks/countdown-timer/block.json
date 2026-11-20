@@ -4,7 +4,7 @@
 	"name": "designsetgo/countdown-timer",
 	"version": "1.0.0",
 	"title": "Countdown Timer",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Countdown to a date and time. Use for sales, launches, events, webinars, and coming-soon pages.",
 	"keywords": [
 		"countdown",

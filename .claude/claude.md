@@ -16,7 +16,7 @@
 
 ## Architecture
 
-- **Categories**: Use WordPress core categories (`"category": "design"`), plus custom collection
+- **Categories**: Use the core category of the core block yours stands in for (`design`, `media`, `text`, `widgets`, `theme`), never a custom one. AI agents filter blocks by category before matching text, so a custom category hides the block. The `designsetgo` block collection (`src/block-category-icon.js`) groups them in the inserter.
 - **Extensions**: Use `addFilter()` with explicit block name allowlist
 - **File Structure**: `src/blocks/{block}/` → index.js (registration), edit.js, save.js, components/, utils/
 - **Asset Loading**: Enqueue in `enqueue_block_assets` with `is_admin()` check

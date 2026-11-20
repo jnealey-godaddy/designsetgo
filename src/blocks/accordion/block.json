@@ -4,8 +4,8 @@
 	"name": "designsetgo/accordion",
 	"version": "1.0.0",
 	"title": "Accordion",
-	"category": "designsetgo",
-	"description": "Accessible collapsible accordion, like the Details block but for a group of items with icons and open/close behavior. Use for FAQ sections, questions and answers, specs, and any expandable content.",
+	"category": "design",
+	"description": "FAQ accordion that can output FAQPage structured data for search results, which the core Accordion does not. Adds chevron, plus/minus, or caret icons, open-state and hover colors, and dividers between items. Use for FAQ sections, questions and answers, specs, and any expandable content.",
 	"keywords": [
 		"accordion",
 		"faq",

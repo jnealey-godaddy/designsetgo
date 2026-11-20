@@ -4,7 +4,7 @@
 	"name": "designsetgo/map",
 	"version": "1.0.0",
 	"title": "Map",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Interactive map using OpenStreetMap or Google Maps. Use for contact, location, and 'find us' sections.",
 	"keywords": [
 		"map",

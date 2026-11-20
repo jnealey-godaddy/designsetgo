@@ -53,7 +53,7 @@ class List_Blocks extends Abstract_Ability {
 				'readonly'     => true,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Returns all DesignSetGo blocks with their attributes and metadata. Each block reports both `category` (the block editor category it registers into, almost always "designsetgo") and `group` (the plugin\'s own grouping: containers, ui, interactive, widgets, forms, or uncategorized). Filter with `group`, not `category` — `category` is near-uniform across the library and will not narrow anything. Use detail "full" with specific block names for complete attribute definitions.',
+				'instructions' => 'Returns all DesignSetGo blocks with their attributes and metadata. Each block reports both `category` (the core block editor category it registers into, matching the core block it stands in for: design, media, text, widgets, or theme) and `group` (the plugin\'s own grouping: containers, ui, interactive, widgets, forms, or uncategorized). Filter with `group` to narrow DesignSetGo blocks. Use detail "full" with specific block names for complete attribute definitions.',
 			),
 		);
 	}
@@ -128,7 +128,7 @@ class List_Blocks extends Abstract_Ability {
 							),
 							'category'    => array(
 								'type'        => 'string',
-								'description' => __( 'The block editor category the block registers into, verbatim from block.json (almost always "designsetgo").', 'designsetgo' ),
+								'description' => __( 'The block editor category the block registers into, verbatim from block.json. A core category (design, media, text, widgets, theme) matching the core block it stands in for.', 'designsetgo' ),
 							),
 							'group'       => array(
 								'type'        => 'string',

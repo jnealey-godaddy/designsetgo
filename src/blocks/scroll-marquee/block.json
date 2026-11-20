@@ -4,7 +4,7 @@
 	"name": "designsetgo/scroll-marquee",
 	"version": "1.2.0",
 	"title": "Scrolling Gallery",
-	"category": "designsetgo",
+	"category": "media",
 	"description": "Rows of images that scroll horizontally in alternating directions as the page scrolls. Use for logo walls, client logos, and image galleries. Use optimized images (WebP recommended) and keep it to 20 images or fewer.",
 	"keywords": [
 		"scrolling gallery",

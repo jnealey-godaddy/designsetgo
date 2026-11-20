@@ -4,7 +4,7 @@
 	"name": "designsetgo/chart",
 	"version": "1.0.0",
 	"title": "Chart",
-	"category": "designsetgo",
+	"category": "widgets",
 	"description": "Bar, line, or donut chart for data. No JavaScript required.",
 	"keywords": ["chart", "graph", "data", "bar", "line", "donut", "pie", "statistics"],
 	"textdomain": "designsetgo",

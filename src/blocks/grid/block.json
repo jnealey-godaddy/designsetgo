@@ -4,7 +4,7 @@
 	"name": "designsetgo/grid",
 	"version": "1.0.0",
 	"title": "Grid",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Responsive multi-column grid, like Columns but with per-device column counts, equal-height rows, and custom column templates. Use for feature grids, services, team members, card layouts, product listings, logo walls, and stats.",
 	"keywords": [
 		"grid",

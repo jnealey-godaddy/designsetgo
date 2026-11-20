@@ -4,7 +4,7 @@
 	"name": "designsetgo/heading-segment",
 	"version": "1.0.0",
 	"title": "Heading Segment",
-	"category": "designsetgo",
+	"category": "text",
 	"parent": [
 		"designsetgo/advanced-heading"
 	],

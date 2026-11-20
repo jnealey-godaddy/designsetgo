@@ -4,7 +4,7 @@
 	"name": "designsetgo/flip-card",
 	"version": "1.0.0",
 	"title": "Flip Card",
-	"category": "designsetgo",
+	"category": "design",
 	"description": "Card that flips on hover or click to reveal content on the back. Use for team profiles, services, feature highlights, and interactive reveals.",
 	"keywords": [
 		"flip card",

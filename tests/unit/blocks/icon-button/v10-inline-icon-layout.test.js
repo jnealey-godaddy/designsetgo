@@ -30,7 +30,15 @@ import metadata from '../../../../src/blocks/icon-button/block.json';
 import save from '../../../../src/blocks/icon-button/save';
 import deprecated, { v10 } from '../../../../src/blocks/icon-button/deprecated';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
 const LAYOUT = 'display:flex;align-items:center;justify-content:center';

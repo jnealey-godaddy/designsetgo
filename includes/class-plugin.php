@@ -927,9 +927,6 @@ class Plugin {
 		// Hook into WordPress.
 		add_action( 'enqueue_block_editor_assets', array( $this, 'editor_assets' ) );
 
-		// Add block category.
-		add_filter( 'block_categories_all', array( $this, 'register_block_category' ), 10, 2 );
-
 		// Conditionally register WooCommerce-dependent blocks.
 		add_filter( 'designsetgo_register_block', array( $this, 'gate_woocommerce_blocks' ), 10, 2 );
 
@@ -1050,23 +1047,6 @@ class Plugin {
 		// intentionally NOT localized here. It rides `enqueue_block_assets`
 		// instead so it reaches the iframed editor canvas — see
 		// Assets::localize_extension_settings() for the full rationale.
-	}
-
-	/**
-	 * Register DesignSetGo block category.
-	 *
-	 * @param array    $categories Block categories.
-	 * @param \WP_Post $_post      Current post object (unused).
-	 * @return array Modified categories.
-	 */
-	public function register_block_category( $categories, $_post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$categories[] = array(
-			'slug'  => 'designsetgo',
-			'title' => __( 'DesignSetGo', 'designsetgo' ),
-			'icon'  => 'layout',
-		);
-
-		return $categories;
 	}
 
 	/**

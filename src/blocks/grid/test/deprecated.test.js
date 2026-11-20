@@ -23,7 +23,15 @@ import deprecated, {
 	styleVariationClasses as styleVariationClassesDeprecation,
 } from '../deprecated';
 
-setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+setCategories([
+	{ slug: 'designsetgo', title: 'DesignSetGo' },
+	{ slug: 'text', title: 'Text' },
+	{ slug: 'media', title: 'Media' },
+	{ slug: 'design', title: 'Design' },
+	{ slug: 'widgets', title: 'Widgets' },
+	{ slug: 'theme', title: 'Theme' },
+	{ slug: 'embed', title: 'Embed' },
+]);
 
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
