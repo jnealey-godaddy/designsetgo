@@ -65,17 +65,35 @@ class Test_Plugin extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that block category is registered.
+	 * Test that blocks use core categories and no custom category is added.
+	 *
+	 * AI agents filter blocks by category before matching text, so each block
+	 * registers into the core category of the core block it stands in for.
+	 * The inserter groups them with a "designsetgo" block collection instead.
 	 */
 	public function test_block_category() {
-		$categories = get_block_categories( get_post() );
+		$categories     = get_block_categories( get_post() );
 		$category_slugs = wp_list_pluck( $categories, 'slug' );
 
-		$this->assertContains(
+		$this->assertNotContains(
 			'designsetgo',
 			$category_slugs,
-			'DesignSetGo block category should be registered'
+			'DesignSetGo should not register a custom block category'
 		);
+
+		$checked = 0;
+		foreach ( WP_Block_Type_Registry::get_instance()->get_all_registered() as $block_type ) {
+			if ( 0 !== strpos( $block_type->name, 'designsetgo/' ) ) {
+				continue;
+			}
+			++$checked;
+			$this->assertContains(
+				$block_type->category,
+				$category_slugs,
+				"{$block_type->name} should use a registered core category"
+			);
+		}
+		$this->assertGreaterThan( 0, $checked, 'DesignSetGo blocks should be registered' );
 	}
 
 	/**
