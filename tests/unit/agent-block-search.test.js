@@ -73,7 +73,9 @@ describe('Agent block search', () => {
 		['details accordion faq', 'design', 'designsetgo/accordion'],
 		['photo', null, 'designsetgo/card'],
 		['restaurant menu dishes', 'design', 'designsetgo/card'],
-		// Customer language: how site owners describe what they want.
+		// Customer language: how site owners describe what they want. These
+		// replay whole queries; some also match on common words ("a", "us",
+		// "text"), so the keyword guard below pins the phrases themselves.
 		['opening hours', null, 'designsetgo/icon-list'],
 		['request a quote', 'widgets', 'designsetgo/form-builder'],
 		['appointment reservation rsvp', null, 'designsetgo/form-builder'],
@@ -94,5 +96,21 @@ describe('Agent block search', () => {
 		['fundraiser donation', 'widgets', 'designsetgo/progress-bar'],
 	])('"%s" in category %s finds %s', (query, category, expected) => {
 		expect(search(query, category)).toContain(expected);
+	});
+
+	// Customer-language phrases a block must keep. A substring search can pass
+	// on filler words, so check the keyword list directly.
+	it.each([
+		['designsetgo/card', ['photo', 'restaurant menu item']],
+		['designsetgo/form-builder', ['request a quote', 'rsvp']],
+		['designsetgo/map', ['visit us']],
+		['designsetgo/scroll-marquee', ['as seen in', 'trusted by']],
+		['designsetgo/query', ['latest posts', 'blog']],
+		['designsetgo/star-rating', ['customer reviews']],
+		['designsetgo/product-categories-grid', ['shop by category']],
+		['designsetgo/text-path', ['curved text']],
+	])('%s keeps customer-language keywords %j', (name, phrases) => {
+		const block = blocks.find((b) => b.name === name);
+		expect(block.keywords).toEqual(expect.arrayContaining(phrases));
 	});
 });
