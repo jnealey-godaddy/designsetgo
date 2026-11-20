@@ -15,7 +15,11 @@
 		"images",
 		"scroll",
 		"parallax",
-		"infinite"
+		"infinite",
+		"as seen in",
+		"trusted by",
+		"partners",
+		"sponsors"
 	],
 	"textdomain": "designsetgo",
 	"icon": "controls-repeat",

@@ -16,7 +16,9 @@
 		"collapsible",
 		"toggle",
 		"expand",
-		"dropdown"
+		"dropdown",
+		"frequently asked questions",
+		"shipping and returns"
 	],
 	"textdomain": "designsetgo",
 	"icon": "menu-alt",

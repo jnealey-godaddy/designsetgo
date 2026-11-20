@@ -12,7 +12,10 @@
 		"tag",
 		"label",
 		"eyebrow",
-		"chip"
+		"chip",
+		"sale badge",
+		"status",
+		"kicker"
 	],
 	"textdomain": "designsetgo",
 	"icon": "tag",

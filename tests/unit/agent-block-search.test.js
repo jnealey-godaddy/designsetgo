@@ -73,6 +73,25 @@ describe('Agent block search', () => {
 		['details accordion faq', 'design', 'designsetgo/accordion'],
 		['photo', null, 'designsetgo/card'],
 		['restaurant menu dishes', 'design', 'designsetgo/card'],
+		// Customer language: how site owners describe what they want.
+		['opening hours', null, 'designsetgo/icon-list'],
+		['request a quote', 'widgets', 'designsetgo/form-builder'],
+		['appointment reservation rsvp', null, 'designsetgo/form-builder'],
+		['book now', 'design', 'designsetgo/icon-button'],
+		['visit us', null, 'designsetgo/map'],
+		['as seen in trusted by', 'media', 'designsetgo/scroll-marquee'],
+		[
+			'years in business happy customers',
+			null,
+			'designsetgo/counter-group',
+		],
+		['grand opening', 'widgets', 'designsetgo/countdown-timer'],
+		['latest posts blog', 'theme', 'designsetgo/query'],
+		['customer reviews', 'widgets', 'designsetgo/star-rating'],
+		['shop by category', null, 'designsetgo/product-categories-grid'],
+		['agenda itinerary', 'design', 'designsetgo/timeline'],
+		['curved text', 'text', 'designsetgo/text-path'],
+		['fundraiser donation', 'widgets', 'designsetgo/progress-bar'],
 	])('"%s" in category %s finds %s', (query, category, expected) => {
 		expect(search(query, category)).toContain(expected);
 	});

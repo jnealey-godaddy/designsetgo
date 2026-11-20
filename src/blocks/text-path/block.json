@@ -10,7 +10,10 @@
 		"text",
 		"svg",
 		"path",
-		"curve"
+		"curve",
+		"curved text",
+		"circular text",
+		"circle"
 	],
 	"textdomain": "designsetgo",
 	"icon": "text",

@@ -13,7 +13,9 @@
 		"cards",
 		"pin",
 		"reveal",
-		"sections"
+		"sections",
+		"stacked cards",
+		"storytelling"
 	],
 	"textdomain": "designsetgo",
 	"icon": "align-full-width",

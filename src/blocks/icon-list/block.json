@@ -16,7 +16,11 @@
 		"why choose us",
 		"check",
 		"bullet",
-		"icon"
+		"icon",
+		"opening hours",
+		"what's included",
+		"amenities",
+		"pros and cons"
 	],
 	"textdomain": "designsetgo",
 	"icon": "list-view",

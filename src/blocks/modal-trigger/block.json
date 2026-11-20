@@ -11,7 +11,9 @@
 		"popup",
 		"button",
 		"trigger",
-		"open"
+		"open",
+		"watch video",
+		"show more"
 	],
 	"textdomain": "designsetgo",
 	"icon": "button",

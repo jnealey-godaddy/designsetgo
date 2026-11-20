@@ -6,7 +6,7 @@
   "title": "Dynamic Query",
   "category": "theme",
   "description": "Query any posts, users, or terms and render them with your own block design. Supports filters, pagination, and Block Bindings.",
-  "keywords": ["query", "loop", "posts", "dynamic", "grid", "listing"],
+  "keywords": ["query", "loop", "posts", "dynamic", "grid", "listing", "blog", "latest posts", "news", "articles", "directory", "archive"],
   "textdomain": "designsetgo",
   "icon": "editor-table",
   "supports": {

@@ -6,7 +6,7 @@
   "title": "Section Divider",
   "category": "design",
   "description": "Wave, curve, tilt, triangle, zigzag, or other shape divider placed between two sections. Shape, size, and color follow your theme by default.",
-  "keywords": ["shape divider", "divider", "wave", "curve", "zigzag", "separator", "section"],
+  "keywords": ["shape divider", "divider", "wave", "curve", "zigzag", "separator", "section", "wavy edge", "curved edge"],
   "textdomain": "designsetgo",
   "attributes": {
     "shape": { "type": "string", "default": "inherit" },

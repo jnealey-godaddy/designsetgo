@@ -14,7 +14,10 @@
 		"accordion",
 		"hover",
 		"expand",
-		"panels"
+		"panels",
+		"destinations",
+		"tours",
+		"rooms"
 	],
 	"textdomain": "designsetgo",
 	"icon": "images-alt2",

@@ -13,7 +13,10 @@
 		"percentage",
 		"stat",
 		"meter",
-		"goal"
+		"goal",
+		"donation",
+		"fundraiser",
+		"skill bar"
 	],
 	"textdomain": "designsetgo",
 	"icon": "performance",

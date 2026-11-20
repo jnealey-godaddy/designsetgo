@@ -16,7 +16,10 @@
 		"achievements",
 		"results",
 		"kpi",
-		"animated"
+		"animated",
+		"years in business",
+		"happy customers",
+		"projects completed"
 	],
 	"textdomain": "designsetgo",
 	"icon": "chart-area",

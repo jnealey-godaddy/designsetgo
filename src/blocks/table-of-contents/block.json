@@ -12,7 +12,10 @@
 		"navigation",
 		"headings",
 		"anchor",
-		"outline"
+		"outline",
+		"jump links",
+		"on this page",
+		"quick links"
 	],
 	"textdomain": "designsetgo",
 	"icon": "editor-ol",

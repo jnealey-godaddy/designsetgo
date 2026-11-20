@@ -14,7 +14,11 @@
 		"logos",
 		"gallery",
 		"hero",
-		"rotating"
+		"rotating",
+		"customer reviews",
+		"what clients say",
+		"portfolio",
+		"banner slider"
 	],
 	"textdomain": "designsetgo",
 	"icon": "images-alt2",
