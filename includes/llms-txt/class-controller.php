@@ -147,23 +147,109 @@ class Controller {
 	const FULL_REWRITE_PATTERN = '^llms-full\\.txt/?$';
 
 	/**
-	 * Add rewrite rules for llms.txt and llms-full.txt.
+	 * Option key recording which of our rewrite rules were last flushed.
+	 *
+	 * Lets us flush exactly once when the enabled state changes (including on
+	 * upgrade), so stale rules stop routing /llms.txt to this plugin while the
+	 * feature is disabled.
+	 */
+	const REWRITE_STATE_OPTION = 'designsetgo_llms_txt_rewrite_state';
+
+	/**
+	 * Rewrite rules this plugin should own given the current settings.
+	 *
+	 * When the feature is disabled no rules are registered, so /llms.txt and
+	 * /llms-full.txt fall through to the web server, WordPress, or another
+	 * plugin (e.g. an SEO plugin) that serves its own llms.txt.
+	 *
+	 * @return array<string, string> Regex => query.
+	 */
+	private function get_active_rewrite_rules(): array {
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		$rules    = array();
+
+		if ( empty( $settings['llms_txt']['enable'] ) ) {
+			return $rules;
+		}
+
+		$rules[ self::REWRITE_PATTERN ] = 'index.php?llms_txt=1';
+
+		if ( ! empty( $settings['llms_txt']['generate_full_txt'] ) ) {
+			$rules[ self::FULL_REWRITE_PATTERN ] = 'index.php?llms_full_txt=1';
+		}
+
+		return $rules;
+	}
+
+	/**
+	 * Add rewrite rules for llms.txt and llms-full.txt when enabled.
 	 */
 	public function add_rewrite_rule(): void {
-		add_rewrite_rule( self::REWRITE_PATTERN, 'index.php?llms_txt=1', 'top' );
-		add_rewrite_rule( self::FULL_REWRITE_PATTERN, 'index.php?llms_full_txt=1', 'top' );
+		$rules = $this->get_active_rewrite_rules();
+		foreach ( $rules as $regex => $query ) {
+			add_rewrite_rule( $regex, $query, 'top' );
+		}
+
+		$state = implode( ',', array_keys( $rules ) );
 
 		if ( get_transient( 'designsetgo_llms_txt_flush_rules' ) ) {
 			delete_transient( 'designsetgo_llms_txt_flush_rules' );
-			flush_rewrite_rules();
+			$this->flush_rules( $state );
+			return;
+		}
+
+		// Flush once whenever the set of rules we own changes (enable/disable,
+		// llms-full.txt toggle, or an upgrade from a version that always
+		// registered them).
+		if ( get_option( self::REWRITE_STATE_OPTION ) !== $state ) {
+			$this->flush_rules( $state );
 			return;
 		}
 
 		// Flush if our rules are missing from stored rules (covers updates without activation).
-		$rules = get_option( 'rewrite_rules' );
-		if ( is_array( $rules ) && ( ! isset( $rules[ self::REWRITE_PATTERN ] ) || ! isset( $rules[ self::FULL_REWRITE_PATTERN ] ) ) ) {
-			flush_rewrite_rules();
+		$stored = get_option( 'rewrite_rules' );
+		if ( is_array( $stored ) ) {
+			foreach ( array_keys( $rules ) as $regex ) {
+				if ( ! isset( $stored[ $regex ] ) ) {
+					$this->flush_rules( $state );
+					return;
+				}
+			}
 		}
+	}
+
+	/**
+	 * Re-register our rules for the current settings and flush immediately.
+	 *
+	 * Safe to call outside of init: rules registered earlier in this request
+	 * under the previous settings are removed before flushing.
+	 */
+	private function sync_rewrite_rules(): void {
+		global $wp_rewrite;
+
+		if ( $wp_rewrite instanceof \WP_Rewrite ) {
+			unset(
+				$wp_rewrite->extra_rules_top[ self::REWRITE_PATTERN ],
+				$wp_rewrite->extra_rules_top[ self::FULL_REWRITE_PATTERN ]
+			);
+		}
+
+		$rules = $this->get_active_rewrite_rules();
+		foreach ( $rules as $regex => $query ) {
+			add_rewrite_rule( $regex, $query, 'top' );
+		}
+
+		$this->flush_rules( implode( ',', array_keys( $rules ) ) );
+	}
+
+	/**
+	 * Flush rewrite rules and record which of our rules are now active.
+	 *
+	 * @param string $state Comma-separated list of active rule patterns.
+	 */
+	private function flush_rules( string $state ): void {
+		flush_rewrite_rules();
+		update_option( self::REWRITE_STATE_OPTION, $state, true );
 	}
 
 	/**
@@ -224,16 +310,18 @@ class Controller {
 			return;
 		}
 
+		// When the feature (or llms-full.txt) is disabled, let the request
+		// fall through untouched so another plugin hooked to the same query
+		// var or URL (e.g. Rank Math) can serve the file. Exiting here with a
+		// 404 would block it.
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
 		if ( empty( $settings['llms_txt']['enable'] ) ) {
-			status_header( 404 );
-			exit;
+			return;
 		}
 
 		if ( $is_llms_full ) {
 			if ( empty( $settings['llms_txt']['generate_full_txt'] ) ) {
-				status_header( 404 );
-				exit;
+				return;
 			}
 			$this->serve_llms_full_txt();
 		} else {
@@ -403,14 +491,15 @@ class Controller {
 
 		$was_enabled = ! empty( $old_value['llms_txt']['enable'] );
 		$is_enabled  = ! empty( $new_value['llms_txt']['enable'] );
+		$had_full_rule = $was_enabled && ! empty( $old_value['llms_txt']['generate_full_txt'] );
+		$has_full_rule = $is_enabled && ! empty( $new_value['llms_txt']['generate_full_txt'] );
+
+		if ( $is_enabled !== $was_enabled || $has_full_rule !== $had_full_rule ) {
+			// Flush immediately so rules are added/removed before the next request.
+			$this->sync_rewrite_rules();
+		}
 
 		if ( $is_enabled !== $was_enabled ) {
-			// Flush immediately so the rule is active before the next request.
-			// Must register the rules first since this may run outside of init.
-			add_rewrite_rule( self::REWRITE_PATTERN, 'index.php?llms_txt=1', 'top' );
-			add_rewrite_rule( self::FULL_REWRITE_PATTERN, 'index.php?llms_full_txt=1', 'top' );
-			flush_rewrite_rules();
-
 			if ( $is_enabled ) {
 				$this->file_manager->generate_all_files( $this->generator );
 				$this->write_physical_file();
