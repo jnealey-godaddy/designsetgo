@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.11.3
+Stable tag: 2.11.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,10 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 11. Editing chart data right in the block settings sidebar
 
 == Changelog ==
+
+= 2.11.4 - 2026-11-23 =
+
+* **Fix:** With the llms.txt option turned off, DesignSetGo no longer answers requests for /llms.txt and /llms-full.txt with a "not found" page. Another plugin that makes llms.txt files, such as Rank Math, can now serve them.
 
 = 2.11.3 - 2026-11-20 =
 
@@ -255,6 +259,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.11.4 =
+If you turned off DesignSetGo's llms.txt option, another plugin such as Rank Math can now serve your llms.txt file.
 
 = 2.11.3 =
 DesignSetGo blocks now come up when you search the block inserter for everyday phrases like "opening hours", "book now" or "request a quote".
