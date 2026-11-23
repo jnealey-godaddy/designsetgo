@@ -150,6 +150,7 @@ function designsetgo_uninstall_site() {
 				'designsetgo_llms_txt_physical',
 				'designsetgo_llms_full_txt_physical',
 				'designsetgo_llms_htaccess_backfilled',
+				'designsetgo_llms_txt_rewrite_state',
 				'designsetgo_llms_public_exports_repaired',
 				'designsetgo_db_upgrade_failure',
 				'designsetgo_db_version',

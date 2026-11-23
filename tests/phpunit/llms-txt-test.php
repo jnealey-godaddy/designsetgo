@@ -660,6 +660,98 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Disabled feature must not intercept /llms.txt (issue #666).
+	 *
+	 * Another plugin (e.g. Rank Math) can serve llms.txt from a later
+	 * template_redirect callback; a 404 + exit here would block it.
+	 */
+	public function test_handle_request_falls_through_when_disabled() {
+		update_option( 'designsetgo_settings', array( 'llms_txt' => array( 'enable' => false ) ) );
+		Settings::invalidate_cache();
+
+		foreach ( array( 'llms_txt', 'llms_full_txt' ) as $var ) {
+			set_query_var( $var, '1' );
+			ob_start();
+			$this->controller->handle_request(); // Would exit if it intercepted the request.
+			$output = ob_get_clean();
+			set_query_var( $var, false );
+
+			$this->assertSame( '', $output, "Disabled feature should not output anything for {$var}." );
+		}
+	}
+
+	/**
+	 * llms-full.txt requests fall through when only llms-full.txt is disabled.
+	 */
+	public function test_handle_request_falls_through_when_full_txt_disabled() {
+		$this->enable_llms_feature();
+
+		set_query_var( 'llms_full_txt', '1' );
+		ob_start();
+		$this->controller->handle_request();
+		$output = ob_get_clean();
+		set_query_var( 'llms_full_txt', false );
+
+		$this->assertSame( '', $output );
+	}
+
+	/**
+	 * Rewrite rules are only registered while the feature is enabled.
+	 */
+	public function test_rewrite_rules_only_registered_when_enabled() {
+		global $wp_rewrite;
+
+		// Keep physical llms.txt writes from the enable path out of the test WordPress root.
+		$root = trailingslashit( sys_get_temp_dir() ) . 'dsgo-llms-rewrite-' . wp_generate_uuid4() . '/';
+		wp_mkdir_p( $root );
+		$root_filter = function () use ( $root ) {
+			return $root;
+		};
+		add_filter( 'designsetgo_llms_txt_site_root', $root_filter );
+
+		$wp_rewrite->set_permalink_structure( '/%postname%/' );
+
+		update_option( 'designsetgo_settings', array( 'llms_txt' => array( 'enable' => false ) ) );
+		Settings::invalidate_cache();
+		unset( $wp_rewrite->extra_rules_top[ Controller::REWRITE_PATTERN ], $wp_rewrite->extra_rules_top[ Controller::FULL_REWRITE_PATTERN ] );
+		delete_option( Controller::REWRITE_STATE_OPTION );
+
+		$this->controller->add_rewrite_rule();
+		$rules = get_option( 'rewrite_rules' );
+		$this->assertArrayNotHasKey( Controller::REWRITE_PATTERN, $wp_rewrite->extra_rules_top );
+		$this->assertArrayNotHasKey( Controller::REWRITE_PATTERN, (array) $rules );
+		$this->assertSame( '', get_option( Controller::REWRITE_STATE_OPTION ) );
+
+		// Enabling via a settings save registers and flushes the llms.txt rule only.
+		$old = Settings::get_settings();
+		$new = $old;
+		$new['llms_txt']['enable'] = true;
+		update_option( 'designsetgo_settings', $new );
+		Settings::invalidate_cache();
+		$this->controller->handle_settings_update( $old, $new );
+
+		$rules = get_option( 'rewrite_rules' );
+		$this->assertArrayHasKey( Controller::REWRITE_PATTERN, $rules );
+		$this->assertArrayNotHasKey( Controller::FULL_REWRITE_PATTERN, $rules );
+
+		// Disabling again removes it, even though it was registered this request.
+		update_option( 'designsetgo_settings', $old );
+		Settings::invalidate_cache();
+		$this->controller->handle_settings_update( $new, $old );
+
+		$rules = get_option( 'rewrite_rules' );
+		$this->assertArrayNotHasKey( Controller::REWRITE_PATTERN, $rules );
+		$this->assertArrayNotHasKey( Controller::FULL_REWRITE_PATTERN, $rules );
+
+		$this->assertFileDoesNotExist( $root . 'llms.txt', 'Disabling should remove the physical llms.txt we wrote.' );
+
+		delete_option( Controller::REWRITE_STATE_OPTION );
+		$wp_rewrite->set_permalink_structure( '' );
+		remove_filter( 'designsetgo_llms_txt_site_root', $root_filter );
+		File_Manager::filesystem()->delete( $root, true );
+	}
+
+	/**
 	 * Test backfill writes .htaccess into an existing legacy markdown dir.
 	 */
 	public function test_htaccess_backfill_writes_file_on_legacy_dir() {
