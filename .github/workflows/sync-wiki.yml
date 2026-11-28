@@ -17,6 +17,7 @@ permissions:
 jobs:
   sync-wiki:
     name: Sync Documentation to Wiki
+    if: github.repository == 'jnealey-godaddy/designsetgo'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repo
